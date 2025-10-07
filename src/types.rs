@@ -1,0 +1,79 @@
+use serde::{Serialize, Deserialize};
+use std::collections::HashMap;
+use std::net::SocketAddr;
+
+#[derive(Clone, Serialize, Deserialize, Debug)]
+pub struct Block {
+    pub slot: u64,
+    pub parent_hash: String,
+    pub hash: String,
+    pub producer: String,
+    pub timestamp: u64,
+    pub transactions: Vec<Transaction>,
+}
+
+#[derive(Clone, Serialize, Deserialize, Debug)]
+pub struct Transaction {
+    pub from: String,
+    pub to: String,
+    pub amount: u64,
+    pub signature: String,
+}
+
+#[derive(Clone, Serialize, Deserialize, Debug)]
+pub enum NetworkMessage {
+    Handshake { peer_addr: String, known_peers: Vec<String> },
+    PeerExchange { peers: Vec<String> },
+    NewBlock(Block),
+    RequestBlocks { from_slot: u64 },
+    BlockResponse { blocks: Vec<Block> },
+    Ping,
+    Pong,
+}
+
+pub struct ChainState {
+    pub blocks: HashMap<u64, Block>,
+    pub accounts: HashMap<String, u64>,
+    pub latest_slot: u64,
+}
+
+impl ChainState {
+    pub fn new() -> Self {
+        ChainState {
+            blocks: HashMap::new(),
+            accounts: HashMap::new(),
+            latest_slot: 0,
+        }
+    }
+
+    pub fn add_block(&mut self, block: Block) -> bool {
+        if block.slot != self.latest_slot + 1 {
+            return false;
+        }
+
+        for tx in &block.transactions {
+            let from_balance = self.accounts.get(&tx.from).copied().unwrap_or(0);
+            if from_balance < tx.amount {
+                return false;
+            }
+            self.accounts.insert(tx.from.clone(), from_balance - tx.amount);
+            let to_balance = self.accounts.get(&tx.to).copied().unwrap_or(0);
+            self.accounts.insert(tx.to.clone(), to_balance + tx.amount);
+        }
+
+        self.blocks.insert(block.slot, block);
+        self.latest_slot += 1;
+        true
+    }
+
+    pub fn get_balance(&self, address: &str) -> u64 {
+        self.accounts.get(address).copied().unwrap_or(0)
+    }
+}
+
+#[derive(Clone, Debug)]
+pub struct PeerInfo {
+    pub addr: String,
+    pub last_seen: u64,
+    pub connected: bool,
+}

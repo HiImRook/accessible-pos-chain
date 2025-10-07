@@ -1,0 +1,11 @@
+listen_addr = "0.0.0.0:8080"
+bootstrap_nodes = []
+
+[genesis]
+alice = 1000000
+bob = 500000
+
+[validators]
+validator_1 = 5000
+validator_2 = 3000
+validator_3 = 2000
