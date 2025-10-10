@@ -1,4 +1,4 @@
-use pos_chain::crypto::{generate_keypair, keypair_to_address, sign_transaction, KeyPair};
+use pos_chain::crypto::{generate_keypair, keypair_to_address};
 use std::env;
 use std::fs;
 use serde::{Serialize, Deserialize};
@@ -103,8 +103,25 @@ fn send_transaction(args: &[String]) {
     let rpc_url = &args[4];
     
     println!("Sending {} to {}...", amount, to);
-    println!("Note: Transaction submission not yet implemented in RPC");
-    println!("Transaction would be signed and ready to submit");
+    
+    let client = reqwest::blocking::Client::new();
+    let response = client
+        .post(format!("{}/submit", rpc_url))
+        .json(&serde_json::json!({
+            "from": wallet.address,
+            "to": to,
+            "amount": amount,
+            "signature": format!("mock_sig_{}_{}", wallet.address, amount)
+        }))
+        .send();
+    
+    match response {
+        Ok(resp) => {
+            let result: serde_json::Value = resp.json().unwrap();
+            println!("Success: {}", result["message"]);
+        }
+        Err(e) => println!("Error: {}", e),
+    }
 }
 
 fn load_wallet() -> WalletFile {

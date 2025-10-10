@@ -1,6 +1,5 @@
 use serde::{Serialize, Deserialize};
 use std::collections::HashMap;
-use std::net::SocketAddr;
 
 #[derive(Clone, Serialize, Deserialize, Debug)]
 pub struct Block {
@@ -76,4 +75,29 @@ pub struct PeerInfo {
     pub addr: String,
     pub last_seen: u64,
     pub connected: bool,
+}
+
+pub struct Mempool {
+    pending: Vec<Transaction>,
+}
+
+impl Mempool {
+    pub fn new() -> Self {
+        Mempool {
+            pending: Vec::new(),
+        }
+    }
+
+    pub fn add_transaction(&mut self, tx: Transaction) {
+        self.pending.push(tx);
+    }
+
+    pub fn get_pending(&mut self, max: usize) -> Vec<Transaction> {
+        let count = self.pending.len().min(max);
+        self.pending.drain(..count).collect()
+    }
+
+    pub fn len(&self) -> usize {
+        self.pending.len()
+    }
 }
