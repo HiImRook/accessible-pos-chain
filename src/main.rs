@@ -14,6 +14,7 @@ async fn main() {
     let state = Arc::new(Mutex::new(ChainState::new()));
     let consensus = Arc::new(Mutex::new(Consensus::new()));
     let peer_manager = Arc::new(Mutex::new(PeerManager::new(config.bootstrap_nodes.clone())));
+    let mempool = Arc::new(Mutex::new(Mempool::new()));
     
     {
         let mut s = state.lock().unwrap();
@@ -38,8 +39,9 @@ async fn main() {
     });
     
     let state_rpc = Arc::clone(&state);
+    let mempool_rpc = Arc::clone(&mempool);
     tokio::spawn(async move {
-        pos_chain::rpc::start_rpc_server(&rpc_addr, state_rpc).await;
+        pos_chain::rpc::start_rpc_server(&rpc_addr, state_rpc, mempool_rpc).await;
     });
     
     let peer_manager_clone = Arc::clone(&peer_manager);
@@ -94,6 +96,7 @@ async fn main() {
     let state_clone = Arc::clone(&state);
     let consensus_clone = Arc::clone(&consensus);
     let peer_manager_clone = Arc::clone(&peer_manager);
+    let mempool_clone = Arc::clone(&mempool);
     tokio::spawn(async move {
         let mut block_interval = interval(Duration::from_secs(10));
         let mut slot = 0u64;
@@ -107,26 +110,24 @@ async fn main() {
             };
             
             if let Some(producer) = producer {
+                let transactions = {
+                    let mut mp = mempool_clone.lock().unwrap();
+                    mp.get_pending(100)
+                };
+                
                 let block = Block {
                     slot,
                     parent_hash: if slot > 0 { format!("block_{}", slot - 1) } else { "genesis".to_string() },
                     hash: format!("block_{}", slot),
                     producer: producer.clone(),
                     timestamp: slot * 10,
-                    transactions: vec![
-                        Transaction {
-                            from: "alice".to_string(),
-                            to: "bob".to_string(),
-                            amount: 100,
-                            signature: format!("sig_{}", slot),
-                        }
-                    ],
+                    transactions,
                 };
                 
                 let mut s = state_clone.lock().unwrap();
                 if s.add_block(block.clone()) {
-                    println!("Slot {}: Producer {} | Alice: {} Bob: {}", 
-                        slot, producer, s.get_balance("alice"), s.get_balance("bob"));
+                    println!("Slot {}: Producer {} | {} transactions", 
+                        slot, producer, block.transactions.len());
                     
                     drop(s);
                     

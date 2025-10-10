@@ -10,6 +10,7 @@ use crate::types::*;
 #[derive(Clone)]
 pub struct RpcState {
     pub chain: Arc<Mutex<ChainState>>,
+    pub mempool: Arc<Mutex<Mempool>>,
 }
 
 #[derive(Serialize)]
@@ -80,13 +81,34 @@ async fn get_block(
     }
 }
 
-pub async fn start_rpc_server(addr: &str, chain: Arc<Mutex<ChainState>>) {
-    let state = RpcState { chain };
+async fn submit_transaction(
+    State(state): State<RpcState>,
+    Json(payload): Json<SubmitTransactionRequest>,
+) -> Json<SubmitTransactionResponse> {
+    let tx = Transaction {
+        from: payload.from,
+        to: payload.to,
+        amount: payload.amount,
+        signature: payload.signature,
+    };
+    
+    let mut mempool = state.mempool.lock().unwrap();
+    mempool.add_transaction(tx);
+    
+    Json(SubmitTransactionResponse {
+        success: true,
+        message: format!("Transaction added to mempool ({} pending)", mempool.len()),
+    })
+}
+
+pub async fn start_rpc_server(addr: &str, chain: Arc<Mutex<ChainState>>, mempool: Arc<Mutex<Mempool>>) {
+    let state = RpcState { chain, mempool };
     
     let app = Router::new()
         .route("/balance", post(get_balance))
         .route("/latest_slot", get(get_latest_slot))
         .route("/block", post(get_block))
+        .route("/submit", post(submit_transaction))
         .with_state(state);
     
     let listener = tokio::net::TcpListener::bind(addr).await.unwrap();
