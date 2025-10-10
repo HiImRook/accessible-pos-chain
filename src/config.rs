@@ -4,6 +4,7 @@ use std::collections::HashMap;
 #[derive(Deserialize)]
 pub struct Config {
     pub listen_addr: String,
+    pub rpc_addr: String,
     pub bootstrap_nodes: Vec<String>,
     pub genesis: HashMap<String, u64>,
     pub validators: HashMap<String, u64>,

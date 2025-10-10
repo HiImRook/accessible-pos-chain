@@ -15,8 +15,8 @@ pub async fn start_listener(
 
     loop {
         let (socket, peer_addr) = listener.accept().await.unwrap();
-        let peer_str = peer_addr.to_string();
-        println!("Connection from {}", peer_str);
+        let peer_str = format!("{}:{}", peer_addr.ip(), peer_addr.port());
+        println!("Accepted connection from {}", peer_str);
         
         {
             let mut pm = peer_manager.lock().unwrap();
@@ -55,7 +55,8 @@ async fn handle_peer(
                     let _ = tx.send((msg, peer_addr.clone())).await;
                 }
             }
-            Err(_) => {
+            Err(e) => {
+                println!("Read error from {}: {}", peer_addr, e);
                 let mut pm = peer_manager.lock().unwrap();
                 pm.mark_disconnected(&peer_addr);
                 break;
@@ -64,12 +65,13 @@ async fn handle_peer(
     }
 }
 
-pub async fn connect_to_peer(
-    addr: &str,
+pub async fn connect_and_handle_peer(
+    addr: String,
     my_addr: String,
+    tx: mpsc::Sender<(NetworkMessage, String)>,
     peer_manager: Arc<Mutex<PeerManager>>
-) -> Option<TcpStream> {
-    match TcpStream::connect(addr).await {
+) {
+    match TcpStream::connect(&addr).await {
         Ok(mut stream) => {
             println!("Connected to peer {}", addr);
             
@@ -84,19 +86,21 @@ pub async fn connect_to_peer(
             };
             
             if let Ok(data) = serde_json::to_vec(&handshake) {
-                let _ = stream.write_all(&data).await;
+                if let Err(e) = stream.write_all(&data).await {
+                    println!("Failed to send handshake to {}: {}", addr, e);
+                    return;
+                }
             }
             
             {
                 let mut pm = peer_manager.lock().unwrap();
-                pm.mark_connected(addr);
+                pm.mark_connected(&addr);
             }
             
-            Some(stream)
+            handle_peer(stream, addr, tx, peer_manager).await;
         }
         Err(e) => {
             println!("Failed to connect to {}: {}", addr, e);
-            None
         }
     }
 }

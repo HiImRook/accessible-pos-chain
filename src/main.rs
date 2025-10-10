@@ -8,6 +8,7 @@ async fn main() {
     let config = Config::load().expect("Failed to load config.toml");
     
     let listen_addr = config.listen_addr.clone();
+    let rpc_addr = config.rpc_addr.clone();
     let my_addr = listen_addr.clone();
     
     let state = Arc::new(Mutex::new(ChainState::new()));
@@ -31,12 +32,19 @@ async fn main() {
     let (tx, mut rx) = mpsc::channel::<(NetworkMessage, String)>(100);
     
     let peer_manager_clone = Arc::clone(&peer_manager);
+    let tx_listener = tx.clone();
     tokio::spawn(async move {
-        network::start_listener(&listen_addr, tx, peer_manager_clone).await;
+        network::start_listener(&listen_addr, tx_listener, peer_manager_clone).await;
+    });
+    
+    let state_rpc = Arc::clone(&state);
+    tokio::spawn(async move {
+        pos_chain::rpc::start_rpc_server(&rpc_addr, state_rpc).await;
     });
     
     let peer_manager_clone = Arc::clone(&peer_manager);
     let my_addr_clone = my_addr.clone();
+    let tx_clone = tx.clone();
     tokio::spawn(async move {
         let mut connect_interval = interval(Duration::from_secs(30));
         
@@ -52,8 +60,10 @@ async fn main() {
                 if node != my_addr_clone {
                     let pm = Arc::clone(&peer_manager_clone);
                     let addr = my_addr_clone.clone();
+                    let tx = tx_clone.clone();
+                    let node = node.clone();
                     tokio::spawn(async move {
-                        network::connect_to_peer(&node, addr, pm).await;
+                        network::connect_and_handle_peer(node, addr, tx, pm).await;
                     });
                 }
             }
@@ -67,8 +77,9 @@ async fn main() {
                 if peer != my_addr_clone {
                     let pm = Arc::clone(&peer_manager_clone);
                     let addr = my_addr_clone.clone();
+                    let tx = tx_clone.clone();
                     tokio::spawn(async move {
-                        network::connect_to_peer(&peer, addr, pm).await;
+                        network::connect_and_handle_peer(peer, addr, tx, pm).await;
                     });
                 }
             }
@@ -134,7 +145,7 @@ async fn main() {
     loop {
         if let Some((msg, peer_addr)) = rx.recv().await {
             match msg {
-                NetworkMessage::Handshake { peer_addr: their_addr, known_peers } => {
+                NetworkMessage::Handshake { peer_addr: _their_addr, known_peers } => {
                     println!("Handshake from {} with {} known peers", peer_addr, known_peers.len());
                     let mut pm = peer_manager.lock().unwrap();
                     for peer in known_peers {
