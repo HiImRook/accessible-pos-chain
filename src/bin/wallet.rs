@@ -1,4 +1,4 @@
-use pos_chain::crypto::{generate_keypair, keypair_to_address};
+use pos_chain::crypto::{generate_keypair, keypair_to_address, sign_transaction, KeyPair};
 use std::env;
 use std::fs;
 use serde::{Serialize, Deserialize};
@@ -102,6 +102,18 @@ fn send_transaction(args: &[String]) {
     let amount: u64 = args[3].parse().expect("Invalid amount");
     let rpc_url = &args[4];
     
+    let secret_bytes = hex::decode(&wallet.secret_key).expect("Invalid secret key");
+    let secret_array: [u8; 32] = secret_bytes.try_into().expect("Wrong secret key length");
+    let signing_key = ed25519_dalek::SigningKey::from_bytes(&secret_array);
+    let verifying_key = signing_key.verifying_key();
+    
+    let keypair = KeyPair {
+        signing_key,
+        verifying_key,
+    };
+    
+    let signature = sign_transaction(&keypair, &wallet.address, to, amount);
+    
     println!("Sending {} to {}...", amount, to);
     
     let client = reqwest::blocking::Client::new();
@@ -109,9 +121,10 @@ fn send_transaction(args: &[String]) {
         .post(format!("{}/submit", rpc_url))
         .json(&serde_json::json!({
             "from": wallet.address,
+            "from_pubkey": wallet.public_key,
             "to": to,
             "amount": amount,
-            "signature": format!("mock_sig_{}_{}", wallet.address, amount)
+            "signature": signature
         }))
         .send();
     

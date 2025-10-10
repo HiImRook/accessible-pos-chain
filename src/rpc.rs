@@ -31,6 +31,7 @@ struct BlockResponse {
 #[derive(Deserialize)]
 struct SubmitTransactionRequest {
     from: String,
+    from_pubkey: String,
     to: String,
     amount: u64,
     signature: String,
@@ -87,6 +88,7 @@ async fn submit_transaction(
 ) -> Json<SubmitTransactionResponse> {
     let tx = Transaction {
         from: payload.from,
+        from_pubkey: payload.from_pubkey,
         to: payload.to,
         amount: payload.amount,
         signature: payload.signature,

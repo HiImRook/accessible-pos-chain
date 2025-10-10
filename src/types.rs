@@ -14,6 +14,7 @@ pub struct Block {
 #[derive(Clone, Serialize, Deserialize, Debug)]
 pub struct Transaction {
     pub from: String,
+    pub from_pubkey: String,
     pub to: String,
     pub amount: u64,
     pub signature: String,
@@ -46,11 +47,18 @@ impl ChainState {
     }
 
     pub fn add_block(&mut self, block: Block) -> bool {
+        use crate::crypto::verify_transaction;
+        
         if block.slot != self.latest_slot + 1 {
             return false;
         }
 
         for tx in &block.transactions {
+            if !verify_transaction(&tx.from_pubkey, &tx.from, &tx.to, tx.amount, &tx.signature) {
+                println!("Invalid signature for transaction from {}", tx.from);
+                return false;
+            }
+            
             let from_balance = self.accounts.get(&tx.from).copied().unwrap_or(0);
             if from_balance < tx.amount {
                 return false;
