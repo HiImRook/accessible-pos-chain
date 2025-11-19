@@ -1,6 +1,6 @@
-# Accessible PoS Chain — Valid (pos-chain)
+# Accessible PoS Chain — (Valid pos-chain)
 
-A compact, practical Proof‑of‑Stake node implementation written in async Rust. This project intentionally favors clarity and runnability over academic maximalism — it’s a small, self‑contained node you can build, run, and use as a private or public testnet for development and experimentation.
+A compact, practical, Proof‑of‑Stake node implementation written in async Rust. This project intentionally favors clarity and runnability over academic maximalism — it’s a small, self‑contained node you can build, run, and use as a private or public testnet for development and experimentation.
 
 Highlights
 - 10‑second slot cadence (configurable)
@@ -115,7 +115,7 @@ Developer notes and best practices (Rust)
   - Use fixed seeds and deterministic clocks in tests to exercise edge cases.
 - Reproducible builds: Cargo.lock is included — keep it up to date for reproducible CI runs.
 
-Roadmap (short / practical)
+Roadmap
 - Short term
   - Proper transaction signing + replay protection (nonces)
   - Blake3 block hashing and Merkle roots for transactions
@@ -139,7 +139,7 @@ Contributing
 - Large changes: open an issue first describing approach and tests.
 - Tests and CI: include tests and a short description of how to reproduce locally.
 
-Repository layout (quick)
+Repository layout
 - Cargo.toml, Cargo.lock
 - config.example.toml
 - src/
@@ -155,9 +155,11 @@ Repository layout (quick)
 
 Related projects
 - Wallet (prototype, UX): https://github.com/HiImRook/Valid-Blockchain-Wallet
+- K.E.V.I.N. (A.I. agent): https://github.com/HiImRook/K.E.V.I.N.
+- NFT Assembler (local tool visual NFT builder): https://github.com/HiImRook/nft-assembler
 
 License
 - MIT — see LICENSE in this repo.
 
 Acknowledgements
-- Built and maintained by the solo author (Rook). If you run this successfully on your machines and it behaves, open an issue and tell me — it’s the best kind of feedback.
+- Built and maintained by the solo author (Rook). If you run this successfully on your machines and it behaves, open an issue and tell me.
