@@ -162,4 +162,4 @@ License
 - MIT — see LICENSE in this repo.
 
 Acknowledgements
-- Built and maintained by the solo author (Rook). If you run this successfully on your machines and it behaves, open an issue and tell me.
+- Built and maintained by the solo author Rook. If you run this successfully on your machines and it behaves, open an issue and tell me.
