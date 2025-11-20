@@ -1,6 +1,6 @@
 # Accessible PoS Chain — (Valid pos-chain)
 
-A compact, practical, Proof‑of‑Stake node implementation written in async Rust. This project intentionally favors clarity and runnability over academic maximalism — it’s a small, self‑contained node you can build, run, and use as a private or public testnet for development and experimentation.
+A lightweight, practical, Proof‑of‑Stake node implementation written in async Rust. This project intentionally favors clarity and runnability over academic maximalism — it’s a small, self‑contained node you can build, run, and use as a private or public testnet for development and experimentation.
 
 Highlights
 - 10‑second slot cadence (configurable)
