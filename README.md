@@ -89,7 +89,7 @@ This project uses a slot‑based, single‑leader per‑slot model with stake‑
 
 How this differs from Tendermint
 - Tendermint: classical BFT consensus with multi‑round voting and deterministic finality (commits require 2/3 votes).
-- Accessible PoS (this repo): single‑leader slot game with probabilistic finality based on chain growth and stake weighting. Simpler and easier to implement but relies on eventual chain growth for finality; faster to prototype and run with fewer protocol rounds, but weaker theoretical finality guarantees than Tendermint’s BFT commit model.
+- Accessible PoS (this repo): single‑leader slot game with probabilistic finality based on chain growth and stake weighting. Simpler and easier to implement but relies on eventual chain growth for finality; faster to prototype and run with fewer protocol rounds.
 
 Transaction format and signing
 - Transactions are minimal: { from, to, amount, signature } (ed25519 expected).
