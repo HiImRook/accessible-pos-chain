@@ -1,6 +1,7 @@
 listen_addr = "0.0.0.0:8080"
 rpc_addr = "0.0.0.0:3000"
 bootstrap_nodes = []
+storage_path = "./chain_data"
 
 [genesis]
 alice = 1000000

@@ -1,4 +1,4 @@
-use pos_chain::{types::*, consensus::Consensus, network, config::Config, peer_manager::PeerManager};
+use pos_chain::{types::*, consensus::Consensus, network, config::Config, peer_manager::PeerManager, storage::Storage};
 use tokio::sync::mpsc;
 use tokio::time::{interval, Duration};
 use std::sync::{Arc, Mutex};
@@ -11,15 +11,28 @@ async fn main() {
     let rpc_addr = config.rpc_addr.clone();
     let my_addr = listen_addr.clone();
     
-    let state = Arc::new(Mutex::new(ChainState::new()));
+    // Initialize storage
+    let storage = Arc::new(Storage::new(&config.storage_path).expect("Failed to initialize storage"));
+    println!("Storage initialized at: {}", config.storage_path);
+    
+    let state = Arc::new(Mutex::new(ChainState::with_storage(Arc::clone(&storage))));
     let consensus = Arc::new(Mutex::new(Consensus::new()));
     let peer_manager = Arc::new(Mutex::new(PeerManager::new(config.bootstrap_nodes.clone())));
     let mempool = Arc::new(Mutex::new(Mempool::new()));
     
     {
         let mut s = state.lock().unwrap();
-        for (address, balance) in config.genesis {
-            s.accounts.insert(address, balance);
+        // Only initialize genesis if this is a fresh start (no existing accounts)
+        if s.accounts.is_empty() {
+            println!("Initializing genesis state...");
+            for (address, balance) in config.genesis {
+                s.accounts.insert(address.clone(), balance);
+                if let Err(e) = storage.store_account(&address, balance) {
+                    eprintln!("Warning: Failed to persist genesis account: {}", e);
+                }
+            }
+        } else {
+            println!("Loaded {} existing accounts from storage", s.accounts.len());
         }
     }
     
