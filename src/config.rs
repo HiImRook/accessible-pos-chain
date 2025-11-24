@@ -6,14 +6,8 @@ pub struct Config {
     pub listen_addr: String,
     pub rpc_addr: String,
     pub bootstrap_nodes: Vec<String>,
-    #[serde(default = "default_storage_path")]
-    pub storage_path: String,
     pub genesis: HashMap<String, u64>,
     pub validators: HashMap<String, u64>,
-}
-
-fn default_storage_path() -> String {
-    "./chain_data".to_string()
 }
 
 impl Config {

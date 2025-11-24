@@ -36,7 +36,6 @@ Configuration (config.toml)
 - listen_addr — TCP address for P2P
 - rpc_addr — JSON‑RPC listen address
 - bootstrap_nodes — addresses to bootstrap peer list
-- storage_path — directory path for persistent blockchain data (default: ./chain_data)
 - [genesis] — mapping of address -> initial balance
 - [validators] — mapping of address -> staked amount (controls selection weight)
 
@@ -44,7 +43,6 @@ Example excerpt:
 ```toml
 listen_addr = "0.0.0.0:8080"
 rpc_addr    = "0.0.0.0:8333"
-storage_path = "./chain_data"
 
 # Leave bootstrap_nodes empty when you start the first node.
 # To join peers, add their <host:port> entries here.
@@ -79,8 +77,6 @@ Architecture overview
   - JSON‑RPC request parsing and handlers.
 - src/crypto.rs
   - Key and signature helpers (ed25519-based today).
-- src/storage.rs
-  - Persistent blockchain storage using Sled embedded database for blocks, accounts, and state.
 - src/types.rs
   - Block, Transaction, and ChainState definitions.
 
@@ -99,13 +95,6 @@ Transaction format and signing
 - Transactions are minimal: { from, to, amount, signature } (ed25519 expected).
 - Currently the repository contains transaction/verification primitives; full replay protection (nonces) and canonical transaction serialization are on the roadmap.
 - Wallets should sign transactions with ed25519 keys and submit via RPC.
-
-Persistent storage
-- The node uses Sled, an embedded key‑value database, for persistent storage of blocks, account balances, and chain state.
-- Storage location is configurable via `storage_path` in config.toml (default: ./chain_data).
-- On startup, the node automatically loads existing blockchain data from storage, allowing seamless restarts without data loss.
-- Genesis state is only initialized on first run; subsequent runs load the existing chain state from disk.
-- All block production and state changes are automatically persisted to disk for durability.
 
 Security notes (read this before running validators or wallets)
 - Do not use the provided JS “house wallet” for real funds — it currently implements a prototype seed flow and insecure localStorage storage. Treat it as a UX prototype only. See: https://github.com/HiImRook/Valid-Blockchain-Wallet
@@ -161,7 +150,6 @@ Repository layout
   - network.rs
   - peer_manager.rs
   - rpc.rs
-  - storage.rs
   - types.rs
   - bin/ (additional binaries)
 

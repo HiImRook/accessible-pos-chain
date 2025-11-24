@@ -5,4 +5,3 @@ pub mod config;
 pub mod peer_manager;
 pub mod rpc;
 pub mod crypto;
-pub mod storage;

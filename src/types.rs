@@ -35,7 +35,6 @@ pub struct ChainState {
     pub blocks: HashMap<u64, Block>,
     pub accounts: HashMap<String, u64>,
     pub latest_slot: u64,
-    pub storage: Option<std::sync::Arc<crate::storage::Storage>>,
 }
 
 impl ChainState {
@@ -44,20 +43,6 @@ impl ChainState {
             blocks: HashMap::new(),
             accounts: HashMap::new(),
             latest_slot: 0,
-            storage: None,
-        }
-    }
-
-    pub fn with_storage(storage: std::sync::Arc<crate::storage::Storage>) -> Self {
-        let blocks = storage.load_all_blocks().unwrap_or_default();
-        let accounts = storage.load_all_accounts().unwrap_or_default();
-        let latest_slot = storage.get_latest_slot().unwrap_or(0);
-        
-        ChainState {
-            blocks,
-            accounts,
-            latest_slot,
-            storage: Some(storage),
         }
     }
 
@@ -83,24 +68,8 @@ impl ChainState {
             self.accounts.insert(tx.to.clone(), to_balance + tx.amount);
         }
 
-        self.blocks.insert(block.slot, block.clone());
+        self.blocks.insert(block.slot, block);
         self.latest_slot += 1;
-
-        // Persist to storage if available
-        if let Some(storage) = &self.storage {
-            if let Err(e) = storage.store_block(&block) {
-                eprintln!("Warning: Failed to persist block to storage: {}", e);
-            }
-            if let Err(e) = storage.store_latest_slot(self.latest_slot) {
-                eprintln!("Warning: Failed to persist latest slot to storage: {}", e);
-            }
-            for (address, balance) in &self.accounts {
-                if let Err(e) = storage.store_account(address, *balance) {
-                    eprintln!("Warning: Failed to persist account {} to storage: {}", address, e);
-                }
-            }
-        }
-
         true
     }
 
