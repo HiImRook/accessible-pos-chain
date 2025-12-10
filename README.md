@@ -1,6 +1,6 @@
 # Accessible PoS Chain — (Valid pos-chain)
 
-A lightweight, practical, Proof‑of‑Stake node implementation written in async Rust. This project intentionally favors clarity and runnability over academic maximalism — it’s a small, self‑contained node you can build, run, and use as a private or public testnet for development and experimentation.
+A lightweight, practical, Proof‑of‑Stake node implementation written in async Rust. This project intentionally favors clarity and runnability over academic maximalism. It’s a small, self‑contained node you can build, run, and use as a private or public testnet for development and experimentation.
 
 Highlights
 - 10‑second slot cadence (configurable)
@@ -12,7 +12,7 @@ Highlights
 - Minimal dependency surface (Tokio, Serde, toml, ed25519 libraries, etc.)
 
 Important disclaimer
-This repository is a work‑in‑progress research / engineering project. It is useful for testing, learning, and small private networks. Do not run this on mainnet with real funds until the crypto, storage, and networking primitives have been audited and hardened (see Security section and Roadmap).
+This repository is a work‑in‑progress. It is useful for testing, learning, and small private networks. Do not run this on mainnet with real funds until the crypto, storage, and networking primitives have been audited and hardened (see Security section and Roadmap).
 
 Quick start — run a two‑node LAN test
 1. Clone and build
@@ -80,16 +80,12 @@ Architecture overview
 - src/types.rs
   - Block, Transaction, and ChainState definitions.
 
-Consensus model — plainspoken detail
+Consensus model
 This project uses a slot‑based, single‑leader per‑slot model with stake‑weighted selection. Important points:
 - Time is divided into fixed slots (default 10s). Each slot has at most one scheduled producer.
 - Producer selection is proportional to validator stake. The node deterministically derives the scheduled producer for a slot from the validator set and a deterministic pseudo‑random function (implemented in Rust). This is intentionally simple and auditable; a VRF or full entropy beacon can replace it later.
 - Finality model: current design offers probabilistic finality like classic chain‑selection PoS (finality emerges from extending the longest/heaviest chain and fork resolution rules). It is not BFT finality (no multi‑round commit votes).
 - Safety / liveness constraints: with a largely honest stake majority and typical network conditions, the chain progresses and conflicts resolve quickly. Under adversarial or highly partitioned conditions, forks can happen and manual reconciliation or more sophisticated consensus (e.g., commit voting, dynamic validator set) is required.
-
-How this differs from Tendermint
-- Tendermint: classical BFT consensus with multi‑round voting and deterministic finality (commits require 2/3 votes).
-- Accessible PoS (this repo): single‑leader slot game with probabilistic finality based on chain growth and stake weighting. Simpler and easier to implement but relies on eventual chain growth for finality; faster to prototype and run with fewer protocol rounds.
 
 Transaction format and signing
 - Transactions are minimal: { from, to, amount, signature } (ed25519 expected).
