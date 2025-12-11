@@ -52,13 +52,16 @@ impl PeerManager {
     }
 
     pub fn get_peers_to_connect(&self) -> Vec<String> {
+        use rand::seq::SliceRandom;
         let now = current_timestamp();
-        self.peers
+        let mut peers: Vec<String> = self.peers
             .values()
             .filter(|p| !p.connected && now - p.last_seen < PEER_TIMEOUT)
-            .take(10)
             .map(|p| p.addr.clone())
-            .collect()
+            .collect();
+        let mut rng = rand::thread_rng();
+        peers.shuffle(&mut rng);
+        peers.into_iter().take(10).collect()
     }
 
     pub fn get_connected_peers(&self) -> Vec<String> {
