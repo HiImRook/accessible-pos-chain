@@ -101,6 +101,9 @@ impl Mempool {
     }
 
     pub fn get_pending(&mut self, max: usize) -> Vec<Transaction> {
+        use rand::seq::SliceRandom;
+        let mut rng = rand::thread_rng();
+        self.pending.shuffle(&mut rng);
         let count = self.pending.len().min(max);
         self.pending.drain(..count).collect()
     }
