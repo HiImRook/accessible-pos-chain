@@ -11,13 +11,23 @@ Get validators running in minutes with copy/paste commands.
 **On Windows (WSL):**
 
 Open PowerShell as Administrator and run:
+
+**Step 1: Enable WSL**
+```powershell
+dism.exe /online /enable-feature /featurename:Microsoft-Windows-Subsystem-Linux /all /norestart
+dism.exe /online /enable-feature /featurename:VirtualMachinePlatform /all /norestart
+```
+
+**Step 2: Restart your computer**
+
+**Step 3: Install Ubuntu**
+
+Open PowerShell as Administrator again and run:
 ```powershell
 wsl --install -d Ubuntu-22.04
 ```
 
-Restart your computer when prompted.
-
-After restart, Ubuntu will open automatically. Create a username and password.
+Ubuntu will open automatically. Create a username and password when prompted.
 
 **Close Ubuntu and reopen it** to start using it.
 
