@@ -64,6 +64,11 @@ Run one validator to verify blockchain works.
 
 ```bash
 cd accessible-pos-chain
+
+# Create config file
+cp config.example.toml config.toml
+
+# Run validator
 ./target/release/pos-chain
 ```
 
