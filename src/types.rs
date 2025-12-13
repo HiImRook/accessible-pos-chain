@@ -78,9 +78,16 @@ impl ChainState {
     }
 }
 
+pub fn generate_peer_id(addr: &str) -> String {
+    use sha2::{Sha256, Digest};
+    let hash = Sha256::digest(addr.as_bytes());
+    format!("peer-{}", hex::encode(&hash[..6]))
+}
+
 #[derive(Clone, Debug)]
 pub struct PeerInfo {
     pub addr: String,
+    pub peer_id: String,
     pub last_seen: u64,
     pub connected: bool,
 }

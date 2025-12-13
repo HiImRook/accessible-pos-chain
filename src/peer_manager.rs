@@ -19,13 +19,17 @@ impl PeerManager {
     }
 
     pub fn add_peer(&mut self, addr: String) {
+        use crate::types::generate_peer_id;
+        
         if self.peers.len() >= MAX_PEERS {
             return;
         }
 
         if !self.peers.contains_key(&addr) {
+            let peer_id = generate_peer_id(&addr);
             self.peers.insert(addr.clone(), PeerInfo {
                 addr,
+                peer_id,
                 last_seen: current_timestamp(),
                 connected: false,
             });
