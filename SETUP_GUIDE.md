@@ -8,14 +8,34 @@ Get validators running in minutes with copy/paste commands.
 
 ## Install Ubuntu
 
-**Download Ubuntu 22.04 LTS:**
-https://ubuntu.com/download/desktop
+**On Windows (WSL):**
 
-**Install on:**
-- **Physical computer (Linux OS)** - Dual boot or replace existing OS
-- **Virtual machine (Windows OS)** - VirtualBox or VMware running Ubuntu
+Open PowerShell as Administrator and run:
+```powershell
+wsl --install -d Ubuntu-22.04
+```
 
-**After install, open terminal:** Ctrl+Alt+T
+Restart your computer when prompted.
+
+After restart, Ubuntu will open automatically. Create a username and password.
+
+**Close Ubuntu and reopen it** to start using it.
+
+---
+
+**On Linux:**
+
+If you're already on Linux, skip this step. Open terminal: Ctrl+Alt+T
+
+---
+
+**On Mac:**
+
+Install Ubuntu in a virtual machine (VirtualBox or UTM) or use a Linux VPS.
+
+---
+
+**You should now have an Ubuntu terminal open.**
 
 ---
 
