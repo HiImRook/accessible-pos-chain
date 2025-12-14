@@ -12,24 +12,32 @@ Get validators running in minutes with copy/paste commands.
 
 Open PowerShell as Administrator and run:
 
-**Step 1: Enable WSL**
+```powershell
+wsl --install
+```
+
+**Restart your computer when prompted.**
+
+After restart, search for "Ubuntu" in Start Menu and open it.
+
+Create a username and password when prompted.
+
+**You now have Ubuntu installed.**
+
+---
+
+**If `wsl --install` fails:**
+
+Run these commands in PowerShell (Administrator):
 ```powershell
 dism.exe /online /enable-feature /featurename:Microsoft-Windows-Subsystem-Linux /all /norestart
 dism.exe /online /enable-feature /featurename:VirtualMachinePlatform /all /norestart
 ```
 
-**Step 2: Restart your computer**
-
-**Step 3: Install Ubuntu**
-
-Open PowerShell as Administrator again and run:
+Restart computer, then run:
 ```powershell
 wsl --install -d Ubuntu-22.04
 ```
-
-Ubuntu will open automatically. Create a username and password when prompted.
-
-**Close Ubuntu and reopen it** to start using it.
 
 ---
 
@@ -60,7 +68,7 @@ curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 source $HOME/.cargo/env
 
 # Install build tools
-sudo apt install -y build-essential git screen
+sudo apt install -y build-essential git screen pkg-config libssl-dev
 
 # Verify
 rustc --version
