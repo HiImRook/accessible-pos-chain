@@ -1,16 +1,22 @@
 use axum::{
-    extract::State,
+    extract::{State, WebSocketUpgrade},
+    response::IntoResponse,
     routing::{get, post},
     Json, Router,
 };
+use axum::extract::ws::{WebSocket, Message};
+use futures::{sink::SinkExt, stream::StreamExt};
 use serde::{Deserialize, Serialize};
 use std::sync::{Arc, Mutex};
+use tower_http::services::ServeDir;
 use crate::types::*;
+use crate::metrics::{Metrics, StatusResponse};
 
 #[derive(Clone)]
 pub struct RpcState {
     pub chain: Arc<Mutex<ChainState>>,
     pub mempool: Arc<Mutex<Mempool>>,
+    pub metrics: Arc<Mutex<Metrics>>,
 }
 
 #[derive(Serialize)]
@@ -50,7 +56,6 @@ async fn get_balance(
     let address = payload["address"].as_str().unwrap_or("");
     let chain = state.chain.lock().unwrap();
     let balance = chain.get_balance(address);
-    
     Json(BalanceResponse {
         address: address.to_string(),
         balance,
@@ -68,7 +73,6 @@ async fn get_block(
 ) -> Json<Option<BlockResponse>> {
     let slot = payload["slot"].as_u64().unwrap_or(0);
     let chain = state.chain.lock().unwrap();
-    
     if let Some(block) = chain.blocks.get(&slot) {
         Json(Some(BlockResponse {
             slot: block.slot,
@@ -93,28 +97,111 @@ async fn submit_transaction(
         amount: payload.amount,
         signature: payload.signature,
     };
-    
     let mut mempool = state.mempool.lock().unwrap();
     mempool.add_transaction(tx);
-    
     Json(SubmitTransactionResponse {
         success: true,
         message: format!("Transaction added to mempool ({} pending)", mempool.len()),
     })
 }
 
-pub async fn start_rpc_server(addr: &str, chain: Arc<Mutex<ChainState>>, mempool: Arc<Mutex<Mempool>>) {
-    let state = RpcState { chain, mempool };
+async fn get_status(State(state): State<RpcState>) -> Json<StatusResponse> {
+    let metrics = state.metrics.lock().unwrap();
+    Json(metrics.get_status())
+}
+
+async fn get_blocks(State(state): State<RpcState>) -> Json<Vec<crate::metrics::BlockMetric>> {
+    let metrics = state.metrics.lock().unwrap();
+    Json(metrics.get_blocks())
+}
+
+async fn get_peers(State(state): State<RpcState>) -> Json<Vec<crate::metrics::PeerMetric>> {
+    let metrics = state.metrics.lock().unwrap();
+    Json(metrics.get_peers())
+}
+
+async fn get_transactions(State(state): State<RpcState>) -> Json<Vec<crate::metrics::TxMetric>> {
+    let metrics = state.metrics.lock().unwrap();
+    Json(metrics.get_transactions())
+}
+
+async fn get_logs(State(state): State<RpcState>) -> Json<Vec<crate::metrics::LogEntry>> {
+    let metrics = state.metrics.lock().unwrap();
+    Json(metrics.get_logs())
+}
+
+async fn websocket_handler(
+    ws: WebSocketUpgrade,
+    State(state): State<RpcState>,
+) -> impl IntoResponse {
+    ws.on_upgrade(|socket| handle_websocket(socket, state))
+}
+
+async fn handle_websocket(socket: WebSocket, state: RpcState) {
+    let (mut sender, mut receiver) = socket.split();
+    
+    let mut interval = tokio::time::interval(tokio::time::Duration::from_secs(1));
+    
+    loop {
+        tokio::select! {
+            _ = interval.tick() => {
+                let status = {
+                    let metrics = state.metrics.lock().unwrap();
+                    metrics.get_status()
+                };
+                
+                if let Ok(json) = serde_json::to_string(&serde_json::json!({
+                    "type": "status",
+                    "current_slot": status.current_slot,
+                    "blocks_produced": status.blocks_produced,
+                    "mempool_size": status.mempool_size,
+                    "connected_peers": status.connected_peers,
+                    "uptime_seconds": status.uptime_seconds,
+                    "avg_block_time": status.avg_block_time,
+                    "current_tps": status.current_tps,
+                    "avg_tps": status.avg_tps,
+                    "memory_mb": status.memory_mb,
+                    "cpu_percent": status.cpu_percent,
+                })) {
+                    if sender.send(Message::Text(json)).await.is_err() {
+                        break;
+                    }
+                }
+            }
+            msg = receiver.next() => {
+                if msg.is_none() {
+                    break;
+                }
+            }
+        }
+    }
+}
+
+pub async fn start_rpc_server(
+    addr: &str,
+    chain: Arc<Mutex<ChainState>>,
+    mempool: Arc<Mutex<Mempool>>,
+    metrics: Arc<Mutex<Metrics>>,
+) {
+    let state = RpcState { chain, mempool, metrics };
     
     let app = Router::new()
         .route("/balance", post(get_balance))
         .route("/latest_slot", get(get_latest_slot))
         .route("/block", post(get_block))
         .route("/submit", post(submit_transaction))
+        .route("/status", get(get_status))
+        .route("/blocks", get(get_blocks))
+        .route("/peers", get(get_peers))
+        .route("/transactions", get(get_transactions))
+        .route("/logs", get(get_logs))
+        .route("/ws", get(websocket_handler))
+        .nest_service("/dashboard", ServeDir::new("testing"))
         .with_state(state);
     
     let listener = tokio::net::TcpListener::bind(addr).await.unwrap();
     println!("RPC server listening on {}", addr);
+    println!("Dashboard available at http://localhost:3000/dashboard");
     
     axum::serve(listener, app).await.unwrap();
 }
