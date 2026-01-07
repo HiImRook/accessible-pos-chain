@@ -29,6 +29,8 @@ pub enum NetworkMessage {
     BlockResponse { blocks: Vec<Block> },
     Ping,
     Pong,
+    TpiHash { slot: u64, validator_id: String, block_hash: String, signature: String },
+    TpiConsensusAchieved { slot: u64, agreed_hash: String },
 }
 
 pub struct ChainState {

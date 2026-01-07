@@ -1,8 +1,10 @@
 use pos_chain::{types::*, consensus::Consensus, network, config::Config, peer_manager::PeerManager, metrics::Metrics};
+use pos_chain::tpi_production::produce_block_with_tpi;
 use tokio::sync::mpsc;
 use tokio::time::{interval, Duration};
 use std::sync::{Arc, Mutex};
 use std::time::{SystemTime, UNIX_EPOCH};
+use std::collections::HashMap;
 
 fn timestamp() -> String {
     let now = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs();
@@ -131,6 +133,7 @@ async fn main() {
     let peer_manager_clone = Arc::clone(&peer_manager);
     let mempool_clone = Arc::clone(&mempool);
     let metrics_clone = Arc::clone(&metrics);
+    let my_addr_tpi = my_addr.clone();
     tokio::spawn(async move {
         let mut block_interval = interval(Duration::from_secs(10));
         let mut slot = 0u64;
@@ -138,29 +141,33 @@ async fn main() {
         loop {
             block_interval.tick().await;
 
-            let producer = {
+            let all_validators: Vec<String> = {
                 let c = consensus_clone.lock().unwrap();
-                c.select_producer(slot)
+                c.validators.keys().cloned().collect()
             };
 
-            if let Some(producer) = producer {
-                let transactions = {
-                    let mut mp = mempool_clone.lock().unwrap();
-                    mp.get_pending(100)
-                };
+            let validator_merit: HashMap<String, u64> = {
+                let c = consensus_clone.lock().unwrap();
+                c.validators.iter().map(|(k, v)| (k.clone(), *v)).collect()
+            };
 
-                let block = Block {
-                    slot,
-                    parent_hash: if slot > 0 { format!("block_{}", slot - 1) } else { "genesis".to_string() },
-                    hash: format!("block_{}", slot),
-                    producer: producer.clone(),
-                    timestamp: slot * 10,
-                    transactions: transactions.clone(),
-                };
+            let my_id = "validator_1".to_string();
 
+            if let Some(block) = produce_block_with_tpi(
+                slot,
+                my_id,
+                all_validators,
+                validator_merit,
+                Arc::clone(&state_clone),
+                Arc::clone(&mempool_clone),
+            ).await {
                 let mut s = state_clone.lock().unwrap();
                 if s.add_block(block.clone()) {
-                    let producer_short = if producer.len() > 12 { &producer[..12] } else { &producer };
+                    let producer_short = if block.producer.len() > 12 {
+                        &block.producer[..12]
+                    } else {
+                        &block.producer
+                    };
                     println!("[{}] Slot {}: Producer {} ({} tx)",
                         timestamp(), slot, producer_short, block.transactions.len());
 
@@ -171,7 +178,7 @@ async fn main() {
                             let mp = mempool_clone.lock().unwrap();
                             mp.len()
                         };
-                        
+
                         let mut m = metrics_clone.lock().unwrap();
                         m.record_block(pos_chain::metrics::BlockMetric {
                             slot: block.slot,
@@ -182,7 +189,7 @@ async fn main() {
                             timestamp: block.timestamp,
                         });
                         m.set_mempool_size(mempool_size);
-                        
+
                         let memory_mb = get_memory_usage();
                         let cpu_percent = get_cpu_usage();
                         m.update_system_stats(memory_mb, cpu_percent);

@@ -10,3 +10,4 @@ pub mod tpi;
 pub mod racer;
 pub mod snapshot;
 pub mod pruning;
+pub mod tpi_production;
