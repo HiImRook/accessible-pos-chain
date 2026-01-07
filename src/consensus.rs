@@ -4,16 +4,10 @@ use std::time::{SystemTime, UNIX_EPOCH};
 const FINALITY_THRESHOLD: f64 = 0.66;
 
 pub struct Consensus {
-    validators: HashMap<String, Validator>,
+    pub validators: HashMap<String, u64>,
     total_stake: u64,
     current_epoch: u64,
     epoch_start: u64,
-}
-
-pub struct Validator {
-    pub address: String,
-    pub stake: u64,
-    pub active: bool,
 }
 
 impl Consensus {
@@ -25,40 +19,43 @@ impl Consensus {
             epoch_start: current_timestamp(),
         }
     }
-
+    
     pub fn register_validator(&mut self, address: String, stake: u64) {
         self.total_stake += stake;
-        self.validators.insert(address.clone(), Validator {
-            address,
-            stake,
-            active: true,
-        });
+        self.validators.insert(address, stake);
     }
-
+    
+    pub fn get_all_validators(&self) -> Vec<String> {
+        self.validators.keys().cloned().collect()
+    }
+    
+    pub fn get_validator_stakes(&self) -> HashMap<String, u64> {
+        self.validators.clone()
+    }
+    
     pub fn select_producer(&self, slot: u64) -> Option<String> {
-        let active: Vec<&Validator> = self.validators.values().filter(|v| v.active).collect();
-        if active.is_empty() {
+        if self.validators.is_empty() {
             return None;
         }
-
+        
         let seed = slot ^ self.current_epoch;
         let random_stake = (seed % self.total_stake) as u64;
+        
         let mut accumulated = 0;
-
-        for validator in active {
-            accumulated += validator.stake;
+        for (address, stake) in &self.validators {
+            accumulated += stake;
             if accumulated > random_stake {
-                return Some(validator.address.clone());
+                return Some(address.clone());
             }
         }
-
+        
         None
     }
-
+    
     pub fn should_rotate_epoch(&self) -> bool {
         current_timestamp() >= self.epoch_start + 21600
     }
-
+    
     pub fn rotate_epoch(&mut self) {
         self.current_epoch += 1;
         self.epoch_start = current_timestamp();
