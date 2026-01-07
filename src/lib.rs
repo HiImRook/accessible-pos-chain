@@ -5,3 +5,8 @@ pub mod config;
 pub mod peer_manager;
 pub mod rpc;
 pub mod crypto;
+pub mod metrics;
+pub mod tpi;
+pub mod racer;
+pub mod snapshot;
+pub mod pruning;

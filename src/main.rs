@@ -1,4 +1,4 @@
-use pos_chain::{types::*, consensus::Consensus, network, config::Config, peer_manager::PeerManager};
+use pos_chain::{types::*, consensus::Consensus, network, config::Config, peer_manager::PeerManager, metrics::Metrics};
 use tokio::sync::mpsc;
 use tokio::time::{interval, Duration};
 use std::sync::{Arc, Mutex};
@@ -10,6 +10,28 @@ fn timestamp() -> String {
     let minutes = (now / 60) % 60;
     let seconds = now % 60;
     format!("{:02}:{:02}:{:02}", hours, minutes, seconds)
+}
+
+fn get_memory_usage() -> u64 {
+    #[cfg(target_os = "linux")]
+    {
+        if let Ok(status) = std::fs::read_to_string("/proc/self/status") {
+            for line in status.lines() {
+                if line.starts_with("VmRSS:") {
+                    if let Some(kb) = line.split_whitespace().nth(1) {
+                        if let Ok(kb_val) = kb.parse::<u64>() {
+                            return kb_val / 1024;
+                        }
+                    }
+                }
+            }
+        }
+    }
+    0
+}
+
+fn get_cpu_usage() -> f64 {
+    0.0
 }
 
 #[tokio::main]
@@ -24,6 +46,7 @@ async fn main() {
     let consensus = Arc::new(Mutex::new(Consensus::new()));
     let peer_manager = Arc::new(Mutex::new(PeerManager::new(config.bootstrap_nodes.clone())));
     let mempool = Arc::new(Mutex::new(Mempool::new()));
+    let metrics = Metrics::new();
 
     {
         let mut s = state.lock().unwrap();
@@ -49,8 +72,9 @@ async fn main() {
 
     let state_rpc = Arc::clone(&state);
     let mempool_rpc = Arc::clone(&mempool);
+    let metrics_rpc = Arc::clone(&metrics);
     tokio::spawn(async move {
-        pos_chain::rpc::start_rpc_server(&rpc_addr, state_rpc, mempool_rpc).await;
+        pos_chain::rpc::start_rpc_server(&rpc_addr, state_rpc, mempool_rpc, metrics_rpc).await;
     });
 
     let peer_manager_clone = Arc::clone(&peer_manager);
@@ -106,6 +130,7 @@ async fn main() {
     let consensus_clone = Arc::clone(&consensus);
     let peer_manager_clone = Arc::clone(&peer_manager);
     let mempool_clone = Arc::clone(&mempool);
+    let metrics_clone = Arc::clone(&metrics);
     tokio::spawn(async move {
         let mut block_interval = interval(Duration::from_secs(10));
         let mut slot = 0u64;
@@ -130,7 +155,7 @@ async fn main() {
                     hash: format!("block_{}", slot),
                     producer: producer.clone(),
                     timestamp: slot * 10,
-                    transactions,
+                    transactions: transactions.clone(),
                 };
 
                 let mut s = state_clone.lock().unwrap();
@@ -140,6 +165,28 @@ async fn main() {
                         timestamp(), slot, producer_short, block.transactions.len());
 
                     drop(s);
+
+                    {
+                        let mempool_size = {
+                            let mp = mempool_clone.lock().unwrap();
+                            mp.len()
+                        };
+                        
+                        let mut m = metrics_clone.lock().unwrap();
+                        m.record_block(pos_chain::metrics::BlockMetric {
+                            slot: block.slot,
+                            hash: block.hash.clone(),
+                            producer: block.producer.clone(),
+                            tx_count: block.transactions.len(),
+                            time_ms: 10000,
+                            timestamp: block.timestamp,
+                        });
+                        m.set_mempool_size(mempool_size);
+                        
+                        let memory_mb = get_memory_usage();
+                        let cpu_percent = get_cpu_usage();
+                        m.update_system_stats(memory_mb, cpu_percent);
+                    }
 
                     let msg = NetworkMessage::NewBlock(block);
                     let pm = Arc::clone(&peer_manager_clone);
