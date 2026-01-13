@@ -64,14 +64,25 @@ impl ChainState {
         if self.blocks.contains_key(&block.slot) {
             return false;
         }
+        
         for tx in &block.transactions {
-            if let Some(balance) = self.accounts.get_mut(&tx.from) {
-                if *balance >= tx.amount {
-                    *balance -= tx.amount;
-                    *self.accounts.entry(tx.to.clone()).or_insert(0) += tx.amount;
-                }
+            use crate::crypto::verify_transaction;
+            
+            if !verify_transaction(&tx.from_pubkey, &tx.from, &tx.to, tx.amount, &tx.signature) {
+                println!("Invalid signature for tx from {}", tx.from);
+                return false;
             }
+            
+            let from_balance = self.accounts.get(&tx.from).copied().unwrap_or(0);
+            if from_balance < tx.amount {
+                println!("Insufficient balance for {}: {} < {}", tx.from, from_balance, tx.amount);
+                return false;
+            }
+            
+            self.accounts.insert(tx.from.clone(), from_balance - tx.amount);
+            *self.accounts.entry(tx.to.clone()).or_insert(0) += tx.amount;
         }
+        
         if block.slot > self.latest_slot {
             self.latest_slot = block.slot;
         }
