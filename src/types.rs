@@ -1,7 +1,8 @@
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+use sha2::{Sha256, Digest};
 
-#[derive(Clone, Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Block {
     pub slot: u64,
     pub parent_hash: String,
@@ -11,7 +12,7 @@ pub struct Block {
     pub transactions: Vec<Transaction>,
 }
 
-#[derive(Clone, Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Transaction {
     pub from: String,
     pub from_pubkey: String,
@@ -20,58 +21,61 @@ pub struct Transaction {
     pub signature: String,
 }
 
-#[derive(Clone, Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub enum NetworkMessage {
-    Handshake { peer_addr: String, known_peers: Vec<String> },
-    PeerExchange { peers: Vec<String> },
+    Handshake {
+        peer_addr: String,
+        known_peers: Vec<String>,
+        genesis_timestamp: u64,
+    },
     NewBlock(Block),
-    RequestBlocks { from_slot: u64 },
-    BlockResponse { blocks: Vec<Block> },
     Ping,
-    Pong,
-    TpiHash { slot: u64, validator_id: String, block_hash: String, signature: String },
-    TpiConsensusAchieved { slot: u64, agreed_hash: String },
+    TpiHash {
+        slot: u64,
+        validator_id: String,
+        block_hash: String,
+        signature: String,
+    },
+}
+
+#[derive(Clone, Debug)]
+pub struct PeerInfo {
+    pub address: String,
+    pub last_seen: u64,
+    pub connected: bool,
 }
 
 pub struct ChainState {
-    pub blocks: HashMap<u64, Block>,
     pub accounts: HashMap<String, u64>,
+    pub blocks: HashMap<u64, Block>,
     pub latest_slot: u64,
 }
 
 impl ChainState {
     pub fn new() -> Self {
         ChainState {
-            blocks: HashMap::new(),
             accounts: HashMap::new(),
+            blocks: HashMap::new(),
             latest_slot: 0,
         }
     }
 
     pub fn add_block(&mut self, block: Block) -> bool {
-        use crate::crypto::verify_transaction;
-        
-        if block.slot != self.latest_slot + 1 {
+        if self.blocks.contains_key(&block.slot) {
             return false;
         }
-
         for tx in &block.transactions {
-            if !verify_transaction(&tx.from_pubkey, &tx.from, &tx.to, tx.amount, &tx.signature) {
-                println!("Invalid signature for transaction from {}", tx.from);
-                return false;
+            if let Some(balance) = self.accounts.get_mut(&tx.from) {
+                if *balance >= tx.amount {
+                    *balance -= tx.amount;
+                    *self.accounts.entry(tx.to.clone()).or_insert(0) += tx.amount;
+                }
             }
-            
-            let from_balance = self.accounts.get(&tx.from).copied().unwrap_or(0);
-            if from_balance < tx.amount {
-                return false;
-            }
-            self.accounts.insert(tx.from.clone(), from_balance - tx.amount);
-            let to_balance = self.accounts.get(&tx.to).copied().unwrap_or(0);
-            self.accounts.insert(tx.to.clone(), to_balance + tx.amount);
         }
-
+        if block.slot > self.latest_slot {
+            self.latest_slot = block.slot;
+        }
         self.blocks.insert(block.slot, block);
-        self.latest_slot += 1;
         true
     }
 
@@ -80,44 +84,48 @@ impl ChainState {
     }
 }
 
-pub fn generate_peer_id(addr: &str) -> String {
-    use sha2::{Sha256, Digest};
-    let hash = Sha256::digest(addr.as_bytes());
-    format!("peer-{}", hex::encode(&hash[..6]))
-}
-
-#[derive(Clone, Debug)]
-pub struct PeerInfo {
-    pub addr: String,
-    pub peer_id: String,
-    pub last_seen: u64,
-    pub connected: bool,
-}
-
 pub struct Mempool {
-    pending: Vec<Transaction>,
+    transactions: Vec<Transaction>,
 }
 
 impl Mempool {
     pub fn new() -> Self {
         Mempool {
-            pending: Vec::new(),
+            transactions: Vec::new(),
         }
     }
 
+    pub fn add(&mut self, tx: Transaction) {
+        self.transactions.push(tx);
+    }
+
     pub fn add_transaction(&mut self, tx: Transaction) {
-        self.pending.push(tx);
+        self.add(tx);
     }
 
     pub fn get_pending(&mut self, max: usize) -> Vec<Transaction> {
-        use rand::seq::SliceRandom;
-        let mut rng = rand::thread_rng();
-        self.pending.shuffle(&mut rng);
-        let count = self.pending.len().min(max);
-        self.pending.drain(..count).collect()
+        let count = max.min(self.transactions.len());
+        let mut txs = self.transactions.drain(..count).collect::<Vec<_>>();
+        
+        txs.sort_by_cached_key(|tx| {
+            let mut hasher = Sha256::new();
+            hasher.update(tx.from.as_bytes());
+            hasher.update(tx.to.as_bytes());
+            hasher.update(tx.amount.to_le_bytes());
+            hasher.finalize().to_vec()
+        });
+        
+        txs
     }
 
     pub fn len(&self) -> usize {
-        self.pending.len()
+        self.transactions.len()
     }
+}
+
+pub fn generate_peer_id(addr: &str) -> String {
+    let mut hasher = Sha256::new();
+    hasher.update(addr.as_bytes());
+    let result = hasher.finalize();
+    format!("peer-{:x}", &result[..4].iter().fold(0u32, |acc, &b| (acc << 8) | b as u32))
 }
