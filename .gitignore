@@ -1,9 +1,4 @@
-/target
-nano .gitignore
-```
-
-Add:
-```
+/target/
 config.toml
 wallet.json
 blockchain.snapshot
