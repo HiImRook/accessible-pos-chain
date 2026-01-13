@@ -1,0 +1,47 @@
+listen_addr = "0.0.0.0:8082"
+rpc_addr = "0.0.0.0:3000"
+bootstrap_nodes = ["127.0.0.1:8080", "127.0.0.1:8081"]
+genesis_timestamp = 0
+
+[genesis]
+alice = 1000000
+bob = 500000
+
+[validators]
+validator_1 = 5000
+validator_2 = 3000
+validator_3 = 2000
+
+[pruning]
+enabled = true
+keep_blocks = 2160
+prune_interval = 1000
+prune_batch_size = 5000
+
+[snapshots]
+enabled = true
+epoch_size = 2160
+snapshot_dir = "./snapshots"
+keep_local_snapshots = 10
+arweave_upload = false
+
+[consensus.tpi]
+enabled = true
+validators_per_group = 3
+allow_two_of_two = true
+
+[consensus.timing]
+primary_window_seconds = 5
+buffer_seconds = 3
+racer_window_seconds = 2
+
+[consensus.racer]
+enabled = true
+pool_size = 10
+reward_multiplier = 5.0
+
+[rewards]
+block_produced = 10
+racer_save = 50
+tpi_verified = 5
+snapshot_uploaded = 25

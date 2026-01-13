@@ -1,0 +1,355 @@
+warning: constant `FINALITY_THRESHOLD` is never used
+ --> src/consensus.rs:4:7
+  |
+4 | const FINALITY_THRESHOLD: f64 = 0.66;
+  |       ^^^^^^^^^^^^^^^^^^
+  |
+  = note: `#[warn(dead_code)]` on by default
+
+warning: `pos-chain` (lib) generated 1 warning
+    Finished `release` profile [optimized] target(s) in 0.13s
+     Running `target/release/pos-chain`
+Listening on 0.0.0.0:8080
+RPC server listening on 0.0.0.0:3000
+Dashboard available at http://localhost:3000/dashboard
+[DEBUG] Slot 0: Starting TPI production
+[DEBUG] Slot 0: Am I in TPI? true
+[TPI] Slot 0: validator_1 computed hash e31e9f7d
+[TPI] Slot 0: No consensus reached
+[DEBUG] Slot 0: TPI failed, waiting for block (8s)
+[DEBUG] Slot 0: No block received
+[DEBUG] Slot 0: Checking racer
+[DEBUG] Slot 0: Racer selected: validator_1, am I racer? true
+[RACER] Slot 0: Speed save by validator_1
+[DEBUG] Slot 1: Starting TPI production
+[DEBUG] Slot 1: Am I in TPI? true
+[TPI] Slot 1: validator_1 computed hash 5ed37fbd
+[TPI] Slot 1: No consensus reached
+[DEBUG] Slot 1: TPI failed, waiting for block (8s)
+[DEBUG] Slot 1: No block received
+[DEBUG] Slot 1: Checking racer
+[DEBUG] Slot 1: Racer selected: validator_1, am I racer? true
+[RACER] Slot 1: Speed save by validator_1
+[22:50:43] Slot 1: Producer validator_1 (0 tx)
+[DEBUG] Slot 2: Starting TPI production
+[DEBUG] Slot 2: Am I in TPI? true
+[TPI] Slot 2: validator_1 computed hash d93d873c
+[TPI] Slot 2: No consensus reached
+[DEBUG] Slot 2: TPI failed, waiting for block (8s)
+[DEBUG] Slot 2: No block received
+[DEBUG] Slot 2: Checking racer
+[DEBUG] Slot 2: Racer selected: validator_1, am I racer? true
+[RACER] Slot 2: Speed save by validator_1
+[22:50:53] Slot 2: Producer validator_1 (0 tx)
+[DEBUG] Slot 3: Starting TPI production
+[DEBUG] Slot 3: Am I in TPI? true
+[TPI] Slot 3: validator_1 computed hash 977bc0b8
+[TPI] Slot 3: No consensus reached
+[DEBUG] Slot 3: TPI failed, waiting for block (8s)
+[DEBUG] Slot 3: No block received
+[DEBUG] Slot 3: Checking racer
+[DEBUG] Slot 3: Racer selected: validator_1, am I racer? true
+[RACER] Slot 3: Speed save by validator_1
+[22:51:03] Slot 3: Producer validator_1 (0 tx)
+[DEBUG] Slot 4: Starting TPI production
+[DEBUG] Slot 4: Am I in TPI? true
+[TPI] Slot 4: validator_1 computed hash c363b9ff
+[TPI] Slot 4: No consensus reached
+[DEBUG] Slot 4: TPI failed, waiting for block (8s)
+[DEBUG] Slot 4: No block received
+[DEBUG] Slot 4: Checking racer
+[DEBUG] Slot 4: Racer selected: validator_2, am I racer? false
+[DEBUG] Slot 4: No block produced
+[DEBUG] Slot 5: Starting TPI production
+[DEBUG] Slot 5: Am I in TPI? true
+[TPI] Slot 5: validator_1 computed hash dd9c3cdd
+[TPI] Slot 5: No consensus reached
+[DEBUG] Slot 5: TPI failed, waiting for block (8s)
+[DEBUG] Slot 5: No block received
+[DEBUG] Slot 5: Checking racer
+[DEBUG] Slot 5: Racer selected: validator_1, am I racer? true
+[RACER] Slot 5: Speed save by validator_1
+[DEBUG] Slot 6: Starting TPI production
+[DEBUG] Slot 6: Am I in TPI? true
+[TPI] Slot 6: validator_1 computed hash 449609e7
+[TPI] Slot 6: No consensus reached
+[DEBUG] Slot 6: TPI failed, waiting for block (8s)
+[DEBUG] Slot 6: No block received
+[DEBUG] Slot 6: Checking racer
+[DEBUG] Slot 6: Racer selected: validator_2, am I racer? false
+[DEBUG] Slot 6: No block produced
+[DEBUG] Slot 7: Starting TPI production
+[DEBUG] Slot 7: Am I in TPI? true
+[TPI] Slot 7: validator_1 computed hash 3030db2c
+[TPI] Slot 7: No consensus reached
+[DEBUG] Slot 7: TPI failed, waiting for block (8s)
+[DEBUG] Slot 7: No block received
+[DEBUG] Slot 7: Checking racer
+[DEBUG] Slot 7: Racer selected: validator_1, am I racer? true
+[RACER] Slot 7: Speed save by validator_1
+[DEBUG] Slot 8: Starting TPI production
+[DEBUG] Slot 8: Am I in TPI? true
+[TPI] Slot 8: validator_1 computed hash f902d574
+[TPI] Slot 8: No consensus reached
+[DEBUG] Slot 8: TPI failed, waiting for block (8s)
+[DEBUG] Slot 8: No block received
+[DEBUG] Slot 8: Checking racer
+[DEBUG] Slot 8: Racer selected: validator_3, am I racer? false
+[DEBUG] Slot 8: No block produced
+[DEBUG] Slot 9: Starting TPI production
+[DEBUG] Slot 9: Am I in TPI? true
+[TPI] Slot 9: validator_1 computed hash 6257f6fb
+[TPI] Slot 9: No consensus reached
+[DEBUG] Slot 9: TPI failed, waiting for block (8s)
+[DEBUG] Slot 9: No block received
+[DEBUG] Slot 9: Checking racer
+[DEBUG] Slot 9: Racer selected: validator_2, am I racer? false
+[DEBUG] Slot 9: No block produced
+[DEBUG] Slot 10: Starting TPI production
+[DEBUG] Slot 10: Am I in TPI? true
+[TPI] Slot 10: validator_1 computed hash 3b3d591c
+[TPI] Slot 10: No consensus reached
+[DEBUG] Slot 10: TPI failed, waiting for block (8s)
+[DEBUG] Slot 10: No block received
+[DEBUG] Slot 10: Checking racer
+[DEBUG] Slot 10: Racer selected: validator_3, am I racer? false
+[DEBUG] Slot 10: No block produced
+[DEBUG] Slot 11: Starting TPI production
+[DEBUG] Slot 11: Am I in TPI? true
+[TPI] Slot 11: validator_1 computed hash 89dc8c69
+[TPI] Slot 11: No consensus reached
+[DEBUG] Slot 11: TPI failed, waiting for block (8s)
+[DEBUG] Slot 11: No block received
+[DEBUG] Slot 11: Checking racer
+[DEBUG] Slot 11: Racer selected: validator_3, am I racer? false
+[DEBUG] Slot 11: No block produced
+[DEBUG] Slot 12: Starting TPI production
+[DEBUG] Slot 12: Am I in TPI? true
+[TPI] Slot 12: validator_1 computed hash 60df54c9
+[TPI] Slot 12: No consensus reached
+[DEBUG] Slot 12: TPI failed, waiting for block (8s)
+[DEBUG] Slot 12: No block received
+[DEBUG] Slot 12: Checking racer
+[DEBUG] Slot 12: Racer selected: validator_1, am I racer? true
+[RACER] Slot 12: Speed save by validator_1
+[DEBUG] Slot 13: Starting TPI production
+[DEBUG] Slot 13: Am I in TPI? true
+[TPI] Slot 13: validator_1 computed hash b1bf10b0
+[TPI] Slot 13: No consensus reached
+[DEBUG] Slot 13: TPI failed, waiting for block (8s)
+[DEBUG] Slot 13: No block received
+[DEBUG] Slot 13: Checking racer
+[DEBUG] Slot 13: Racer selected: validator_2, am I racer? false
+[DEBUG] Slot 13: No block produced
+[DEBUG] Slot 14: Starting TPI production
+[DEBUG] Slot 14: Am I in TPI? true
+[TPI] Slot 14: validator_1 computed hash 100e278e
+[TPI] Slot 14: No consensus reached
+[DEBUG] Slot 14: TPI failed, waiting for block (8s)
+[DEBUG] Slot 14: No block received
+[DEBUG] Slot 14: Checking racer
+[DEBUG] Slot 14: Racer selected: validator_2, am I racer? false
+[DEBUG] Slot 14: No block produced
+[DEBUG] Slot 15: Starting TPI production
+[DEBUG] Slot 15: Am I in TPI? true
+[TPI] Slot 15: validator_1 computed hash 5b596be8
+[TPI] Slot 15: No consensus reached
+[DEBUG] Slot 15: TPI failed, waiting for block (8s)
+[DEBUG] Slot 15: No block received
+[DEBUG] Slot 15: Checking racer
+[DEBUG] Slot 15: Racer selected: validator_2, am I racer? false
+[DEBUG] Slot 15: No block produced
+[DEBUG] Slot 16: Starting TPI production
+[DEBUG] Slot 16: Am I in TPI? true
+[TPI] Slot 16: validator_1 computed hash a7e45c9a
+[TPI] Slot 16: No consensus reached
+[DEBUG] Slot 16: TPI failed, waiting for block (8s)
+[DEBUG] Slot 16: No block received
+[DEBUG] Slot 16: Checking racer
+[DEBUG] Slot 16: Racer selected: validator_1, am I racer? true
+[RACER] Slot 16: Speed save by validator_1
+[DEBUG] Slot 17: Starting TPI production
+[DEBUG] Slot 17: Am I in TPI? true
+[TPI] Slot 17: validator_1 computed hash 9942e426
+[TPI] Slot 17: No consensus reached
+[DEBUG] Slot 17: TPI failed, waiting for block (8s)
+[DEBUG] Slot 17: No block received
+[DEBUG] Slot 17: Checking racer
+[DEBUG] Slot 17: Racer selected: validator_3, am I racer? false
+[DEBUG] Slot 17: No block produced
+[DEBUG] Slot 18: Starting TPI production
+[DEBUG] Slot 18: Am I in TPI? true
+[TPI] Slot 18: validator_1 computed hash 9edeb58d
+[TPI] Slot 18: No consensus reached
+[DEBUG] Slot 18: TPI failed, waiting for block (8s)
+[DEBUG] Slot 18: No block received
+[DEBUG] Slot 18: Checking racer
+[DEBUG] Slot 18: Racer selected: validator_1, am I racer? true
+[RACER] Slot 18: Speed save by validator_1
+[DEBUG] Slot 19: Starting TPI production
+[DEBUG] Slot 19: Am I in TPI? true
+[TPI] Slot 19: validator_1 computed hash 131accd3
+[TPI] Slot 19: No consensus reached
+[DEBUG] Slot 19: TPI failed, waiting for block (8s)
+[DEBUG] Slot 19: No block received
+[DEBUG] Slot 19: Checking racer
+[DEBUG] Slot 19: Racer selected: validator_2, am I racer? false
+[DEBUG] Slot 19: No block produced
+[DEBUG] Slot 20: Starting TPI production
+[DEBUG] Slot 20: Am I in TPI? true
+[TPI] Slot 20: validator_1 computed hash 11364e96
+[TPI] Slot 20: No consensus reached
+[DEBUG] Slot 20: TPI failed, waiting for block (8s)
+[DEBUG] Slot 20: No block received
+[DEBUG] Slot 20: Checking racer
+[DEBUG] Slot 20: Racer selected: validator_1, am I racer? true
+[RACER] Slot 20: Speed save by validator_1
+[DEBUG] Slot 21: Starting TPI production
+[DEBUG] Slot 21: Am I in TPI? true
+[TPI] Slot 21: validator_1 computed hash cf57a235
+[TPI] Slot 21: No consensus reached
+[DEBUG] Slot 21: TPI failed, waiting for block (8s)
+[DEBUG] Slot 21: No block received
+[DEBUG] Slot 21: Checking racer
+[DEBUG] Slot 21: Racer selected: validator_3, am I racer? false
+[DEBUG] Slot 21: No block produced
+[DEBUG] Slot 22: Starting TPI production
+[DEBUG] Slot 22: Am I in TPI? true
+[TPI] Slot 22: validator_1 computed hash 303266eb
+[TPI] Slot 22: No consensus reached
+[DEBUG] Slot 22: TPI failed, waiting for block (8s)
+[DEBUG] Slot 22: No block received
+[DEBUG] Slot 22: Checking racer
+[DEBUG] Slot 22: Racer selected: validator_3, am I racer? false
+[DEBUG] Slot 22: No block produced
+[DEBUG] Slot 23: Starting TPI production
+[DEBUG] Slot 23: Am I in TPI? true
+[TPI] Slot 23: validator_1 computed hash c1ece821
+[TPI] Slot 23: No consensus reached
+[DEBUG] Slot 23: TPI failed, waiting for block (8s)
+[DEBUG] Slot 23: No block received
+[DEBUG] Slot 23: Checking racer
+[DEBUG] Slot 23: Racer selected: validator_3, am I racer? false
+[DEBUG] Slot 23: No block produced
+[DEBUG] Slot 24: Starting TPI production
+[DEBUG] Slot 24: Am I in TPI? true
+[TPI] Slot 24: validator_1 computed hash f51f9cf2
+[TPI] Slot 24: No consensus reached
+[DEBUG] Slot 24: TPI failed, waiting for block (8s)
+[DEBUG] Slot 24: No block received
+[DEBUG] Slot 24: Checking racer
+[DEBUG] Slot 24: Racer selected: validator_3, am I racer? false
+[DEBUG] Slot 24: No block produced
+[DEBUG] Slot 25: Starting TPI production
+[DEBUG] Slot 25: Am I in TPI? true
+[TPI] Slot 25: validator_1 computed hash bb0cdcd8
+[TPI] Slot 25: No consensus reached
+[DEBUG] Slot 25: TPI failed, waiting for block (8s)
+[DEBUG] Slot 25: No block received
+[DEBUG] Slot 25: Checking racer
+[DEBUG] Slot 25: Racer selected: validator_2, am I racer? false
+[DEBUG] Slot 25: No block produced
+[DEBUG] Slot 26: Starting TPI production
+[DEBUG] Slot 26: Am I in TPI? true
+[TPI] Slot 26: validator_1 computed hash 612d037d
+[TPI] Slot 26: No consensus reached
+[DEBUG] Slot 26: TPI failed, waiting for block (8s)
+[DEBUG] Slot 26: No block received
+[DEBUG] Slot 26: Checking racer
+[DEBUG] Slot 26: Racer selected: validator_2, am I racer? false
+[DEBUG] Slot 26: No block produced
+[DEBUG] Slot 27: Starting TPI production
+[DEBUG] Slot 27: Am I in TPI? true
+[TPI] Slot 27: validator_1 computed hash 8d7ed6f4
+[TPI] Slot 27: No consensus reached
+[DEBUG] Slot 27: TPI failed, waiting for block (8s)
+[DEBUG] Slot 27: No block received
+[DEBUG] Slot 27: Checking racer
+[DEBUG] Slot 27: Racer selected: validator_1, am I racer? true
+[RACER] Slot 27: Speed save by validator_1
+[DEBUG] Slot 28: Starting TPI production
+[DEBUG] Slot 28: Am I in TPI? true
+[TPI] Slot 28: validator_1 computed hash 3a88a9b3
+[TPI] Slot 28: No consensus reached
+[DEBUG] Slot 28: TPI failed, waiting for block (8s)
+[DEBUG] Slot 28: No block received
+[DEBUG] Slot 28: Checking racer
+[DEBUG] Slot 28: Racer selected: validator_1, am I racer? true
+[RACER] Slot 28: Speed save by validator_1
+[DEBUG] Slot 29: Starting TPI production
+[DEBUG] Slot 29: Am I in TPI? true
+[TPI] Slot 29: validator_1 computed hash 6a61c402
+[TPI] Slot 29: No consensus reached
+[DEBUG] Slot 29: TPI failed, waiting for block (8s)
+[DEBUG] Slot 29: No block received
+[DEBUG] Slot 29: Checking racer
+[DEBUG] Slot 29: Racer selected: validator_1, am I racer? true
+[RACER] Slot 29: Speed save by validator_1
+[DEBUG] Slot 30: Starting TPI production
+[DEBUG] Slot 30: Am I in TPI? true
+[TPI] Slot 30: validator_1 computed hash 96d2a28c
+[TPI] Slot 30: No consensus reached
+[DEBUG] Slot 30: TPI failed, waiting for block (8s)
+[DEBUG] Slot 30: No block received
+[DEBUG] Slot 30: Checking racer
+[DEBUG] Slot 30: Racer selected: validator_1, am I racer? true
+[RACER] Slot 30: Speed save by validator_1
+[DEBUG] Slot 31: Starting TPI production
+[DEBUG] Slot 31: Am I in TPI? true
+[TPI] Slot 31: validator_1 computed hash 37765a02
+[TPI] Slot 31: No consensus reached
+[DEBUG] Slot 31: TPI failed, waiting for block (8s)
+[DEBUG] Slot 31: No block received
+[DEBUG] Slot 31: Checking racer
+[DEBUG] Slot 31: Racer selected: validator_2, am I racer? false
+[DEBUG] Slot 31: No block produced
+[DEBUG] Slot 32: Starting TPI production
+[DEBUG] Slot 32: Am I in TPI? true
+[TPI] Slot 32: validator_1 computed hash 0074d593
+[TPI] Slot 32: No consensus reached
+[DEBUG] Slot 32: TPI failed, waiting for block (8s)
+[DEBUG] Slot 32: No block received
+[DEBUG] Slot 32: Checking racer
+[DEBUG] Slot 32: Racer selected: validator_1, am I racer? true
+[RACER] Slot 32: Speed save by validator_1
+[DEBUG] Slot 33: Starting TPI production
+[DEBUG] Slot 33: Am I in TPI? true
+[TPI] Slot 33: validator_1 computed hash 332f51b8
+[TPI] Slot 33: No consensus reached
+[DEBUG] Slot 33: TPI failed, waiting for block (8s)
+[DEBUG] Slot 33: No block received
+[DEBUG] Slot 33: Checking racer
+[DEBUG] Slot 33: Racer selected: validator_3, am I racer? false
+[DEBUG] Slot 33: No block produced
+[DEBUG] Slot 34: Starting TPI production
+[DEBUG] Slot 34: Am I in TPI? true
+[TPI] Slot 34: validator_1 computed hash 4d0222e3
+[TPI] Slot 34: No consensus reached
+[DEBUG] Slot 34: TPI failed, waiting for block (8s)
+[DEBUG] Slot 34: No block received
+[DEBUG] Slot 34: Checking racer
+[DEBUG] Slot 34: Racer selected: validator_2, am I racer? false
+[DEBUG] Slot 34: No block produced
+[DEBUG] Slot 35: Starting TPI production
+[DEBUG] Slot 35: Am I in TPI? true
+[TPI] Slot 35: validator_1 computed hash 56c295f8
+[TPI] Slot 35: No consensus reached
+[DEBUG] Slot 35: TPI failed, waiting for block (8s)
+[DEBUG] Slot 35: No block received
+[DEBUG] Slot 35: Checking racer
+[DEBUG] Slot 35: Racer selected: validator_1, am I racer? true
+[RACER] Slot 35: Speed save by validator_1
+[DEBUG] Slot 36: Starting TPI production
+[DEBUG] Slot 36: Am I in TPI? true
+[TPI] Slot 36: validator_1 computed hash be375a35
+[TPI] Slot 36: No consensus reached
+[DEBUG] Slot 36: TPI failed, waiting for block (8s)
+[DEBUG] Slot 36: No block received
+[DEBUG] Slot 36: Checking racer
+[DEBUG] Slot 36: Racer selected: validator_2, am I racer? false
+[DEBUG] Slot 36: No block produced
+[DEBUG] Slot 37: Starting TPI production
+[DEBUG] Slot 37: Am I in TPI? true
+[TPI] Slot 37: validator_1 computed hash e6b54668
+[TPI] Slot 37: No consensus reached
+[DEBUG] Slot 37: TPI failed, waiting for block (8s)

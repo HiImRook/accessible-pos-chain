@@ -1,8 +1,9 @@
-use pos_chain::{types::*, consensus::Consensus, network, config::Config, peer_manager::PeerManager, metrics::Metrics};
+use pos_chain::{types::*, consensus::Consensus, network, config::Config, peer_manager::PeerManager, metrics::Metrics, tpi::TpiHashMessage};
 use pos_chain::tpi_production::produce_block_with_tpi;
 use tokio::sync::mpsc;
 use tokio::time::{interval, Duration};
-use std::sync::{Arc, Mutex};
+use std::sync::Arc;
+use tokio::sync::{Mutex, RwLock};
 use std::time::{SystemTime, UNIX_EPOCH};
 use std::collections::HashMap;
 
@@ -38,38 +39,60 @@ fn get_cpu_usage() -> f64 {
 
 #[tokio::main]
 async fn main() {
+    let args: Vec<String> = std::env::args().collect();
+    let my_validator_id = if args.len() > 1 {
+        args[1].clone()
+    } else {
+        "validator_1".to_string()
+    };
+
+    println!("Starting validator: {}", my_validator_id);
+
     let config = Config::load().expect("Failed to load config.toml");
 
     let listen_addr = config.listen_addr.clone();
     let rpc_addr = config.rpc_addr.clone();
     let my_addr = listen_addr.clone();
 
-    let state = Arc::new(Mutex::new(ChainState::new()));
-    let consensus = Arc::new(Mutex::new(Consensus::new()));
+    let state = Arc::new(RwLock::new(ChainState::new()));
+    let consensus = Arc::new(RwLock::new(Consensus::new()));
     let peer_manager = Arc::new(Mutex::new(PeerManager::new(config.bootstrap_nodes.clone())));
     let mempool = Arc::new(Mutex::new(Mempool::new()));
     let metrics = Metrics::new();
 
+    let my_genesis = if config.genesis_timestamp == 0 {
+        let now = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs();
+        println!("First validator - setting genesis to current time: {}", now);
+        now
+    } else {
+        println!("Using genesis from config: {}", config.genesis_timestamp);
+        config.genesis_timestamp
+    };
+    let genesis_timestamp = Arc::new(Mutex::new(my_genesis));
+    let genesis_ms = my_genesis * 1000;
+
     {
-        let mut s = state.lock().unwrap();
+        let mut s = state.write().await;
         for (address, balance) in config.genesis {
             s.accounts.insert(address, balance);
         }
     }
 
     {
-        let mut c = consensus.lock().unwrap();
+        let mut c = consensus.write().await;
         for (address, stake) in config.validators {
             c.register_validator(address, stake);
         }
     }
 
     let (tx, mut rx) = mpsc::channel::<(NetworkMessage, String)>(100);
+    let (tpi_tx, tpi_rx) = mpsc::channel::<TpiHashMessage>(100);
 
     let peer_manager_clone = Arc::clone(&peer_manager);
     let tx_listener = tx.clone();
+    let tpi_tx_listener = tpi_tx.clone();
     tokio::spawn(async move {
-        network::start_listener(&listen_addr, tx_listener, peer_manager_clone).await;
+        network::start_listener(&listen_addr, tx_listener, tpi_tx_listener, peer_manager_clone).await;
     });
 
     let state_rpc = Arc::clone(&state);
@@ -82,14 +105,18 @@ async fn main() {
     let peer_manager_clone = Arc::clone(&peer_manager);
     let my_addr_clone = my_addr.clone();
     let tx_clone = tx.clone();
+    let tpi_tx_clone = tpi_tx.clone();
+    let genesis_timestamp_connect = Arc::clone(&genesis_timestamp);
     tokio::spawn(async move {
         let mut connect_interval = interval(Duration::from_secs(30));
 
         loop {
             connect_interval.tick().await;
 
+            let genesis_ts = *genesis_timestamp_connect.lock().await;
+
             let bootstrap = {
-                let pm = peer_manager_clone.lock().unwrap();
+                let pm = peer_manager_clone.lock().await;
                 pm.get_bootstrap_nodes()
             };
 
@@ -98,15 +125,16 @@ async fn main() {
                     let pm = Arc::clone(&peer_manager_clone);
                     let addr = my_addr_clone.clone();
                     let tx = tx_clone.clone();
+                    let tpi_tx = tpi_tx_clone.clone();
                     let node = node.clone();
                     tokio::spawn(async move {
-                        network::connect_and_handle_peer(node, addr, tx, pm).await;
+                        network::connect_and_handle_peer(node, addr, tx, tpi_tx, pm, genesis_ts).await;
                     });
                 }
             }
 
             let to_connect = {
-                let pm = peer_manager_clone.lock().unwrap();
+                let pm = peer_manager_clone.lock().await;
                 pm.get_peers_to_connect()
             };
 
@@ -115,14 +143,15 @@ async fn main() {
                     let pm = Arc::clone(&peer_manager_clone);
                     let addr = my_addr_clone.clone();
                     let tx = tx_clone.clone();
+                    let tpi_tx = tpi_tx_clone.clone();
                     tokio::spawn(async move {
-                        network::connect_and_handle_peer(peer, addr, tx, pm).await;
+                        network::connect_and_handle_peer(peer, addr, tx, tpi_tx, pm, genesis_ts).await;
                     });
                 }
             }
 
             {
-                let mut pm = peer_manager_clone.lock().unwrap();
+                let mut pm = peer_manager_clone.lock().await;
                 pm.cleanup_stale_peers();
             }
         }
@@ -133,118 +162,170 @@ async fn main() {
     let peer_manager_clone = Arc::clone(&peer_manager);
     let mempool_clone = Arc::clone(&mempool);
     let metrics_clone = Arc::clone(&metrics);
-    let my_addr_tpi = my_addr.clone();
-    tokio::spawn(async move {
-        let mut block_interval = interval(Duration::from_secs(10));
-        let mut slot = 0u64;
+    let tpi_rx = Arc::new(Mutex::new(tpi_rx));
+    let tpi_tx_block = tpi_tx.clone();
+    let validator_id_for_block = my_validator_id.clone();
 
-        loop {
-            block_interval.tick().await;
+    let mut current_slot = 0u64;
+    let mut slot_deadline = tokio::time::Instant::now();
 
-            let all_validators: Vec<String> = {
-                let c = consensus_clone.lock().unwrap();
-                c.validators.keys().cloned().collect()
-            };
+    loop {
+        tokio::select! {
+            Some((msg, peer_addr)) = rx.recv() => {
+                match msg {
+                    NetworkMessage::Handshake { peer_addr: _their_addr, known_peers, genesis_timestamp: their_genesis } => {
+                        let peer_id = generate_peer_id(&peer_addr);
+                        let peer_id_short = if peer_id.len() > 12 { &peer_id[..12] } else { &peer_id };
+                        println!("[{}] Handshake from {} ({} peers, genesis: {})",
+                            timestamp(), peer_id_short, known_peers.len(), their_genesis);
 
-            let validator_merit: HashMap<String, u64> = {
-                let c = consensus_clone.lock().unwrap();
-                c.validators.iter().map(|(k, v)| (k.clone(), *v)).collect()
-            };
+                        let now = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs();
+                        let mut our_genesis = genesis_timestamp.lock().await;
+                        if their_genesis > 0 
+                            && their_genesis < *our_genesis
+                            && their_genesis > now.saturating_sub(86400)
+                            && their_genesis < now + 300
+                        {
+                            println!("[{}] Adopting earlier genesis: {} -> {}", timestamp(), *our_genesis, their_genesis);
+                            *our_genesis = their_genesis;
+                        }
+                        drop(our_genesis);
 
-            let my_id = "validator_1".to_string();
-
-            if let Some(block) = produce_block_with_tpi(
-                slot,
-                my_id,
-                all_validators,
-                validator_merit,
-                Arc::clone(&state_clone),
-                Arc::clone(&mempool_clone),
-            ).await {
-                let mut s = state_clone.lock().unwrap();
-                if s.add_block(block.clone()) {
-                    let producer_short = if block.producer.len() > 12 {
-                        &block.producer[..12]
-                    } else {
-                        &block.producer
-                    };
-                    println!("[{}] Slot {}: Producer {} ({} tx)",
-                        timestamp(), slot, producer_short, block.transactions.len());
-
-                    drop(s);
-
-                    {
-                        let mempool_size = {
-                            let mp = mempool_clone.lock().unwrap();
-                            mp.len()
-                        };
-
-                        let mut m = metrics_clone.lock().unwrap();
-                        m.record_block(pos_chain::metrics::BlockMetric {
-                            slot: block.slot,
-                            hash: block.hash.clone(),
-                            producer: block.producer.clone(),
-                            tx_count: block.transactions.len(),
-                            time_ms: 10000,
-                            timestamp: block.timestamp,
-                        });
-                        m.set_mempool_size(mempool_size);
-
-                        let memory_mb = get_memory_usage();
-                        let cpu_percent = get_cpu_usage();
-                        m.update_system_stats(memory_mb, cpu_percent);
+                        let mut pm = peer_manager.lock().await;
+                        for peer in known_peers {
+                            if peer != my_addr {
+                                pm.add_peer(peer);
+                            }
+                        }
                     }
+                    NetworkMessage::NewBlock(block) => {
+                        let mut s = state_clone.write().await;
+                        if s.add_block(block.clone()) {
+                            current_slot = block.slot;
+                            slot_deadline = tokio::time::Instant::now() + Duration::from_secs(10);
 
-                    let msg = NetworkMessage::NewBlock(block);
-                    let pm = Arc::clone(&peer_manager_clone);
-                    tokio::spawn(async move {
-                        network::broadcast_message(msg, pm).await;
-                    });
+                            let peer_id = generate_peer_id(&peer_addr);
+                            let peer_id_short = if peer_id.len() > 12 { &peer_id[..12] } else { &peer_id };
+                            println!("[{}] Block from {}: slot {}, next slot at +10s",
+                                timestamp(), peer_id_short, block.slot);
+
+                            drop(s);
+
+                            {
+                                let mempool_size = {
+                                    let mp = mempool_clone.lock().await;
+                                    mp.len()
+                                };
+
+                                let mut m = metrics_clone.lock().await;
+                                m.record_block(pos_chain::metrics::BlockMetric {
+                                    slot: block.slot,
+                                    hash: block.hash.clone(),
+                                    producer: block.producer.clone(),
+                                    tx_count: block.transactions.len(),
+                                    time_ms: 10000,
+                                    timestamp: block.timestamp,
+                                });
+                                m.set_mempool_size(mempool_size);
+
+                                let memory_mb = get_memory_usage();
+                                let cpu_percent = get_cpu_usage();
+                                m.update_system_stats(memory_mb, cpu_percent);
+                            }
+
+                            let msg = NetworkMessage::NewBlock(block);
+                            let pm = Arc::clone(&peer_manager);
+                            tokio::spawn(async move {
+                                network::broadcast_message(msg, pm).await;
+                            });
+                        }
+                    }
+                    NetworkMessage::Ping => {
+                        let peer_id = generate_peer_id(&peer_addr);
+                        let peer_id_short = if peer_id.len() > 12 { &peer_id[..12] } else { &peer_id };
+                        println!("[{}] Ping from {}", timestamp(), peer_id_short);
+                    }
+                    _ => {}
                 }
             }
 
-            slot += 1;
-        }
-    });
+            _ = tokio::time::sleep_until(slot_deadline) => {
+                current_slot += 1;
 
-    loop {
-        if let Some((msg, peer_addr)) = rx.recv().await {
-            match msg {
-                NetworkMessage::Handshake { peer_addr: _their_addr, known_peers } => {
-                    let peer_id = generate_peer_id(&peer_addr);
-                    let peer_id_short = if peer_id.len() > 12 { &peer_id[..12] } else { &peer_id };
-                    println!("[{}] Handshake from {} ({} peers)",
-                        timestamp(), peer_id_short, known_peers.len());
-                    let mut pm = peer_manager.lock().unwrap();
-                    for peer in known_peers {
-                        if peer != my_addr {
-                            pm.add_peer(peer);
+                let all_validators: Vec<String> = {
+                    let c = consensus_clone.read().await;
+                    c.validators.keys().cloned().collect()
+                };
+
+                let validator_merit: HashMap<String, u64> = {
+                    let c = consensus_clone.read().await;
+                    c.validators.iter().map(|(k, v)| (k.clone(), *v)).collect()
+                };
+
+                let state_clone_spawn = Arc::clone(&state_clone);
+                let mempool_clone_spawn = Arc::clone(&mempool_clone);
+                let tpi_rx_clone = Arc::clone(&tpi_rx);
+                let tpi_tx_clone = tpi_tx_block.clone();
+                let peer_manager_clone_spawn = Arc::clone(&peer_manager_clone);
+                let metrics_clone_spawn = Arc::clone(&metrics_clone);
+                let my_id = validator_id_for_block.clone();
+
+                tokio::spawn(async move {
+                    if let Some(block) = produce_block_with_tpi(
+                        current_slot,
+                        my_id.clone(),
+                        all_validators,
+                        validator_merit,
+                        state_clone_spawn.clone(),
+                        mempool_clone_spawn.clone(),
+                        tpi_rx_clone,
+                        tpi_tx_clone,
+                        peer_manager_clone_spawn.clone(),
+                        genesis_ms,
+                    ).await {
+                        let mut s = state_clone_spawn.write().await;
+                        if s.add_block(block.clone()) {
+                            let producer_short = if block.producer.len() > 12 {
+                                &block.producer[..12]
+                            } else {
+                                &block.producer
+                            };
+                            println!("[PRODUCE] Slot {}: Producer {} ({} tx)",
+                                current_slot, producer_short, block.transactions.len());
+
+                            drop(s);
+
+                            {
+                                let mempool_size = {
+                                    let mp = mempool_clone_spawn.lock().await;
+                                    mp.len()
+                                };
+
+                                let mut m = metrics_clone_spawn.lock().await;
+                                m.record_block(pos_chain::metrics::BlockMetric {
+                                    slot: block.slot,
+                                    hash: block.hash.clone(),
+                                    producer: block.producer.clone(),
+                                    tx_count: block.transactions.len(),
+                                    time_ms: 10000,
+                                    timestamp: block.timestamp,
+                                });
+                                m.set_mempool_size(mempool_size);
+
+                                let memory_mb = get_memory_usage();
+                                let cpu_percent = get_cpu_usage();
+                                m.update_system_stats(memory_mb, cpu_percent);
+                            }
+
+                            let msg = NetworkMessage::NewBlock(block);
+                            tokio::spawn(async move {
+                                network::broadcast_message(msg, peer_manager_clone_spawn).await;
+                            });
                         }
                     }
-                }
-                NetworkMessage::NewBlock(block) => {
-                    let mut s = state.lock().unwrap();
-                    if s.add_block(block.clone()) {
-                        let peer_id = generate_peer_id(&peer_addr);
-                        let peer_id_short = if peer_id.len() > 12 { &peer_id[..12] } else { &peer_id };
-                        println!("[{}] Block from {}: slot {}",
-                            timestamp(), peer_id_short, block.slot);
+                });
 
-                        drop(s);
-
-                        let msg = NetworkMessage::NewBlock(block);
-                        let pm = Arc::clone(&peer_manager);
-                        tokio::spawn(async move {
-                            network::broadcast_message(msg, pm).await;
-                        });
-                    }
-                }
-                NetworkMessage::Ping => {
-                    let peer_id = generate_peer_id(&peer_addr);
-                    let peer_id_short = if peer_id.len() > 12 { &peer_id[..12] } else { &peer_id };
-                    println!("[{}] Ping from {}", timestamp(), peer_id_short);
-                }
-                _ => {}
+                slot_deadline = tokio::time::Instant::now() + Duration::from_secs(10);
             }
         }
     }
