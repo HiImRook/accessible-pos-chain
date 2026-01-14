@@ -145,10 +145,12 @@ async fn broadcast_tpi_hash(
         signature: String::from_utf8_lossy(&msg.signature).to_string(),
     };
 
-    if let Ok(data) = serde_json::to_vec(&network_msg) {
-        for peer in peers {
-            if let Ok(mut stream) = tokio::net::TcpStream::connect(&peer).await {
-                use tokio::io::AsyncWriteExt;
+    for peer in peers {
+        if let Ok(mut stream) = tokio::net::TcpStream::connect(&peer).await {
+            use tokio::io::AsyncWriteExt;
+            if let Ok(data) = serde_json::to_vec(&network_msg) {
+                let len = (data.len() as u32).to_be_bytes();
+                let _ = stream.write_all(&len).await;
                 let _ = stream.write_all(&data).await;
             }
         }
