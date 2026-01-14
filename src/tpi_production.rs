@@ -201,8 +201,10 @@ fn compute_block_hash(block: &Block) -> String {
     hasher.update(block.timestamp.to_le_bytes());
     for tx in &block.transactions {
         hasher.update(tx.from.as_bytes());
+        hasher.update(tx.from_pubkey.as_bytes());
         hasher.update(tx.to.as_bytes());
         hasher.update(tx.amount.to_le_bytes());
+        hasher.update(tx.signature.as_bytes());
     }
     let result = hasher.finalize();
     hex::encode(result)
