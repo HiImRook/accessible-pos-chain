@@ -3,3 +3,4 @@ config.toml
 wallet.json
 blockchain.snapshot
 blockchain.log
+wallet.json
