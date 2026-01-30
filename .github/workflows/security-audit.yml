@@ -7,6 +7,26 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
-      - run: cargo install cargo-audit --locked
-      - run: cargo audit
-      - run: cargo build --release --locked
+      
+      - name: Install cargo-audit
+        run: cargo install cargo-audit --locked
+      
+      - name: Vendor dependencies
+        run: cargo vendor vendor
+      
+      - name: Configure vendored build
+        run: |
+          mkdir -p .cargo
+          cat > .cargo/config.toml <<'CARGO_CONFIG'
+          [source.crates-io]
+          replace-with = "vendored-sources"
+          
+          [source.vendored-sources]
+          directory = "vendor"
+          CARGO_CONFIG
+      
+      - name: Run audit
+        run: cargo audit
+      
+      - name: Build offline
+        run: cargo build --release --locked --offline

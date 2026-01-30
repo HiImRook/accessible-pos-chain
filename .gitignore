@@ -4,3 +4,4 @@ wallet.json
 blockchain.snapshot
 blockchain.log
 /vendor/
+.cargo/
