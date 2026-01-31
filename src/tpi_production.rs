@@ -21,12 +21,14 @@ pub async fn produce_block_with_tpi(
     genesis_ms: u64,
 ) -> Option<Block> {
     let tpi_start = tokio::time::Instant::now();
-    
+
     let tpi_group = select_tpi_validators(slot, &all_validator_ids);
 
     if tpi_group.is_empty() {
         return None;
     }
+
+    println!("[TPI] Slot {}: Selected validators: {:?}", slot, tpi_group);
 
     let am_i_in_tpi = tpi_group.contains(&my_validator_id);
 
@@ -34,7 +36,7 @@ pub async fn produce_block_with_tpi(
         let block = create_block(slot, &my_validator_id, state.clone(), mempool.clone(), genesis_ms).await;
         let my_hash = compute_block_hash(&block);
 
-        println!("[TPI] Slot {}: {} computed hash {} at T+0ms", 
+        println!("[TPI] Slot {}: {} computed hash {} at T+0ms",
             slot, &my_validator_id[..12.min(my_validator_id.len())], &my_hash[..8]);
 
         let my_tpi_msg = TpiHashMessage {
@@ -77,7 +79,42 @@ pub async fn produce_block_with_tpi(
         let consensus = check_tpi_consensus(received_hashes);
 
         match consensus {
-            TpiConsensus::Perfect(_) | TpiConsensus::TwoOfThree(_, _) | TpiConsensus::TwoOfTwo(_, _) => {
+            TpiConsensus::Perfect(hash) => {
+                println!("[TPI] Slot {}: Perfect consensus (3/3) on hash {}", slot, &hash[..8]);
+                let tpi_with_merit: Vec<(String, u64)> = tpi_group
+                    .iter()
+                    .map(|id| {
+                        let merit = validator_merit_scores.get(id).copied().unwrap_or(0);
+                        (id.clone(), merit)
+                    })
+                    .collect();
+
+                let broadcaster = select_broadcaster_by_merit(&tpi_with_merit);
+
+                if broadcaster == my_validator_id {
+                    println!("[TPI] Slot {}: Broadcasting block (highest merit)", slot);
+                    return Some(block);
+                }
+            }
+            TpiConsensus::TwoOfThree(hash, _) => {
+                println!("[TPI] Slot {}: Two-of-three consensus on hash {}", slot, &hash[..8]);
+                let tpi_with_merit: Vec<(String, u64)> = tpi_group
+                    .iter()
+                    .map(|id| {
+                        let merit = validator_merit_scores.get(id).copied().unwrap_or(0);
+                        (id.clone(), merit)
+                    })
+                    .collect();
+
+                let broadcaster = select_broadcaster_by_merit(&tpi_with_merit);
+
+                if broadcaster == my_validator_id {
+                    println!("[TPI] Slot {}: Broadcasting block (highest merit)", slot);
+                    return Some(block);
+                }
+            }
+            TpiConsensus::TwoOfTwo(hash, _) => {
+                println!("[TPI] Slot {}: Two-of-two consensus on hash {}", slot, &hash[..8]);
                 let tpi_with_merit: Vec<(String, u64)> = tpi_group
                     .iter()
                     .map(|id| {
@@ -94,21 +131,21 @@ pub async fn produce_block_with_tpi(
                 }
             }
             _ => {
-                println!("[TPI] Slot {}: No consensus reached", slot);
+                println!("[TPI] Slot {}: Consensus failed - no matching hashes", slot);
             }
         }
     }
 
-    println!("[DEBUG] Slot {}: TPI failed, waiting for block (8s)", slot);
+    println!("[TPI] Slot {}: TPI failed, waiting for block or racer", slot);
     match timeout(Duration::from_millis(8000), wait_for_block(slot, state.clone())).await {
         Ok(Some(block)) => {
-            println!("[DEBUG] Slot {}: Received block from network", slot);
+            println!("[TPI] Slot {}: Received block from network", slot);
             return Some(block);
         }
         _ => {}
     }
 
-    println!("[DEBUG] Slot {}: Checking racer", slot);
+    println!("[RACER] Slot {}: Checking racer eligibility", slot);
     let validators_with_speed: Vec<(String, u64)> = all_validator_ids
         .iter()
         .map(|id| {
@@ -121,7 +158,7 @@ pub async fn produce_block_with_tpi(
 
     if racer == my_validator_id {
         let block = create_block(slot, &my_validator_id, state, mempool, genesis_ms).await;
-        println!("[RACER] Slot {}: Speed save by {}", slot, my_validator_id);
+        println!("[RACER] Slot {}: Racer activated, producing block", slot);
         return Some(block);
     }
 
@@ -164,7 +201,7 @@ async fn create_block(
     mempool: Arc<Mutex<Mempool>>,
     genesis_ms: u64,
 ) -> Block {
-    let mut transactions = {
+    let transactions = {
         let mut mp = mempool.lock().await;
         mp.get_pending(100)
     };
