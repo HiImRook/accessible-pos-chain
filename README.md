@@ -2,20 +2,19 @@
 
 A lightweight, decentralized-by-nature, Proof-of-Stake blockchain with **Three-Person Integrity (TPI) consensus** written in async Rust. Validators in developing regions participate equally with those in major cities using modest hardware (4-8GB RAM). This is a fully functional blockchain node you can build, run, and deploy for testnet experimentation and real-world validator networks.
 
-## What's New in v0.4.0
+## What's New in v0.4.3
 
-- **TPI Consensus**: 3 validators verify each block before broadcast
-- **Merit-Based Broadcasting**: Highest merit validator selected to produce blocks
-- **Racer Backup System**: 5/3/2 timing ensures 99.99% uptime
-- **Real-Time Dashboard**: WebSocket-powered validator performance metrics
-- **Memory Optimized**: 4 MB system recommendation per validator (down from 16+ MB)
+- **Enhanced TPI Logging**: Validator selection, consensus status, and racer activation visibility
+- **Config Validation**: Fail-fast startup with clear error messages for malformed configs
+- **Supply Chain Security**: Vendored dependencies, CI audit workflow, pinned toolchain
+- **Unified Block Hashing**: Consistent cryptographic verification across all modules
 
 ## Highlights
 
 - **10-second block times** - Consistent confirmation globally, tested with validators in Nigeria and Australia
 - **TPI consensus** - Three-validator verification prevents Byzantine faults and state corruption
 - **Merit-weighted selection** - Best-performing validators broadcast blocks (gamified competition)
-- **Racer backup** - 5s primary window, 3s buffer, 2s fallback (fork risk: essentially negligible)
+- **Racer backup** - 6s primary window, 2s buffer, 2s fallback (fork risk: essentially negligible)
 - **Automatic peer discovery** - Validators find each other through gossip protocol
 - **Randomized peer selection** - Protection against network isolation attacks
 - **Full signature verification** - ed25519 cryptographic verification for every transaction
@@ -46,10 +45,11 @@ Edit `config.toml` (see Configuration section below)
 
 ### 4. View Dashboard
 
-Open browser(Control + click): `http://localhost:3000/dashboard`
+Open browser (Control + click): `http://localhost:3000/dashboard`
 
 You should see:
-- TPI consensus messages (`[TPI] Slot X: validator_1 computed hash...`)
+- TPI consensus messages (`[TPI] Slot X: Selected validators: [...]`)
+- Consensus status (`Perfect consensus (3/3)`, `Two-of-three consensus`)
 - Block production every 10 seconds
 - Real-time metrics (memory, uptime, blocks produced)
 
@@ -58,6 +58,7 @@ You should see:
 listen_addr = "0.0.0.0:8080"
 rpc_addr = "0.0.0.0:3000"
 bootstrap_nodes = []
+genesis_timestamp = 0
 
 [genesis]
 alice = 1000000
@@ -70,13 +71,13 @@ validator_3 = 2000
 
 [pruning]
 enabled = true
-keep_blocks = 2160              # One epoch (6 hours)
+keep_blocks = 2160
 prune_interval = 1000
 prune_batch_size = 5000
 
 [snapshots]
 enabled = true
-epoch_size = 2160               # 6 hours per epoch
+epoch_size = 2160
 snapshot_dir = "./snapshots"
 keep_local_snapshots = 10
 arweave_upload = false
@@ -87,8 +88,8 @@ validators_per_group = 3
 allow_two_of_two = true
 
 [consensus.timing]
-primary_window_seconds = 5
-buffer_seconds = 3
+primary_window_seconds = 6
+buffer_seconds = 2
 racer_window_seconds = 2
 
 [consensus.racer]
@@ -107,22 +108,22 @@ snapshot_uploaded = 25
 
 ### TPI Consensus Flow
 ```
-Slot N starts (0s)
+Slot N starts (0ms)
   ↓
 3 validators randomly selected (deterministic from slot hash)
   ↓
-All 3 create block independently (0-5s primary window)
+All 3 create block independently (0-6000ms TPI window)
   ↓
 Compare block hashes:
   - All match → Highest merit broadcasts ✓
   - 2 of 3 match → Quarantine outlier, proceed ✓
   - All different → TPI fails, trigger racer
   ↓
-Buffer period (5-8s) for global propagation
+Buffer period (6000-8000ms) for global propagation
   ↓
-If no block: Racer (fastest ranked validators) produces backup (8-10s)
+If no block: Racer (fastest ranked validators) produces backup (8000-10000ms)
   ↓
-Block finalized, next slot begins
+Block finalized at 10000ms, next slot begins
 ```
 
 ### Core Components
@@ -131,7 +132,7 @@ Block finalized, next slot begins
 TPI validator selection, hash computation, consensus verification
 
 **src/tpi_production.rs**
-Async TPI block production flow with 5/3/2 timing
+Async TPI block production flow with 6/2/2 timing
 
 **src/racer.rs**
 Backup validator selection and speed tracking
@@ -146,7 +147,7 @@ Performance tracking (uptime, memory, block times)
 JSON-RPC API + WebSocket for dashboard
 
 **src/network.rs**
-TCP gossip protocol with peer discovery
+TCP gossip protocol with framed messages and peer discovery
 
 **testing/index.html**
 Real-time dashboard (WebSocket connection)
@@ -166,19 +167,14 @@ Returns complete chain state (accounts, blocks, validators)
 
 #### submit_transaction
 ```bash
-curl -X POST http://localhost:3000 \
+curl -X POST http://localhost:3000/submit \
   -H "Content-Type: application/json" \
   -d '{
-    "jsonrpc": "2.0",
-    "method": "submit_transaction",
-    "params": {
-      "from": "alice",
-      "from_pubkey": "02abc...",
-      "to": "bob",
-      "amount": 1000,
-      "signature": "a1b2c3..."
-    },
-    "id": 1
+    "from": "alice",
+    "from_pubkey": "02abc...",
+    "to": "bob",
+    "amount": 1000,
+    "signature": "a1b2c3..."
   }'
 ```
 
@@ -196,7 +192,7 @@ Connect to `ws://localhost:3000/ws` for real-time metrics
 - Compare block hashes for consensus
 - Highest merit validator broadcasts if consensus achieved
 
-**Merit Scoring(W.I.P.):**
+**Merit Scoring (W.I.P.):**
 - Blocks produced: +100 merit
 - TPI verification: +20 merit
 - Racer saves: +500 merit
@@ -220,14 +216,20 @@ Connect to `ws://localhost:3000/ws` for real-time metrics
 **Block Time:** 10 seconds (consistent globally)
 **Memory Usage:** 17-33 MB per validator
 **Uptime:** 99.99% (TPI + racer combined)
-**Scalability:** Scales naturally
+**Network Bandwidth:** <4 GB/month
 
 ## Security Architecture
 
 ### Current Security Features ✅
 
+**Supply Chain Hardening**
+Vendored dependencies, automated security audits via CI, pinned Rust toolchain for reproducible builds
+
 **TPI Consensus**
 Three validators verify each block before broadcast, detecting Byzantine faults and state corruption immediately
+
+**Framed Network Protocol**
+Length-prefixed TCP messages with size limits and timeouts prevent packet-split bugs and DoS attacks
 
 **Merit-Based Selection**
 Best-performing validators produce blocks, incentivizing reliability and uptime
@@ -237,6 +239,9 @@ Fallback system ensures blocks are produced even during TPI failures or network 
 
 **Cryptographic Signatures (ed25519)**
 Every transaction verified before mempool acceptance
+
+**Config Validation**
+Startup validation prevents malformed configs and invalid genesis timestamps
 
 **Randomized Peer Selection**
 Prevents network isolation attacks
@@ -265,18 +270,21 @@ Eliminates frontrunning opportunities
 
 ## Development Roadmap
 
-### Phase 2 (Completed - v0.4.0) ✅
+### Phase 2 (Completed - v0.4.3) ✅
 - TPI consensus implementation
 - Merit-based broadcaster
 - Racer backup system
 - Real-time dashboard
 - Memory optimization
+- Supply chain security hardening
+- Enhanced observability
 
 ### Phase 3 (In Progress)
 - Multi-validator testing (3-10 validators, 100+ validators)
 - Snapshot TPI verification
 - Arweave integration
 - Coordinator upload system
+- Transaction nonces
 
 ### Phase 4 (Planned)
 - Public testnet
@@ -288,7 +296,7 @@ Eliminates frontrunning opportunities
 - Community governance
 - Mainnet launch preparation
 
-###Phase 6 (Beyond)
+### Phase 6 (Beyond)
 - Valid Browser integration
 - Valid Vault (local password manager)
 
@@ -353,6 +361,6 @@ Copyright (c) 2024-2026 Rook
 
 ## Acknowledgements
 
-Built and maintained by Rook. Questions or inquiries welcome via GitHub issues, or 
+Built and maintained by Rook. Questions or inquiries welcome via GitHub issues, or
 
 - **Join the Discord**: https://discord.gg/2SP383cJs9
