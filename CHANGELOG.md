@@ -5,6 +5,33 @@ All notable changes to Valid Blockchain will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.3] - 2026-01-31
+
+### Added
+- Enhanced TPI logging showing validator selection and consensus status
+- Racer activation logging for better observability
+- Config validation on startup (fail fast on malformed configs)
+- Better error messages for invalid genesis timestamps
+
+### Changed
+- Improved network diagnostics in logs
+
+## [0.4.2] - 2026-01-30
+
+### Added
+- Supply chain security hardening with cargo vendoring
+- CI security audit workflow
+- Pinned Rust toolchain for reproducible builds
+
+### Changed
+- Unified block hash computation across all modules
+- TPI hash messages now use framed protocol
+
+### Security
+- Transaction signature verification restored
+- Removed demo keys from git history
+- Automated security audits on every commit
+
 ## [0.4.0-alpha] - 2026-01-07
 
 ### Added - TPI Consensus Implementation
@@ -140,6 +167,8 @@ Development iteration between v0.1.0 and v0.3.0 - not formally tagged on GitHub.
 
 ---
 
+[0.4.3]: https://github.com/HiImRook/accessible-pos-chain/releases/tag/v0.4.3
+[0.4.2]: https://github.com/HiImRook/accessible-pos-chain/releases/tag/v0.4.2
 [0.4.0-alpha]: https://github.com/HiImRook/accessible-pos-chain/releases/tag/v0.4.0
 [0.3.0]: https://github.com/HiImRook/accessible-pos-chain/releases/tag/v0.3.0
 [0.1.0]: https://github.com/HiImRook/accessible-pos-chain/releases/tag/v0.1
