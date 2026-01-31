@@ -50,6 +50,44 @@ async fn main() {
 
     let config = Config::load().expect("Failed to load config.toml");
 
+    if config.validators.is_empty() {
+        eprintln!("ERROR: No validators configured in config.toml");
+        eprintln!("Add at least one validator to the [validators] section");
+        std::process::exit(1);
+    }
+
+    if config.bootstrap_nodes.is_empty() {
+        eprintln!("WARNING: No bootstrap nodes configured");
+        eprintln!("This validator will not connect to any peers");
+    }
+
+    for node in &config.bootstrap_nodes {
+        if !node.contains(':') {
+            eprintln!("ERROR: Malformed bootstrap node: {}", node);
+            eprintln!("Expected format: 'host:port' (e.g., '127.0.0.1:8000')");
+            std::process::exit(1);
+        }
+    }
+
+    if config.genesis_timestamp > 0 {
+        let now = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap()
+            .as_secs();
+        
+        if config.genesis_timestamp > now + 300 {
+            eprintln!("ERROR: Genesis timestamp is more than 5 minutes in the future");
+            eprintln!("genesis_timestamp: {}, current time: {}", config.genesis_timestamp, now);
+            std::process::exit(1);
+        }
+        
+        if config.genesis_timestamp < now.saturating_sub(86400 * 365) {
+            eprintln!("ERROR: Genesis timestamp is more than 1 year in the past");
+            eprintln!("genesis_timestamp: {}, current time: {}", config.genesis_timestamp, now);
+            std::process::exit(1);
+        }
+    }
+
     let listen_addr = config.listen_addr.clone();
     let rpc_addr = config.rpc_addr.clone();
     let my_addr = listen_addr.clone();
@@ -181,7 +219,7 @@ async fn main() {
 
                         let now = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs();
                         let mut our_genesis = genesis_timestamp.lock().await;
-                        if their_genesis > 0 
+                        if their_genesis > 0
                             && their_genesis < *our_genesis
                             && their_genesis > now.saturating_sub(86400)
                             && their_genesis < now + 300
