@@ -12,12 +12,12 @@ struct WalletFile {
 
 fn main() {
     let args: Vec<String> = env::args().collect();
-    
+
     if args.len() < 2 {
         print_usage();
         return;
     }
-    
+
     match args[1].as_str() {
         "new" => create_wallet(),
         "address" => show_address(),
@@ -44,19 +44,19 @@ fn create_wallet() {
         println!("Wallet already exists! Delete wallet.json to create a new one.");
         return;
     }
-    
+
     let keypair = generate_keypair();
     let address = keypair_to_address(&keypair);
-    
+
     let wallet = WalletFile {
         secret_key: hex::encode(keypair.signing_key.to_bytes()),
         public_key: hex::encode(keypair.verifying_key.to_bytes()),
         address: address.clone(),
     };
-    
+
     let json = serde_json::to_string_pretty(&wallet).unwrap();
     fs::write("wallet.json", json).expect("Failed to write wallet file");
-    
+
     println!("Wallet created!");
     println!("Address: {}", address);
     println!("Saved to wallet.json - keep this file safe!");
@@ -72,16 +72,16 @@ fn check_balance(args: &[String]) {
         println!("Usage: wallet balance <rpc_url>");
         return;
     }
-    
+
     let wallet = load_wallet();
     let rpc_url = &args[2];
-    
+
     let client = reqwest::blocking::Client::new();
     let response = client
         .post(format!("{}/balance", rpc_url))
         .json(&serde_json::json!({ "address": wallet.address }))
         .send();
-    
+
     match response {
         Ok(resp) => {
             let balance: serde_json::Value = resp.json().unwrap();
@@ -96,26 +96,29 @@ fn send_transaction(args: &[String]) {
         println!("Usage: wallet send <to_address> <amount> <rpc_url>");
         return;
     }
-    
+
     let wallet = load_wallet();
     let to = &args[2];
     let amount: u64 = args[3].parse().expect("Invalid amount");
     let rpc_url = &args[4];
-    
+
     let secret_bytes = hex::decode(&wallet.secret_key).expect("Invalid secret key");
     let secret_array: [u8; 32] = secret_bytes.try_into().expect("Wrong secret key length");
     let signing_key = ed25519_dalek::SigningKey::from_bytes(&secret_array);
     let verifying_key = signing_key.verifying_key();
-    
+
     let keypair = KeyPair {
         signing_key,
         verifying_key,
     };
-    
-    let signature = sign_transaction(&keypair, &wallet.address, to, amount);
-    
+
+    let nonce = 0;
+    let fee = 1_000_000;
+
+    let signature = sign_transaction(&keypair, &wallet.address, to, amount, nonce, fee);
+
     println!("Sending {} to {}...", amount, to);
-    
+
     let client = reqwest::blocking::Client::new();
     let response = client
         .post(format!("{}/submit", rpc_url))
@@ -124,10 +127,12 @@ fn send_transaction(args: &[String]) {
             "from_pubkey": wallet.public_key,
             "to": to,
             "amount": amount,
+            "nonce": nonce,
+            "fee": fee,
             "signature": signature
         }))
         .send();
-    
+
     match response {
         Ok(resp) => {
             let result: serde_json::Value = resp.json().unwrap();
