@@ -41,6 +41,8 @@ struct SubmitTransactionRequest {
     from_pubkey: String,
     to: String,
     amount: u64,
+    nonce: u64,
+    fee: u64,
     signature: String,
 }
 
@@ -96,6 +98,8 @@ async fn submit_transaction(
         from_pubkey: payload.from_pubkey,
         to: payload.to,
         amount: payload.amount,
+        nonce: payload.nonce,
+        fee: payload.fee,
         signature: payload.signature,
     };
     let mut mempool = state.mempool.lock().await;
