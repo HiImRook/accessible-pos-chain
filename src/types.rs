@@ -18,6 +18,8 @@ pub struct Transaction {
     pub from_pubkey: String,
     pub to: String,
     pub amount: u64,
+    pub nonce: u64,
+    pub fee: u64,
     pub signature: String,
 }
 
@@ -47,6 +49,9 @@ pub struct PeerInfo {
 
 pub struct ChainState {
     pub accounts: HashMap<String, u64>,
+    pub total_supply: u64,
+    pub nonces: HashMap<String, u64>,
+    pub delegations: HashMap<String, String>,
     pub blocks: HashMap<u64, Block>,
     pub latest_slot: u64,
 }
@@ -55,6 +60,9 @@ impl ChainState {
     pub fn new() -> Self {
         ChainState {
             accounts: HashMap::new(),
+            total_supply: 0,
+            nonces: HashMap::new(),
+            delegations: HashMap::new(),
             blocks: HashMap::new(),
             latest_slot: 0,
         }
@@ -64,25 +72,46 @@ impl ChainState {
         if self.blocks.contains_key(&block.slot) {
             return false;
         }
-        
+
         for tx in &block.transactions {
             use crate::crypto::verify_transaction;
-            
-            if !verify_transaction(&tx.from_pubkey, &tx.from, &tx.to, tx.amount, &tx.signature) {
+            if !verify_transaction(
+                &tx.from_pubkey,
+                &tx.from,
+                &tx.to,
+                tx.amount,
+                tx.nonce,
+                tx.fee,
+                &tx.signature
+            ) {
                 println!("Invalid signature for tx from {}", tx.from);
                 return false;
             }
-            
-            let from_balance = self.accounts.get(&tx.from).copied().unwrap_or(0);
-            if from_balance < tx.amount {
-                println!("Insufficient balance for {}: {} < {}", tx.from, from_balance, tx.amount);
+
+            let expected_nonce = self.nonces.get(&tx.from).copied().unwrap_or(0);
+            if tx.nonce != expected_nonce {
+                println!("Invalid nonce for {}: expected {}, got {}", tx.from, expected_nonce, tx.nonce);
                 return false;
             }
-            
-            self.accounts.insert(tx.from.clone(), from_balance - tx.amount);
+
+            let from_balance = self.accounts.get(&tx.from).copied().unwrap_or(0);
+            if from_balance < tx.amount + tx.fee {
+                println!("Insufficient balance for {}: {} < {}", tx.from, from_balance, tx.amount + tx.fee);
+                return false;
+            }
+
+            self.accounts.insert(tx.from.clone(), from_balance - tx.amount - tx.fee);
             *self.accounts.entry(tx.to.clone()).or_insert(0) += tx.amount;
+
+            if let Some(validator) = self.delegations.get(&tx.from) {
+                *self.accounts.entry(validator.clone()).or_insert(0) += tx.fee;
+            } else {
+                *self.accounts.entry(block.producer.clone()).or_insert(0) += tx.fee;
+            }
+
+            self.nonces.insert(tx.from.clone(), expected_nonce + 1);
         }
-        
+
         if block.slot > self.latest_slot {
             self.latest_slot = block.slot;
         }
@@ -92,6 +121,11 @@ impl ChainState {
 
     pub fn get_balance(&self, address: &str) -> u64 {
         self.accounts.get(address).copied().unwrap_or(0)
+    }
+
+    pub fn current_epoch(&self) -> usize {
+        const BLOCKS_PER_EPOCH: u64 = 3_150_000 * 7;
+        (self.latest_slot / BLOCKS_PER_EPOCH) as usize
     }
 }
 
@@ -117,7 +151,6 @@ impl Mempool {
     pub fn get_pending(&mut self, max: usize) -> Vec<Transaction> {
         let count = max.min(self.transactions.len());
         let mut txs = self.transactions.drain(..count).collect::<Vec<_>>();
-        
         txs.sort_by_cached_key(|tx| {
             let mut hasher = Sha256::new();
             hasher.update(tx.from.as_bytes());
@@ -125,7 +158,6 @@ impl Mempool {
             hasher.update(tx.amount.to_le_bytes());
             hasher.finalize().to_vec()
         });
-        
         txs
     }
 

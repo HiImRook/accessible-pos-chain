@@ -15,8 +15,15 @@ pub fn generate_keypair() -> KeyPair {
     KeyPair { signing_key, verifying_key }
 }
 
-pub fn sign_transaction(keypair: &KeyPair, from: &str, to: &str, amount: u64) -> String {
-    let message = format!("{}:{}:{}", from, to, amount);
+pub fn sign_transaction(
+    keypair: &KeyPair,
+    from: &str,
+    to: &str,
+    amount: u64,
+    nonce: u64,
+    fee: u64
+) -> String {
+    let message = format!("{}:{}:{}:{}:{}", from, to, amount, nonce, fee);
     let signature = keypair.signing_key.sign(message.as_bytes());
     hex::encode(signature.to_bytes())
 }
@@ -26,36 +33,32 @@ pub fn verify_transaction(
     from: &str,
     to: &str,
     amount: u64,
+    nonce: u64,
+    fee: u64,
     signature_hex: &str
 ) -> bool {
     let public_key_bytes = match hex::decode(public_key_hex) {
         Ok(bytes) => bytes,
         Err(_) => return false,
     };
-    
     let public_key_array: [u8; 32] = match public_key_bytes.try_into() {
         Ok(arr) => arr,
         Err(_) => return false,
     };
-    
     let verifying_key = match VerifyingKey::from_bytes(&public_key_array) {
         Ok(vk) => vk,
         Err(_) => return false,
     };
-    
     let signature_bytes = match hex::decode(signature_hex) {
         Ok(bytes) => bytes,
         Err(_) => return false,
     };
-    
     let signature_array: [u8; 64] = match signature_bytes.try_into() {
         Ok(arr) => arr,
         Err(_) => return false,
     };
-    
     let signature = Signature::from_bytes(&signature_array);
-    
-    let message = format!("{}:{}:{}", from, to, amount);
+    let message = format!("{}:{}:{}:{}:{}", from, to, amount, nonce, fee);
     verifying_key.verify(message.as_bytes(), &signature).is_ok()
 }
 
