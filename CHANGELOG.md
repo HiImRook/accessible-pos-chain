@@ -5,6 +5,34 @@ All notable changes to Valid Blockchain will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.5] - 2026-02-04
+
+### Added
+- Transaction nonce field (replay protection)
+- Transaction fee field (validator income)
+- Total supply tracking in ChainState
+- Nonces HashMap for sequential transaction ordering
+- Delegations HashMap (for v0.6 SPO implementation)
+- Epoch calculation method (`current_epoch()`)
+
+### Changed
+- Transaction signatures now cover nonce and fee
+- Transaction validation checks nonces (prevents replay attacks)
+- Balance validation includes fee deduction
+- Fees route to block producer (temporary, SPO delegation in v0.6)
+- RPC `submit_transaction` endpoint now accepts nonce and fee
+- Wallet CLI now includes nonce and fee when sending transactions
+
+### Security
+- **CRITICAL:** Fixed signature verification to include all transaction fields
+- Added nonce enforcement to prevent transaction replay
+- Updated `bytes` dependency to 1.11.1 (fix RUSTSEC-2026-0007)
+
+### Notes
+- Foundation prep for v0.5.0 tokenomics implementation
+- SPO fee delegation deferred to v0.6
+- `rustls-pemfile` warning (unmaintained) is low priority
+
 ## [0.4.3] - 2026-01-31
 
 ### Added
