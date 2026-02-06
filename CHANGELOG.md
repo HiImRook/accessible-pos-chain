@@ -62,6 +62,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.4.0-alpha] - 2026-01-07
 
+### Notes
+- Pruning/snapshot implementation deferred to v0.6.0
+- Some features documented prematurely (corrected in v0.4.6)
+
 ### Added - TPI Consensus Implementation
 
 #### Core Consensus
