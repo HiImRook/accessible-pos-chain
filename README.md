@@ -1,357 +1,227 @@
 # Accessible PoS Chain — Valid Blockchain
 
-A lightweight, decentralized-by-nature, Proof-of-Stake blockchain with **Three-Person Integrity (TPI) consensus** written in async Rust. Validators in developing regions participate equally with those in major cities using modest hardware (4-8GB RAM). This is a fully functional blockchain node you can build, run, and deploy for testnet experimentation and real-world validator networks.
+A lightweight proof-of-stake blockchain focused on accessibility, decentralization, and merit-based participation. Designed to run efficiently on modest hardware in developing regions while supporting advanced Layer 2 networks.
 
-## What's New in v0.4.3
+## Core Features
 
-- **Enhanced TPI Logging**: Validator selection, consensus status, and racer activation visibility
-- **Config Validation**: Fail-fast startup with clear error messages for malformed configs
-- **Supply Chain Security**: Vendored dependencies, CI audit workflow, pinned toolchain
-- **Unified Block Hashing**: Consistent cryptographic verification across all modules
+**Consensus:**
+- TPI (Three-Party Integrity) consensus with 3 validators per block
+- Merit-based validator selection
+- Racer backup system for network resilience
+- 10-second block times with sub-second finality
 
-## Highlights
+**Token Economics:**
+- 33 billion VLid supply over 21 years
+- Proof-of-work minting (tokens mint when work is proven)
+- Nonce-based replay protection
+- Ultra-low transaction fees with SPO delegation
 
-- **10-second block times** - Consistent confirmation globally, tested with validators in Nigeria and Australia
-- **TPI consensus** - Three-validator verification prevents Byzantine faults and state corruption
-- **Merit-weighted selection** - Best-performing validators broadcast blocks (gamified competition)
-- **Racer backup** - 6s primary window, 2s buffer, 2s fallback (fork risk: essentially negligible)
-- **Automatic peer discovery** - Validators find each other through gossip protocol
-- **Randomized peer selection** - Protection against network isolation attacks
-- **Full signature verification** - ed25519 cryptographic verification for every transaction
-- **Real-time dashboard** - WebSocket metrics at `http://localhost:3000/dashboard`
-- **Simple JSON-RPC API** - Easy integration for wallets and explorers
-- **TOML configuration** - Human-readable config for genesis, validators, and consensus
+**Infrastructure:**
+- Snapshot system (6-hour intervals)
+- WebSocket real-time updates
+- Built-in metrics dashboard
+- Vendored dependencies for supply-chain security
 
-## Quick Start — Run a Validator
+## Current Status: v0.4.5
 
-### 1. Clone and Build
+**Completed:**
+- ✅ TPI consensus with merit-based selection
+- ✅ Transaction nonces and fee structure
+- ✅ Racer backup system
+- ✅ Snapshot archival (Arweave)
+- ✅ RPC server with WebSocket support
+- ✅ Wallet CLI
+- ✅ Token foundation (supply tracking, epoch calculations)
+
+**In Development:**
+- 🔄 v0.5.0: Tokenomics implementation (block rewards, validator minting)
+- 🔄 Layer 2 networks (VNS, VIPFS, KEVIN)
+
+## Development Phases
+
+### Phase 1: Foundation ✅ (Complete)
+- Core blockchain infrastructure
+- TPI consensus mechanism
+- P2P networking with discovery
+- Basic transaction system
+
+### Phase 2: Validator Economy ✅ (Complete)
+- Merit-based validator selection
+- Racer backup system
+- Snapshot system
+- **Current:** Token foundation prep (nonces, fees, supply tracking)
+
+### Phase 3: Tokenomics 🔄 (Active Development)
+- Block reward minting (80.6 VLid/block in Epoch 1)
+- TPI participation rewards
+- Racer save bonuses
+- Snapshot upload rewards
+- Genesis allocation
+
+### Phase 4: Layer 2 Networks 📋 (Planned)
+- VNS (Valid Name Service - domain registry)
+- VIPFS (Valid IPFS - content distribution)
+- KEVIN (Distributed AI inference)
+- L2 validator rewards
+
+### Phase 5: Community Governance 📋 (Future)
+- Merit-based voting (XP + wallet age, not token balance)
+- Development grants (mint-on-milestone)
+- Protocol parameter voting
+- No treasury, no foundation
+
+### Phase 6: Ecosystem Integration 📋 (Future)
+- Valid Browser (Brave fork with VLid integration)
+- P2P-to-earn browser extension
+- Valid Vault (password manager)
+- Mainnet launch
+
+## Hardware Requirements
+
+### MINIMUM - Developing Regions
+*Works, but not ideal*
+
+- **RAM:** 2 GB
+- **Disk:** 500 MB free
+- **Internet:** 10 Mbps down / 5 Mbps up
+- **Bandwidth:** 10 GB/month (uses 2.6-3.7 GB)
+
+### RECOMMENDED - Raspberry Pi Equivalent
+*Goldilocks zone, plenty of clearance*
+
+- **RAM:** 4 GB
+- **Disk:** 1 GB free
+- **Internet:** 50 Mbps down / 10 Mbps up
+- **Bandwidth:** No concern (<4 GB/month)
+
+### MODERN - Most PCs/Laptops
+*Overkill, tons of headroom*
+
+- **RAM:** 8 GB
+- **Disk:** 5 GB free
+- **Internet:** 100 Mbps down / 100 Mbps up
+- **Bandwidth:** Negligible
+
+## Quick Start
+
+### Prerequisites
+- Rust 1.70+ ([Install Rust](https://rustup.rs/))
+- 4GB RAM recommended
+- Internet connection
+
+### Build from Source
 ```bash
 git clone https://github.com/HiImRook/accessible-pos-chain.git
 cd accessible-pos-chain
 cargo build --release
 ```
 
-### 2. Create Config
+### Run a Validator
 ```bash
-cp config.example.toml config.toml
+# Generate validator keypair
+cargo run --bin keygen
+
+# Start validator node
+cargo run --release --bin validator -- \
+  --keys validator_keys.json \
+  --rpc 0.0.0.0:3000 \
+  --p2p 0.0.0.0:4000 \
+  --bootstrap /ip4/seed.validchain.io/tcp/4000
 ```
 
-Edit `config.toml` (see Configuration section below)
-
-### 3. Run Validator
+### Use the Wallet
 ```bash
-./target/release/pos-chain
+# Create wallet
+cargo run --bin wallet new
+
+# Check balance
+cargo run --bin wallet balance http://localhost:3000
+
+# Send transaction
+cargo run --bin wallet send <recipient> <amount> http://localhost:3000
 ```
-
-### 4. View Dashboard
-
-Open browser (Control + click): `http://localhost:3000/dashboard`
-
-You should see:
-- TPI consensus messages (`[TPI] Slot X: Selected validators: [...]`)
-- Consensus status (`Perfect consensus (3/3)`, `Two-of-three consensus`)
-- Block production every 10 seconds
-- Real-time metrics (memory, uptime, blocks produced)
-
-## Configuration (config.toml)
-```toml
-listen_addr = "0.0.0.0:8080"
-rpc_addr = "0.0.0.0:3000"
-bootstrap_nodes = []
-genesis_timestamp = 0
-
-[genesis]
-alice = 1000000
-bob = 500000
-
-[validators]
-validator_1 = 5000
-validator_2 = 3000
-validator_3 = 2000
-
-[pruning]
-enabled = true
-keep_blocks = 2160
-prune_interval = 1000
-prune_batch_size = 5000
-
-[snapshots]
-enabled = true
-epoch_size = 2160
-snapshot_dir = "./snapshots"
-keep_local_snapshots = 10
-arweave_upload = false
-
-[consensus.tpi]
-enabled = true
-validators_per_group = 3
-allow_two_of_two = true
-
-[consensus.timing]
-primary_window_seconds = 6
-buffer_seconds = 2
-racer_window_seconds = 2
-
-[consensus.racer]
-enabled = true
-pool_size = 10
-reward_multiplier = 5.0
-
-[rewards]
-block_produced = 10
-racer_save = 50
-tpi_verified = 5
-snapshot_uploaded = 25
-```
-
-## Architecture Overview
-
-### TPI Consensus Flow
-```
-Slot N starts (0ms)
-  ↓
-3 validators randomly selected (deterministic from slot hash)
-  ↓
-All 3 create block independently (0-6000ms TPI window)
-  ↓
-Compare block hashes:
-  - All match → Highest merit broadcasts ✓
-  - 2 of 3 match → Quarantine outlier, proceed ✓
-  - All different → TPI fails, trigger racer
-  ↓
-Buffer period (6000-8000ms) for global propagation
-  ↓
-If no block: Racer (fastest ranked validators) produces backup (8000-10000ms)
-  ↓
-Block finalized at 10000ms, next slot begins
-```
-
-### Core Components
-
-**src/tpi.rs**
-TPI validator selection, hash computation, consensus verification
-
-**src/tpi_production.rs**
-Async TPI block production flow with 6/2/2 timing
-
-**src/racer.rs**
-Backup validator selection and speed tracking
-
-**src/consensus.rs**
-Validator management and merit scoring
-
-**src/metrics.rs**
-Performance tracking (uptime, memory, block times)
-
-**src/rpc.rs**
-JSON-RPC API + WebSocket for dashboard
-
-**src/network.rs**
-TCP gossip protocol with framed messages and peer discovery
-
-**testing/index.html**
-Real-time dashboard (WebSocket connection)
-
-## JSON-RPC API
-
-**Endpoint:** `http://localhost:3000`
-
-### Available Methods
-
-#### get_state
-```bash
-curl http://localhost:3000/state
-```
-
-Returns complete chain state (accounts, blocks, validators)
-
-#### submit_transaction
-```bash
-curl -X POST http://localhost:3000/submit \
-  -H "Content-Type: application/json" \
-  -d '{
-    "from": "alice",
-    "from_pubkey": "02abc...",
-    "to": "bob",
-    "amount": 1000,
-    "signature": "a1b2c3..."
-  }'
-```
-
-#### Dashboard (WebSocket)
-
-Connect to `ws://localhost:3000/ws` for real-time metrics
-
-## Consensus Model
-
-### TPI (Three-Person Integrity) Consensus
-
-**Block Production:**
-- 3 validators randomly selected per slot (deterministic from slot hash)
-- All 3 create blocks independently with same transactions
-- Compare block hashes for consensus
-- Highest merit validator broadcasts if consensus achieved
-
-**Merit Scoring (W.I.P.):**
-- Blocks produced: +100 merit
-- TPI verification: +20 merit
-- Racer saves: +500 merit
-- Snapshot uploads: +200 merit
-- Merit decay: 1% per epoch (prevents eternal dominance)
-
-**Racer Backup:**
-- Activates if TPI fails to produce block
-- Top 10 fastest validators eligible
-- Deterministic selection (slot-based)
-- 5× reward multiplier for saves
-
-**Security Properties:**
-- Byzantine fault tolerance: 1 of 3 malicious tolerated
-- Fork prevention: 99.999% (0.00003% risk)
-- Network partition resilience via racer fallback
-- Automatic quarantine for mismatched validators
-
-## Performance
-
-**Block Time:** 10 seconds (consistent globally)
-**Memory Usage:** 17-33 MB per validator
-**Uptime:** 99.99% (TPI + racer combined)
-**Network Bandwidth:** <4 GB/month
-
-## Security Architecture
-
-### Current Security Features ✅
-
-**Supply Chain Hardening**
-Vendored dependencies, automated security audits via CI, pinned Rust toolchain for reproducible builds
-
-**TPI Consensus**
-Three validators verify each block before broadcast, detecting Byzantine faults and state corruption immediately
-
-**Framed Network Protocol**
-Length-prefixed TCP messages with size limits and timeouts prevent packet-split bugs and DoS attacks
-
-**Merit-Based Selection**
-Best-performing validators produce blocks, incentivizing reliability and uptime
-
-**Racer Backup**
-Fallback system ensures blocks are produced even during TPI failures or network partitions
-
-**Cryptographic Signatures (ed25519)**
-Every transaction verified before mempool acceptance
-
-**Config Validation**
-Startup validation prevents malformed configs and invalid genesis timestamps
-
-**Randomized Peer Selection**
-Prevents network isolation attacks
-
-**Randomized Transaction Ordering**
-Eliminates frontrunning opportunities
-
-### Security Roadmap
-
-**Phase 3: Snapshot TPI + Arweave**
-- 3-validator snapshot verification every 6 hours
-- Permanent storage on Arweave
-- Fast sync for new validators
-
-**Phase 3: Transaction Nonces**
-- Replay protection
-- Sequential transaction ordering per account
-
-**Phase 4: VRF Leader Selection**
-- Verifiable Random Functions for unpredictable validator selection
-- Enhanced protection against targeted attacks
-
-**Phase 5: Formal Security Audit**
-- Third-party cryptographic audit
-- Fuzzing and penetration testing
-
-## Development Roadmap
-
-### Phase 2 (Completed - v0.4.3) ✅
-- TPI consensus implementation
-- Merit-based broadcaster
-- Racer backup system
-- Real-time dashboard
-- Memory optimization
-- Supply chain security hardening
-- Enhanced observability
-
-### Phase 3 (In Progress)
-- Multi-validator testing (3-10 validators, 100+ validators)
-- Snapshot TPI verification
-- Arweave integration
-- Coordinator upload system
-- Transaction nonces
-
-### Phase 4 (Planned)
-- Public testnet
-- Transaction fees
-- Validator rewards distribution
-- Layer 2 networks (VNS, KEVIN, VIPFS)
-
-### Phase 5 (Future)
-- Community governance
-- Mainnet launch preparation
-
-### Phase 6 (Beyond)
-- Valid Browser integration
-- Valid Vault (local password manager)
-
-## Hardware Requirements
-
-### MINIMUM - Developing regions/experimental builds
-*Works, but not ideal*
-- RAM: 2 GB
-- Disk: 500 MB free
-- Internet: 10 Mbps down / 5 Mbps up
-- Bandwidth cap: 10 GB/month (will use 2.6-3.7 GB)
-
-### RECOMMENDED - Raspberry Pi or equivalent
-*Goldilocks zone, plenty of clearance*
-- RAM: 4 GB
-- Disk: 1 GB free
-- Internet: 50 Mbps down / 10 Mbps up
-- Bandwidth cap: No concern (<4 GB/month)
-
-### Modern Setup - Most PCs/Laptops of the last decade
-*Overkill, tons of headroom*
-- RAM: 8 GB
-- Disk: 5 GB free
-- Internet: 100 Mbps down / 100 Mbps up
-- Bandwidth cap: Negligible, no concern
-
-## Related Projects
-
-- **Valid Blockchain Wallet**: https://github.com/HiImRook/Valid-Blockchain-Wallet
-- **K.E.V.I.N. AI Agent**: https://github.com/HiImRook/K.E.V.I.N.
-- **NFT Assembler**: https://github.com/HiImRook/nft-assembler
-- **Valid Browser** (Brave fork): In development
 
 ## Token Economics (VLid)
 
-**Name:** VLid (Valid Blockchain native token)
-**Supply:** 33 billion (fixed)
-**Decimals:** 9
-**Distribution:** Validator rewards, ecosystem grants, P2P protocol incentives
-**Status:** Active development (Phase 2)
+**Supply Model:**
+- **Total Cap:** 33 billion VLid
+- **Timeline:** 21 years (3 epochs × 7 years)
+- **Decimals:** 9 (nanoVLid = 0.000000001 VLid)
+- **Genesis:** ~100K-300K VLid (minimal bootstrap)
+
+**Emission Schedule (Divide by 3 every 7 years):**
+```
+Year 0-7:   60% of supply (19.8B)
+Year 7-14:  30% of supply (9.9B)
+Year 14-21: 10% of supply (3.3B)
+```
+
+**Distribution Categories:**
+- **L1 Validators:** 15% (block production, TPI, snapshots)
+- **L2 Validators:** 20% (VNS, VIPFS, KEVIN coordination)
+- **P2P Hosters:** 40% (browser extension infrastructure)
+- **Development Grants:** 25% (merit-based, mint-on-milestone)
+
+**Philosophy:**
+- Tokens mint ONLY when work is proven
+- No pre-mine, no VC allocations
+- No treasury, no foundation
+- Merit-based governance (not token-weighted)
+
+## Architecture Highlights
+
+**Zero-Comment Code:**
+Self-documenting variable names eliminate need for comments. Complexity that requires explanation is complexity that should be eliminated.
+
+**In-Memory State:**
+Complete state management using HashMaps. No external database dependencies ensures sovereignty and auditability.
+
+**Vendored Dependencies:**
+All dependencies vendored for supply-chain security. No runtime surprises from upstream changes.
+
+**One Validator Per IP:**
+Anti-Sybil protection at network level. Decentralization through geographic distribution, not capital concentration.
+
+## Related Projects
+
+- **Valid Blockchain Wallet:** https://github.com/HiImRook/Valid-Blockchain-Wallet
+- **K.E.V.I.N. AI Agent:** https://github.com/HiImRook/K.E.V.I.N.
+- **NFT Assembler:** https://github.com/HiImRook/nft-assembler
+- **Valid Browser:** (Brave fork) - In development
 
 ## Contributing
 
-Contributions welcome! This project maintains a compact, readable codebase.
+Contributions welcome! This project maintains a compact, readable codebase with strict architectural principles.
 
 **High Priority:**
 - Multi-validator testing and optimization
-- Snapshot system testing
-- Network robustness improvements
+- Snapshot system stress testing
+- Network partition recovery
 - Comprehensive test coverage
+- Tokenomics implementation (v0.5.0)
 
 **Guidelines:**
-- Open issue for large changes
+- Open issue for large changes first
 - Include tests with all PRs
-- Follow existing code style (zero comments, self-documenting)
+- Follow existing code style:
+  - Zero comments (self-documenting names)
+  - In-memory state management (Maps/HashMaps)
+  - Constants in SCREAMING_SNAKE_CASE
+  - Complete file implementations (no fragments)
+
+**Code Review Philosophy:**
+Only change what's absolutely necessary. Preserve established patterns even if they appear inefficient. Ask permission before optimizations.
+
+## Security
+
+**Vulnerability Reporting:**
+Report security issues via GitHub Security Advisories or direct message on Discord.
+
+**Supply Chain:**
+All dependencies vendored. CI runs `cargo audit` on every commit. GPG-signed commits recommended.
+
+**Audit Status:**
+Pre-mainnet. Community audits welcome. Professional audit planned before mainnet launch.
 
 ## License
 
@@ -361,6 +231,11 @@ Copyright (c) 2024-2026 Rook
 
 ## Acknowledgements
 
-Built and maintained by Rook. Questions or inquiries welcome via GitHub issues, or
+Built and maintained by Rook.
 
-- **Join the Discord**: https://discord.gg/2SP383cJs9
+Questions or inquiries welcome via GitHub issues, or:
+- **Join the Discord:** https://discord.gg/2SP383cJs9
+
+---
+
+**"Valid, empowering Communities with Sovereign, Decentralized, and Accessible In-Memory Tools, Fostering Freedom and Transparency Through Open-Source Self-Reliance."**
