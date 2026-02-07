@@ -211,7 +211,7 @@ Features are documented **after** implementation to prevent roadmap drift.
 Valid Blockchain is currently in solo development by @HiImRook.
 
 For questions or feedback:
-- Join the Discord: 
+- Join the Discord: https://discord.gg/2SP383cJs9
 
 ---
 
