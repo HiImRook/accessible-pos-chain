@@ -1,6 +1,6 @@
 # Valid Blockchain - Development Roadmap
 
-**Current Version:** v0.4.6
+**Current Version:** v0.4.8
 **Status:** Pre-release (Testnet development)
 
 ---
@@ -74,7 +74,7 @@ Features are documented **after** implementation to prevent roadmap drift.
   - Testnet bootstrap strategy
 
 #### Status:
-- Token foundation complete (v0.4.5)
+- Token foundation complete (v0.4.8)
 - Minting logic: In progress
 - Genesis strategy: Design phase
 
@@ -221,4 +221,4 @@ MIT License - See LICENSE file for details
 
 ---
 
-**Last Updated:** February 6, 2026
+**Last Updated:** February 7, 2026
