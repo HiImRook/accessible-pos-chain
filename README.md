@@ -22,7 +22,7 @@ A lightweight proof-of-stake blockchain focused on accessibility, decentralizati
 - Built-in metrics dashboard
 - Vendored dependencies for supply-chain security
 
-## Current Status: v0.4.5
+## Current Status: v0.4.6
 
 **Completed:**
 - ✅ TPI consensus with merit-based selection
@@ -166,21 +166,20 @@ Year 14-21: 10% of supply (3.3B)
 - Tokens mint ONLY when work is proven
 - No pre-mine, no VC allocations
 - No treasury, no foundation
-- Merit-based governance (not token-weighted)
+- Merit-based governance (not token-weighted, anti-whale)
 
 ## Architecture Highlights
 
 **Zero-Comment Code:**
-Self-documenting variable names eliminate need for comments. Complexity that requires explanation is complexity that should be eliminated.
-
+Self-documenting variable names eliminate need for comments. Complexity that requires explanation is unnecessary and just an extra layer of work.
 **In-Memory State:**
 Complete state management using HashMaps. No external database dependencies ensures sovereignty and auditability.
 
 **Vendored Dependencies:**
-All dependencies vendored for supply-chain security. No runtime surprises from upstream changes.
+All dependencies vendored for supply-chain security. This is a necessity for rust projcts.
 
 **One Validator Per IP:**
-Anti-Sybil protection at network level. Decentralization through geographic distribution, not capital concentration.
+Anti-Sybil protection at network level. This provides decentralization through geographic distribution.
 
 ## Related Projects
 
