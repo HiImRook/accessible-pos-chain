@@ -22,7 +22,7 @@ A lightweight proof-of-stake blockchain focused on accessibility, decentralizati
 - Built-in metrics dashboard
 - Vendored dependencies for supply-chain security
 
-## Current Status: v0.4.6
+## Current Status: v0.4.8
 
 **Completed:**
 - ✅ TPI consensus with merit-based selection
@@ -32,6 +32,8 @@ A lightweight proof-of-stake blockchain focused on accessibility, decentralizati
 - ✅ RPC server with WebSocket support
 - ✅ Wallet CLI
 - ✅ Token foundation (supply tracking, epoch calculations)
+- ✅ Mempool duplicate detection and size limits
+- ✅ Block hash security hardening
 
 **In Development:**
 - 🔄 v0.5.0: Tokenomics implementation (block rewards, validator minting)
@@ -49,7 +51,8 @@ A lightweight proof-of-stake blockchain focused on accessibility, decentralizati
 - Merit-based validator selection
 - Racer backup system
 - Snapshot system
-- **Current:** Token foundation prep (nonces, fees, supply tracking)
+- Token foundation prep (nonces, fees, supply tracking)
+- Mempool security hardening (duplicate detection, size limits)
 
 ### Phase 3: Tokenomics 🔄 (Active Development)
 - Block reward minting (80.6 VLid/block in Epoch 1)
