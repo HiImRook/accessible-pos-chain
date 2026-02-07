@@ -82,7 +82,40 @@ Features are documented **after** implementation to prevent roadmap drift.
 
 ## Upcoming Releases
 
-### v0.6.0 - Memory & State Management (Target: Q2 2026)
+### v0.5.0 - Tokenomics (Target: Q2 2026)
+
+**Scope:** VLid token economics implementation
+
+#### Features:
+- **Block reward minting**
+  - Epoch-based decay (÷3 every 7 years)
+  - 80.6 VLid/block → 26.9 VLid → 8.96 VLid
+- **TPI participation rewards**
+  - 4.5 VLid per validator per slot
+- **Racer save rewards**
+  - 3,365 VLid per emergency activation
+- **Snapshot upload rewards**
+  - Amount TBD (placeholder calculations for budget planning)
+- **Total supply enforcement**
+  - 33B VLid hard cap
+  - Epoch budget tracking
+- **Genesis allocation**
+  - Initial validator distribution
+  - Early supporter rewards
+  - Testnet bootstrap strategy
+- **Mempool improvements**
+  - Duplicate transaction detection
+  - Basic spam protection
+
+#### Status:
+- Token foundation complete (v0.4.5)
+- Fee distribution simplified (v0.4.7)
+- Minting logic: In progress
+- Genesis strategy: Design phase
+
+---
+
+### v0.6.0 - Memory & State Management (Target: Q3 2026)
 
 **Scope:** Production-ready state management with in-memory sovereignty
 
@@ -103,7 +136,7 @@ Features are documented **after** implementation to prevent roadmap drift.
 
 ---
 
-### v0.7.0 - Validator Economics & SPO (Target: Q3 2026)
+### v0.7.0 - Validator Economics & SPO (Target: Q4 2026)
 
 **Scope:** Stake Pool Operator (SPO) model
 
@@ -158,7 +191,7 @@ Features are documented **after** implementation to prevent roadmap drift.
 - VIPFS (Valid IPFS)
   - Content distribution network
 - KEVIN (Distributed AI)
-  - AI inference marketplace
+  - AI database cernter alternative
 
 ---
 
@@ -169,7 +202,7 @@ Features are documented **after** implementation to prevent roadmap drift.
 ⚠️ **No state persistence:** Node restart = chain loss
 ⚠️ **Placeholder SPO logic:** Fee distribution incomplete
 
-**These are intentional staging decisions, not bugs.**
+**These are intentional staging decisions, not bugs, oversights, or knowledge gaps.**
 
 ---
 

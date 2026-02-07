@@ -1,5 +1,5 @@
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use sha2::{Sha256, Digest};
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -103,11 +103,7 @@ impl ChainState {
             self.accounts.insert(tx.from.clone(), from_balance - tx.amount - tx.fee);
             *self.accounts.entry(tx.to.clone()).or_insert(0) += tx.amount;
 
-            if let Some(validator) = self.delegations.get(&tx.from) {
-                *self.accounts.entry(validator.clone()).or_insert(0) += tx.fee;
-            } else {
-                *self.accounts.entry(block.producer.clone()).or_insert(0) += tx.fee;
-            }
+            *self.accounts.entry(block.producer.clone()).or_insert(0) += tx.fee;
 
             self.nonces.insert(tx.from.clone(), expected_nonce + 1);
         }
@@ -131,16 +127,23 @@ impl ChainState {
 
 pub struct Mempool {
     transactions: Vec<Transaction>,
+    seen_hashes: HashSet<String>,
 }
 
 impl Mempool {
     pub fn new() -> Self {
         Mempool {
             transactions: Vec::new(),
+            seen_hashes: HashSet::new(),
         }
     }
 
     pub fn add(&mut self, tx: Transaction) {
+        let tx_hash = compute_tx_hash(&tx);
+        if self.seen_hashes.contains(&tx_hash) {
+            return;
+        }
+        self.seen_hashes.insert(tx_hash);
         self.transactions.push(tx);
     }
 
@@ -151,6 +154,12 @@ impl Mempool {
     pub fn get_pending(&mut self, max: usize) -> Vec<Transaction> {
         let count = max.min(self.transactions.len());
         let mut txs = self.transactions.drain(..count).collect::<Vec<_>>();
+        
+        for tx in &txs {
+            let tx_hash = compute_tx_hash(tx);
+            self.seen_hashes.remove(&tx_hash);
+        }
+        
         txs.sort_by_cached_key(|tx| {
             let mut hasher = Sha256::new();
             hasher.update(tx.from.as_bytes());
@@ -164,6 +173,17 @@ impl Mempool {
     pub fn len(&self) -> usize {
         self.transactions.len()
     }
+}
+
+fn compute_tx_hash(tx: &Transaction) -> String {
+    let mut hasher = Sha256::new();
+    hasher.update(tx.from.as_bytes());
+    hasher.update(tx.to.as_bytes());
+    hasher.update(tx.amount.to_le_bytes());
+    hasher.update(tx.nonce.to_le_bytes());
+    hasher.update(tx.fee.to_le_bytes());
+    hasher.update(tx.signature.as_bytes());
+    format!("{:x}", hasher.finalize())
 }
 
 pub fn generate_peer_id(addr: &str) -> String {
