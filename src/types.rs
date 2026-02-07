@@ -2,6 +2,8 @@ use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
 use sha2::{Sha256, Digest};
 
+const MAX_MEMPOOL_SIZE: usize = 10_000;
+
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Block {
     pub slot: u64,
@@ -138,13 +140,17 @@ impl Mempool {
         }
     }
 
-    pub fn add(&mut self, tx: Transaction) {
+    pub fn add(&mut self, tx: Transaction) -> bool {
+        if self.transactions.len() >= MAX_MEMPOOL_SIZE {
+            return false;
+        }
         let tx_hash = compute_tx_hash(&tx);
         if self.seen_hashes.contains(&tx_hash) {
-            return;
+            return false;
         }
         self.seen_hashes.insert(tx_hash);
         self.transactions.push(tx);
+        true
     }
 
     pub fn add_transaction(&mut self, tx: Transaction) {
@@ -154,12 +160,12 @@ impl Mempool {
     pub fn get_pending(&mut self, max: usize) -> Vec<Transaction> {
         let count = max.min(self.transactions.len());
         let mut txs = self.transactions.drain(..count).collect::<Vec<_>>();
-        
+
         for tx in &txs {
             let tx_hash = compute_tx_hash(tx);
             self.seen_hashes.remove(&tx_hash);
         }
-        
+
         txs.sort_by_cached_key(|tx| {
             let mut hasher = Sha256::new();
             hasher.update(tx.from.as_bytes());

@@ -5,6 +5,19 @@ All notable changes to Valid Blockchain will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.8] - 2026-02-07
+
+### Fixed
+- Block hash now includes transaction nonce and fee fields (security fix)
+- Added mempool size limit (10,000 transactions max to prevent memory exhaustion)
+
+### Security
+- Fixed block hash collision vulnerability where blocks with identical transactions but different nonces/fees would hash identically
+
+### Notes
+- Critical security fixes recommended by audit
+- Foundation hardening for v0.5.0 tokenomics
+
 ## [0.4.7] - 2026-02-07
 
 ### Changed
