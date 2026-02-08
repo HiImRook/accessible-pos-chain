@@ -82,9 +82,9 @@ Features are documented **after** implementation to prevent roadmap drift.
 
 ## Upcoming Releases
 
-### v0.5.0 - Tokenomics (Target: Q2 2026)
+### v0.5.0 - Tokenomics & Testing (Target: Q2 2026)
 
-**Scope:** VLid token economics implementation
+**Scope:** VLid token economics implementation with comprehensive test coverage
 
 #### Features:
 - **Block reward minting**
@@ -103,21 +103,28 @@ Features are documented **after** implementation to prevent roadmap drift.
   - Initial validator distribution
   - Early supporter rewards
   - Testnet bootstrap strategy
-- **Mempool improvements**
-  - Duplicate transaction detection
-  - Basic spam protection
+- **Fee priority ordering**
+  - High-fee transactions processed first
+  - Economic incentives for users
+- **Comprehensive test suite**
+  - Unit tests for mempool behavior
+  - TPI consensus scenario tests (3/3, 2/3, 2/2)
+  - Transaction validation tests
+  - Tokenomics function tests (minting, caps, rewards)
+  - Target coverage: 70%+
 
 #### Status:
-- Token foundation complete (v0.4.5)
+- Token foundation complete (v0.4.5-v0.4.8)
 - Fee distribution simplified (v0.4.7)
-- Minting logic: In progress
-- Genesis strategy: Design phase
+- Security hardening complete (v0.4.8)
+- Minting logic: Design phase
+- Test framework: Planning phase
 
 ---
 
-### v0.6.0 - Memory & State Management (Target: Q3 2026)
+### v0.6.0 - State Management & Error Handling (Target: Q3 2026)
 
-**Scope:** Production-ready state management with in-memory sovereignty
+**Scope:** Production-ready state management with proper error handling
 
 #### Features:
 - **Pruning system**
@@ -130,15 +137,23 @@ Features are documented **after** implementation to prevent roadmap drift.
 - **State sync protocol**
   - Download snapshots from peers
   - Verify via merkle proofs
+- **Error handling refactor**
+  - Replace `.unwrap()` with `Result<T, E>`
+  - Graceful failure modes
+  - Proper error propagation
+- **Integration tests**
+  - Full validator workflow tests
+  - State recovery scenarios
+  - Network partition handling
 
 #### Dependencies:
 - Requires v0.5.0 tokenomics (supply tracking)
 
 ---
 
-### v0.7.0 - Validator Economics & SPO (Target: Q4 2026)
+### v0.7.0 - Validator Economics & Network Security (Target: Q4 2026)
 
-**Scope:** Stake Pool Operator (SPO) model
+**Scope:** Stake Pool Operator (SPO) model with production network security
 
 #### Features:
 - **SPO delegation system**
@@ -153,6 +168,13 @@ Features are documented **after** implementation to prevent roadmap drift.
 - **Validator slashing**
   - Penalties for TPI consensus failures
   - Economic security enforcement
+- **Network security hardening**
+  - TLS encryption for P2P connections
+  - Authentication beyond IP address
+  - Per-peer rate limiting
+- **Type safety improvements**
+  - Refactor String hashes to [u8; 32] (breaking change)
+  - Address type wrappers
 
 #### Dependencies:
 - Requires v0.5.0 tokenomics (fees have value)
