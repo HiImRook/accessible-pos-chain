@@ -36,7 +36,7 @@ A lightweight proof-of-stake blockchain focused on accessibility, decentralizati
 - ✅ Block hash security hardening
 
 **In Development:**
-- 🔄 v0.5.0: Tokenomics implementation (block rewards, validator minting)
+- 🔄 v0.5.0: Tokenomics & Testing (block rewards, validator minting, comprehensive test suite)
 - 🔄 Layer 2 networks (VNS, VIPFS, KEVIN)
 
 ## Development Phases
@@ -54,30 +54,38 @@ A lightweight proof-of-stake blockchain focused on accessibility, decentralizati
 - Token foundation prep (nonces, fees, supply tracking)
 - Mempool security hardening (duplicate detection, size limits)
 
-### Phase 3: Tokenomics 🔄 (Active Development)
-- Block reward minting (80.6 VLid/block in Epoch 1)
-- TPI participation rewards
-- Racer save bonuses
-- Snapshot upload rewards
-- Genesis allocation
+Phase 3: Tokenomics & Testing 🔄 (Active Development - v0.5.0)
+* Block reward minting (80.6 VLid/block in Epoch 1)
+* TPI participation rewards
+* Racer save bonuses
+* Snapshot upload rewards
+* Genesis allocation
+* Fee priority ordering
+* Comprehensive test suite (70%+ coverage target)
 
-### Phase 4: Layer 2 Networks 📋 (Planned)
-- VNS (Valid Name Service - domain registry)
-- VIPFS (Valid IPFS - content distribution)
-- KEVIN (Distributed AI inference)
-- L2 validator rewards
+Phase 4: State Management 📋 (Planned - v0.6.0)
+* Memory pruning (2,160 block retention)
+* Snapshot system for recovery
+* Error handling refactor
+* Integration testing
 
-### Phase 5: Community Governance 📋 (Future)
-- Merit-based voting (XP + wallet age, not token balance)
-- Development grants (mint-on-milestone)
-- Protocol parameter voting
-- No treasury, no foundation
+Phase 5: Network Security & SPO 📋 (Planned - v0.7.0)
+* Stake Pool Operator (SPO) delegation
+* TLS encryption for P2P
+* Authentication and rate limiting
+* Type safety improvements
 
-### Phase 6: Ecosystem Integration 📋 (Future)
-- Valid Browser (Brave fork with VLid integration)
-- P2P-to-earn browser extension
-- Valid Vault (password manager)
-- Mainnet launch
+Phase 6: Layer 2 Networks 📋 (Future - v0.8.0+)
+* VNS (Valid Name Service - domain registry)
+* VIPFS (Valid IPFS - content distribution)
+* KEVIN (Distributed AI inference)
+* L2 validator rewards
+
+Phase 7: Community Governance 📋 (Future)
+* Merit-based voting (XP + wallet age, not token balance)
+* Development grants (mint-on-milestone)
+* Protocol parameter voting
+* No treasury, no foundation needed
 
 ## Hardware Requirements
 
