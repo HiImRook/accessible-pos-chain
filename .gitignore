@@ -1,7 +1,48 @@
+# Rust build artifacts
 /target/
+**/*.rs.bk
+
+# Secrets - NEVER COMMIT
 /config.toml
 wallet.json
+validator.json
+genesis.json
+*.key
+*.pem
+*.seed
+
+# State data
 blockchain.snapshot
+blockchain.db
+*.sqlite
+*.sqlite-*
+state.json
+
+# Logs
+*.log
 blockchain.log
+
+# Vendored dependencies
 /vendor/
-.cargo/
+.cargo/config.toml
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Test artifacts
+*.profraw
+*.profdata
+/coverage/
+
+# Environment
+.env
+.env.local
