@@ -1,5 +1,5 @@
-pub const TOTAL_SUPPLY: u64 = 33_000_000_000_000;
-pub const DECIMALS: u8 = 6;
+pub const TOTAL_SUPPLY: u64 = 33_000_000_000_000_000;
+pub const DECIMALS: u8 = 9;
 pub const TOKEN_SYMBOL: &str = "VLid";
 pub const TOKEN_NAME: &str = "Valid";
 
@@ -48,14 +48,14 @@ pub fn calculate_epoch_rewards(epoch: usize) -> EpochRewards {
     EpochRewards {
         block_reward: block_budget / blocks_per_epoch,
         tpi_reward_per_validator: tpi_budget / (blocks_per_epoch * 3),
-        racer_reward: racer_budget / (blocks_per_epoch / 100),
-        snapshot_reward: snapshot_budget / 365,
+        racer_reward: (racer_budget / blocks_per_epoch) * 100,
+        snapshot_reward: snapshot_budget / blocks_per_epoch,
     }
 }
 
-pub fn format_vlid(micro_vlid: u64) -> String {
-    let vlid = micro_vlid as f64 / 1_000_000.0;
-    format!("{:.6} VLid", vlid)
+pub fn format_vlid(nano_vlid: u64) -> String {
+    let vlid = nano_vlid as f64 / 1_000_000_000.0;
+    format!("{:.9} VLid", vlid)
 }
 
 #[cfg(test)]
@@ -73,6 +73,8 @@ mod tests {
         assert!(rewards.block_reward > 0);
         println!("Epoch 0 block reward: {} ({})", rewards.block_reward, format_vlid(rewards.block_reward));
         println!("Epoch 0 TPI reward: {} ({})", rewards.tpi_reward_per_validator, format_vlid(rewards.tpi_reward_per_validator));
+        println!("Epoch 0 Racer reward: {} ({})", rewards.racer_reward, format_vlid(rewards.racer_reward));
+        println!("Epoch 0 Snapshot reward: {} ({})", rewards.snapshot_reward, format_vlid(rewards.snapshot_reward));
     }
 
     #[test]
@@ -94,5 +96,21 @@ mod tests {
             assert!(rewards.block_reward > 0, "Epoch {} block reward is zero", epoch);
             println!("Epoch {}: block={}", epoch, format_vlid(rewards.block_reward));
         }
+    }
+
+    #[test]
+    fn test_epoch_decay() {
+        let epoch0 = calculate_epoch_rewards(0);
+        let epoch1 = calculate_epoch_rewards(1);
+        let epoch2 = calculate_epoch_rewards(2);
+
+        assert!(epoch1.block_reward < epoch0.block_reward);
+        assert!(epoch2.block_reward < epoch1.block_reward);
+        
+        let ratio1 = epoch1.block_reward as f64 / epoch0.block_reward as f64;
+        let ratio2 = epoch2.block_reward as f64 / epoch1.block_reward as f64;
+        
+        assert!((ratio1 - 0.5).abs() < 0.01, "Epoch 1 should be ~50% of Epoch 0");
+        assert!((ratio2 - 0.333).abs() < 0.01, "Epoch 2 should be ~33% of Epoch 1");
     }
 }
