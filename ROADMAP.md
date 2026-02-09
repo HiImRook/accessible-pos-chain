@@ -51,37 +51,6 @@ Features are documented **after** implementation to prevent roadmap drift.
 
 ## Current Priorities
 
-### v0.5.0 - Tokenomics (Target: Q1 2026)
-
-**Scope:** VLid token economics implementation
-
-#### Features:
-- **Block reward minting**
-  - Epoch-based decay (÷3 every 7 years)
-  - 80.6 VLid/block → 26.9 VLid → 8.96 VLid
-- **TPI participation rewards**
-  - 4.5 VLid per validator per slot
-- **Racer save rewards**
-  - 3,365 VLid per emergency activation
-- **Snapshot upload rewards**
-  - Amount TBD (placeholder calculations for budget planning)
-- **Total supply enforcement**
-  - 33B VLid hard cap
-  - Epoch budget tracking
-- **Genesis allocation**
-  - Initial validator distribution
-  - Early supporter rewards
-  - Testnet bootstrap strategy
-
-#### Status:
-- Token foundation complete (v0.4.8)
-- Minting logic: In progress
-- Genesis strategy: Design phase
-
----
-
-## Upcoming Releases
-
 ### v0.5.0 - Tokenomics & Testing (Target: Q2 2026)
 
 **Scope:** VLid token economics implementation with comprehensive test coverage
@@ -89,15 +58,17 @@ Features are documented **after** implementation to prevent roadmap drift.
 #### Features:
 - **Block reward minting**
   - Epoch-based decay (÷3 every 7 years)
-  - 80.6 VLid/block → 26.9 VLid → 8.96 VLid
+  - 0.0808 VLid/block → 0.0269 VLid → 0.0090 VLid
 - **TPI participation rewards**
-  - 4.5 VLid per validator per slot
+  - 0.0045 VLid per validator per slot (Epoch 0)
+  - 0.0015 VLid → 0.0005 VLid (subsequent epochs)
 - **Racer save rewards**
-  - 3,365 VLid per emergency activation
+  - 0.00337 VLid per emergency activation (Epoch 0)
+  - Decays ÷3 each epoch
 - **Snapshot upload rewards**
   - Amount TBD (placeholder calculations for budget planning)
 - **Total supply enforcement**
-  - 33B VLid hard cap
+  - 33M VLid hard cap
   - Epoch budget tracking
 - **Genesis allocation**
   - Initial validator distribution
@@ -121,6 +92,8 @@ Features are documented **after** implementation to prevent roadmap drift.
 - Test framework: Planning phase
 
 ---
+
+## Upcoming Releases
 
 ### v0.6.0 - State Management & Error Handling (Target: Q3 2026)
 
