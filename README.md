@@ -11,7 +11,7 @@ A lightweight proof-of-stake blockchain focused on accessibility, decentralizati
 - 10-second block times with sub-second finality
 
 **Token Economics:**
-- 33 billion VLid supply over 21 years
+- 33 million VLid supply over 21 years
 - Proof-of-work minting (tokens mint when work is proven)
 - Nonce-based replay protection
 - Ultra-low transaction fees with SPO delegation
@@ -55,7 +55,7 @@ A lightweight proof-of-stake blockchain focused on accessibility, decentralizati
 - Mempool security hardening (duplicate detection, size limits)
 
 Phase 3: Tokenomics & Testing 🔄 (Active Development - v0.5.0)
-* Block reward minting (80.6 VLid/block in Epoch 1)
+* Block reward minting (0.080816 VLid/block in Epoch 1)
 * TPI participation rewards
 * Racer save bonuses
 * Snapshot upload rewards
@@ -89,7 +89,7 @@ Phase 7: Community Governance 📋 (Future)
 
 ## Hardware Requirements
 
-### MINIMUM - Developing Regions
+### MINIMUM - Developing Regions/Experimental Builds
 *Works, but not ideal*
 
 - **RAM:** 2 GB
@@ -155,10 +155,10 @@ cargo run --bin wallet send <recipient> <amount> http://localhost:3000
 ## Token Economics (VLid)
 
 **Supply Model:**
-- **Total Cap:** 33 billion VLid
+- **Total Cap:** 33 million VLid
 - **Timeline:** 21 years (3 epochs × 7 years)
 - **Decimals:** 9 (nanoVLid = 0.000000001 VLid)
-- **Genesis:** ~100K-300K VLid (minimal bootstrap)
+- **Genesis:** ~33,000 VLid (minimal bootstrap)
 
 **Emission Schedule (Divide by 3 every 7 years):**
 ```
@@ -187,7 +187,7 @@ Self-documenting variable names eliminate need for comments. Complexity that req
 Complete state management using HashMaps. No external database dependencies ensures sovereignty and auditability.
 
 **Vendored Dependencies:**
-All dependencies vendored for supply-chain security. This is a necessity for rust projcts.
+All dependencies vendored for supply-chain security.
 
 **One Validator Per IP:**
 Anti-Sybil protection at network level. This provides decentralization through geographic distribution.
