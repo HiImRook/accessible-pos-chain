@@ -5,6 +5,43 @@ All notable changes to Valid Blockchain will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.0-alpha1] - 2026-02-11
+
+### Added
+- **Tokenomics foundation**
+  - Total supply: 33M VLid (33 quadrillion nano-VLid, 9 decimals)
+  - Epoch structure: 3 epochs × 7 years (60%/30%/10% decay)
+  - Reward calculations: Block (0.0808 VLid), TPI (0.0045 VLid), Racer, Snapshot
+  - Genesis allocation: 33K VLid (0.1% of supply)
+- **Comprehensive test suite (18 tests, 30-35% coverage)**
+  - Mempool tests: duplicate detection, size limits, retrieval (4 tests)
+  - TPI consensus tests: all scenarios (6 tests)
+  - Tokenomics tests: supply validation, decay, percentages (8 tests)
+- **Test infrastructure**
+  - Created `tests/` directory with organized test files
+  - Test helper functions for transaction and TPI message creation
+
+### Fixed
+- Removed duplicate `compute_block_hash()` function (critical consensus bug)
+- Block hash now uses single source of truth from `src/tpi.rs`
+
+### Changed
+- Named constants (`MAX_BLOCK_WAIT_ATTEMPTS`, `BLOCK_POLL_INTERVAL_MS`)
+- Tokenomics uses 9 decimals (nano-VLid) for precision
+
+### Security
+- Fixed consensus vulnerability where duplicate hash function was missing nonce/fee
+- Mempool size limit enforced (10,000 transactions max)
+
+### Documentation
+- Added `docs/genesis_allocations.md` (33K VLid distribution strategy)
+- Updated ROADMAP.md with v0.5.0 testing scope
+
+### Notes
+- **Alpha status:** Tokenomics defined but minting not yet implemented
+- Block reward minting coming in v0.5.0-beta
+- Target: 70% test coverage for v0.5.0 final
+
 ## [0.4.8] - 2026-02-07
 
 ### Fixed

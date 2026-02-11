@@ -22,22 +22,23 @@ A lightweight proof-of-stake blockchain focused on accessibility, decentralizati
 - Built-in metrics dashboard
 - Vendored dependencies for supply-chain security
 
-## Current Status: v0.4.8
+## Current Status: v0.5.0-alpha1
 
 **Completed:**
-- ✅ TPI consensus with merit-based selection
-- ✅ Transaction nonces and fee structure
-- ✅ Racer backup system
-- ✅ Snapshot archival (Arweave)
-- ✅ RPC server with WebSocket support
-- ✅ Wallet CLI
-- ✅ Token foundation (supply tracking, epoch calculations)
-- ✅ Mempool duplicate detection and size limits
-- ✅ Block hash security hardening
+* ✅ TPI consensus with merit-based selection
+* ✅ Transaction nonces and fee structure
+* ✅ Racer backup system
+* ✅ Snapshot archival (Arweave)
+* ✅ RPC server with WebSocket support
+* ✅ Wallet CLI
+* ✅ Token foundation (supply tracking, epoch calculations)
+* ✅ Mempool duplicate detection and size limits
+* ✅ Block hash security hardening
+* ✅ Comprehensive test suite (18 tests, 30-35% coverage)
 
 **In Development:**
-- 🔄 v0.5.0: Tokenomics & Testing (block rewards, validator minting, comprehensive test suite)
-- 🔄 Layer 2 networks (VNS, VIPFS, KEVIN)
+* 🔄 v0.5.0: Tokenomics & Testing (block rewards, validator minting, comprehensive test suite)
+* 🔄 Layer 2 networks (VNS, VIPFS, KEVIN)
 
 ## Development Phases
 
