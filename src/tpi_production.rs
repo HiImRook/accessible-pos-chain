@@ -6,7 +6,9 @@ use std::sync::Arc;
 use tokio::time::{timeout, Duration, sleep};
 use tokio::sync::{mpsc, Mutex, RwLock};
 use std::collections::HashMap;
-use sha2::{Sha256, Digest};
+
+const MAX_BLOCK_WAIT_ATTEMPTS: usize = 80;
+const BLOCK_POLL_INTERVAL_MS: u64 = 100;
 
 pub async fn produce_block_with_tpi(
     slot: u64,
@@ -230,26 +232,9 @@ async fn create_block(
     block
 }
 
-fn compute_block_hash(block: &Block) -> String {
-    let mut hasher = Sha256::new();
-    hasher.update(block.slot.to_le_bytes());
-    hasher.update(block.parent_hash.as_bytes());
-    hasher.update(block.producer.as_bytes());
-    hasher.update(block.timestamp.to_le_bytes());
-    for tx in &block.transactions {
-        hasher.update(tx.from.as_bytes());
-        hasher.update(tx.from_pubkey.as_bytes());
-        hasher.update(tx.to.as_bytes());
-        hasher.update(tx.amount.to_le_bytes());
-        hasher.update(tx.signature.as_bytes());
-    }
-    let result = hasher.finalize();
-    hex::encode(result)
-}
-
 async fn wait_for_block(slot: u64, state: Arc<RwLock<ChainState>>) -> Option<Block> {
-    for _ in 0..80 {
-        sleep(Duration::from_millis(100)).await;
+    for _ in 0..MAX_BLOCK_WAIT_ATTEMPTS {
+        sleep(Duration::from_millis(BLOCK_POLL_INTERVAL_MS)).await;
 
         let s = state.read().await;
         if let Some(block) = s.blocks.get(&slot) {
