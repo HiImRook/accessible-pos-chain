@@ -5,6 +5,36 @@ All notable changes to Valid Blockchain will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.0-beta1] - 2026-02-11
+
+### Added
+- **Block reward minting implementation**
+  - Validators earn 0.0808 VLid per block (Epoch 0)
+  - Automatic minting on block acceptance
+  - Epoch-based reward calculation using block.slot
+  - Supply cap enforcement (33M VLid hard limit)
+- **Minting test suite (7 tests)**
+  - Block reward validation
+  - Supply cap enforcement testing
+  - Multi-block supply tracking
+  - Epoch transition verification
+  - Different validators earning independently
+  - Minting stops at supply cap
+
+### Fixed
+- Epoch calculation now uses `block.slot` instead of `latest_slot`
+  - Prevents epoch mismatch when blocks arrive out of order
+  - Ensures correct reward calculation for all blocks
+
+### Changed
+- Test coverage increased from 30% to 40% (31 tests total)
+- ChainState now mints rewards in `add_block()`
+
+### Notes
+- Genesis allocation not yet implemented (coming in v0.5.0-rc)
+- Fee priority ordering not yet implemented (coming in v0.5.0-rc)
+- Target: 70% test coverage for v0.5.0 final
+
 ## [0.5.0-alpha1] - 2026-02-11
 
 ### Added
