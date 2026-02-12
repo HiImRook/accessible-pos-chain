@@ -22,23 +22,25 @@ A lightweight proof-of-stake blockchain focused on accessibility, decentralizati
 - Built-in metrics dashboard
 - Vendored dependencies for supply-chain security
 
-## Current Status: v0.5.0-alpha1
+## Current Status: v0.5.0-beta1
 
 **Completed:**
-* ✅ TPI consensus with merit-based selection
-* ✅ Transaction nonces and fee structure
-* ✅ Racer backup system
-* ✅ Snapshot archival (Arweave)
-* ✅ RPC server with WebSocket support
-* ✅ Wallet CLI
-* ✅ Token foundation (supply tracking, epoch calculations)
-* ✅ Mempool duplicate detection and size limits
-* ✅ Block hash security hardening
-* ✅ Comprehensive test suite (18 tests, 30-35% coverage)
+- ✅ TPI consensus with merit-based selection
+- ✅ Transaction nonces and fee structure
+- ✅ Racer backup system
+- ✅ Snapshot archival (Arweave)
+- ✅ RPC server with WebSocket support
+- ✅ Wallet CLI
+- ✅ Token foundation (supply tracking, epoch calculations)
+- ✅ Mempool duplicate detection and size limits
+- ✅ Block hash security hardening
+- ✅ Block reward minting (validators earn 0.0808 VLid/block)
+- ✅ Supply cap enforcement (33M VLid hard limit)
+- ✅ Comprehensive test suite (31 tests, 40% coverage)
 
 **In Development:**
-* 🔄 v0.5.0: Tokenomics & Testing (block rewards, validator minting, comprehensive test suite)
-* 🔄 Layer 2 networks (VNS, VIPFS, KEVIN)
+- 🔄 v0.5.0-rc: Genesis allocation, fee priority ordering, additional tests (target: 70% coverage)
+- 🔄 Layer 2 networks (VNS, VIPFS, KEVIN)
 
 ## Development Phases
 
@@ -55,38 +57,40 @@ A lightweight proof-of-stake blockchain focused on accessibility, decentralizati
 - Token foundation prep (nonces, fees, supply tracking)
 - Mempool security hardening (duplicate detection, size limits)
 
-Phase 3: Tokenomics & Testing 🔄 (Active Development - v0.5.0)
-* Block reward minting (0.080816 VLid/block in Epoch 1)
-* TPI participation rewards
-* Racer save bonuses
-* Snapshot upload rewards
-* Genesis allocation
-* Fee priority ordering
-* Comprehensive test suite (70%+ coverage target)
+### Phase 3: Tokenomics & Testing 🔄 (Active Development - v0.5.0)
+- ✅ Block reward minting (0.0808 VLid/block in Epoch 0)
+- ✅ Supply cap enforcement (33M VLid)
+- ✅ Epoch-based reward decay
+- 🔄 TPI participation rewards
+- 🔄 Racer save bonuses
+- 🔄 Snapshot upload rewards
+- 🔄 Genesis allocation (33K VLid distribution)
+- 🔄 Fee priority ordering
+- 🔄 Comprehensive test suite (40% → 70% coverage target)
 
-Phase 4: State Management 📋 (Planned - v0.6.0)
-* Memory pruning (2,160 block retention)
-* Snapshot system for recovery
-* Error handling refactor
-* Integration testing
+### Phase 4: State Management 📋 (Planned - v0.6.0)
+- Memory pruning (2,160 block retention)
+- Snapshot system for recovery
+- Error handling refactor
+- Integration testing
 
-Phase 5: Network Security & SPO 📋 (Planned - v0.7.0)
-* Stake Pool Operator (SPO) delegation
-* TLS encryption for P2P
-* Authentication and rate limiting
-* Type safety improvements
+### Phase 5: Network Security & SPO 📋 (Planned - v0.7.0)
+- Stake Pool Operator (SPO) delegation
+- TLS encryption for P2P
+- Authentication and rate limiting
+- Type safety improvements
 
-Phase 6: Layer 2 Networks 📋 (Future - v0.8.0+)
-* VNS (Valid Name Service - domain registry)
-* VIPFS (Valid IPFS - content distribution)
-* KEVIN (Distributed AI inference)
-* L2 validator rewards
+### Phase 6: Layer 2 Networks 📋 (Future - v0.8.0+)
+- VNS (Valid Name Service - domain registry)
+- VIPFS (Valid IPFS - content distribution)
+- KEVIN (Distributed AI inference)
+- L2 validator rewards
 
 Phase 7: Community Governance 📋 (Future)
-* Merit-based voting (XP + wallet age, not token balance)
-* Development grants (mint-on-milestone)
-* Protocol parameter voting
-* No treasury, no foundation needed
+- Merit-based voting (XP + wallet age, not token balance)
+- Development grants (mint-on-milestone)
+- Protocol parameter voting
+- No treasury, no foundation needed
 
 ## Hardware Requirements
 
