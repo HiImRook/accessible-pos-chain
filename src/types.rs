@@ -1,6 +1,7 @@
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
 use sha2::{Sha256, Digest};
+use crate::tokenomics::{calculate_epoch_rewards, TOTAL_SUPPLY};
 
 const MAX_MEMPOOL_SIZE: usize = 10_000;
 
@@ -110,6 +111,10 @@ impl ChainState {
             self.nonces.insert(tx.from.clone(), expected_nonce + 1);
         }
 
+        if !self.mint_block_reward(&block) {
+            println!("Warning: Block reward minting failed (supply cap reached)");
+        }
+
         if block.slot > self.latest_slot {
             self.latest_slot = block.slot;
         }
@@ -124,6 +129,22 @@ impl ChainState {
     pub fn current_epoch(&self) -> usize {
         const BLOCKS_PER_EPOCH: u64 = 3_150_000 * 7;
         (self.latest_slot / BLOCKS_PER_EPOCH) as usize
+    }
+
+    pub fn mint_block_reward(&mut self, block: &Block) -> bool {
+        const BLOCKS_PER_EPOCH: u64 = 3_150_000 * 7;
+        let epoch = (block.slot / BLOCKS_PER_EPOCH) as usize;
+        let rewards = calculate_epoch_rewards(epoch);
+
+        if self.total_supply + rewards.block_reward > TOTAL_SUPPLY {
+            println!("Cannot mint: would exceed supply cap");
+            return false;
+        }
+
+        *self.accounts.entry(block.producer.clone()).or_insert(0) += rewards.block_reward;
+        self.total_supply += rewards.block_reward;
+
+        true
     }
 }
 
