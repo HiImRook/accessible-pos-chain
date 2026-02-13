@@ -5,7 +5,27 @@ All notable changes to Valid Blockchain will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.5.0-beta1] - 2026-02-11
+## [0.5.0-rc1] - 2026-02-14
+
+### Added
+- **Fee priority ordering in mempool**
+  - Transactions sorted by fee (high → low)
+  - Economic incentive for users to pay higher fees
+  - Validators maximize fee earnings
+- **Fee priority tests (2 tests)**
+  - Fee ordering validation
+  - Same-fee transaction order consistency
+
+### Changed
+- Mempool `get_pending()` now sorts by fee instead of hash
+- Test coverage increased to 42% (33 tests total)
+
+### Notes
+- Frontrunning protection deferred to v0.6.0 (parent hash seed method)
+- Core v0.5.0 features complete (minting + fee priority)
+- Target: 70% test coverage for v0.5.0 final
+
+## [0.5.0-beta1] - 2026-02-12
 
 ### Added
 - **Block reward minting implementation**
@@ -98,7 +118,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - No functional change to fee behavior (delegations HashMap was unused)
 - Clarifies temporary vs final implementation
 
-## [0.4.6] - 2026-02-07
+## [0.4.6] - 2026-02-06
 
 ### Changed
 - Added ROADMAP.md to document shipped vs planned features

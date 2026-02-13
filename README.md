@@ -22,25 +22,26 @@ A lightweight proof-of-stake blockchain focused on accessibility, decentralizati
 - Built-in metrics dashboard
 - Vendored dependencies for supply-chain security
 
-## Current Status: v0.5.0-beta1
+## Current Status: v0.5.0-rc1
 
 **Completed:**
-- ✅ TPI consensus with merit-based selection
-- ✅ Transaction nonces and fee structure
-- ✅ Racer backup system
-- ✅ Snapshot archival (Arweave)
-- ✅ RPC server with WebSocket support
-- ✅ Wallet CLI
-- ✅ Token foundation (supply tracking, epoch calculations)
-- ✅ Mempool duplicate detection and size limits
-- ✅ Block hash security hardening
-- ✅ Block reward minting (validators earn 0.0808 VLid/block)
-- ✅ Supply cap enforcement (33M VLid hard limit)
-- ✅ Comprehensive test suite (31 tests, 40% coverage)
+* ✅ TPI consensus with merit-based selection
+* ✅ Transaction nonces and fee structure
+* ✅ Racer backup system
+* ✅ Snapshot archival (Arweave)
+* ✅ RPC server with WebSocket support
+* ✅ Wallet CLI
+* ✅ Token foundation (supply tracking, epoch calculations)
+* ✅ Mempool duplicate detection and size limits
+* ✅ Block hash security hardening
+* ✅ Block reward minting (validators earn 0.0808 VLid/block)
+* ✅ Supply cap enforcement (33M VLid hard limit)
+* ✅ Fee priority ordering (high-fee transactions first)
+* ✅ Comprehensive test suite (33 tests, 42% coverage)
 
 **In Development:**
-- 🔄 v0.5.0-rc: Genesis allocation, fee priority ordering, additional tests (target: 70% coverage)
-- 🔄 Layer 2 networks (VNS, VIPFS, KEVIN)
+* 🔄 Additional test coverage (target: 70% for v0.5.0 final)
+* 📋 Layer 2 networks (VNS, VIPFS, KEVIN)
 
 ## Development Phases
 
