@@ -187,13 +187,7 @@ impl Mempool {
             self.seen_hashes.remove(&tx_hash);
         }
 
-        txs.sort_by_cached_key(|tx| {
-            let mut hasher = Sha256::new();
-            hasher.update(tx.from.as_bytes());
-            hasher.update(tx.to.as_bytes());
-            hasher.update(tx.amount.to_le_bytes());
-            hasher.finalize().to_vec()
-        });
+        txs.sort_by_key(|tx| std::cmp::Reverse(tx.fee));
         txs
     }
 

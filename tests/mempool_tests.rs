@@ -15,7 +15,6 @@ fn create_test_transaction(from: &str, to: &str, amount: u64, nonce: u64, signat
 #[test]
 fn test_mempool_duplicate_detection() {
     let mut mempool = Mempool::new();
-    
     let tx = create_test_transaction("alice", "bob", 100, 0, "sig1");
     
     assert!(mempool.add(tx.clone()));
@@ -79,4 +78,44 @@ fn test_mempool_unique_transactions() {
     assert!(mempool.add(tx2));
     assert!(mempool.add(tx3));
     assert_eq!(mempool.len(), 3);
+}
+
+#[test]
+fn test_fee_priority_ordering() {
+    let mut mempool = Mempool::new();
+    
+    let mut low_fee_tx = create_test_transaction("alice", "bob", 100, 0, "sig1");
+    low_fee_tx.fee = 100;
+    
+    let mut high_fee_tx = create_test_transaction("charlie", "dave", 100, 0, "sig2");
+    high_fee_tx.fee = 1000;
+    
+    let mut mid_fee_tx = create_test_transaction("eve", "frank", 100, 0, "sig3");
+    mid_fee_tx.fee = 500;
+    
+    mempool.add(low_fee_tx);
+    mempool.add(high_fee_tx);
+    mempool.add(mid_fee_tx);
+    
+    let pending = mempool.get_pending(3);
+    
+    assert_eq!(pending[0].fee, 1000);
+    assert_eq!(pending[1].fee, 500);
+    assert_eq!(pending[2].fee, 100);
+}
+
+#[test]
+fn test_same_fee_maintains_order() {
+    let mut mempool = Mempool::new();
+    
+    for i in 0..5 {
+        let tx = create_test_transaction(&format!("addr{}", i), "bob", 100, 0, &format!("sig{}", i));
+        mempool.add(tx);
+    }
+    
+    let pending = mempool.get_pending(5);
+    
+    for tx in &pending {
+        assert_eq!(tx.fee, 1000);
+    }
 }
