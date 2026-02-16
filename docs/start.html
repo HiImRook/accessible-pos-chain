@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>/Start - Valid Blockchain</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #0a0a0a;
+            color: #e0e0e0;
+            line-height: 1.6;
+            padding-top: 60px;
+        }
+
+        .navbar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: rgba(26, 26, 26, 0.95);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid #333;
+            z-index: 1000;
+        }
+
+        .nav-container {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: #00d4aa;
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+
+        .logo:hover {
+            color: #00b894;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 30px;
+        }
+
+        .nav-links a {
+            color: #e0e0e0;
+            text-decoration: none;
+            font-size: 0.95rem;
+            font-weight: 500;
+            font-family: 'Courier New', monospace;
+            transition: color 0.2s;
+        }
+
+        .nav-links a:hover {
+            color: #00d4aa;
+        }
+
+        .hero {
+            background: #0a0a0a;
+            padding: 80px 20px 40px;
+            text-align: center;
+            border-bottom: 1px solid #333;
+        }
+
+        .hero h1 {
+            font-family: 'Courier New', monospace;
+            font-size: 3rem;
+            margin-bottom: 10px;
+            color: #00d4aa;
+            letter-spacing: 2px;
+        }
+
+        .hero .prompt {
+            font-family: 'Courier New', monospace;
+            font-size: 1.1rem;
+            color: #888;
+            margin-top: 20px;
+        }
+
+        .hero .cursor {
+            display: inline-block;
+            width: 10px;
+            height: 20px;
+            background: #00d4aa;
+            animation: blink 1s infinite;
+            margin-left: 5px;
+        }
+
+        @keyframes blink {
+            0%, 50% { opacity: 1; }
+            51%, 100% { opacity: 0; }
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 60px 20px;
+        }
+
+        section {
+            margin-bottom: 80px;
+            padding: 40px;
+            background: #1a1a1a;
+            border: 1px solid #333;
+            border-left: 4px solid #00d4aa;
+        }
+
+        h2 {
+            font-family: 'Courier New', monospace;
+            font-size: 2rem;
+            margin-bottom: 25px;
+            color: #00d4aa;
+            letter-spacing: 1px;
+        }
+
+        h2::before {
+            content: '> ';
+            color: #00d4aa;
+        }
+
+        p {
+            font-size: 1.1rem;
+            line-height: 1.8;
+            margin-bottom: 20px;
+            color: #e0e0e0;
+        }
+
+        .highlight {
+            color: #00d4aa;
+            font-weight: 600;
+        }
+
+        .mission-list {
+            list-style: none;
+            margin-top: 20px;
+        }
+
+        .mission-list li {
+            font-size: 1.1rem;
+            margin-bottom: 15px;
+            padding-left: 30px;
+            position: relative;
+        }
+
+        .mission-list li::before {
+            content: '→';
+            position: absolute;
+            left: 0;
+            color: #00d4aa;
+            font-weight: bold;
+        }
+
+        footer {
+            background: #1a1a1a;
+            padding: 40px 20px;
+            text-align: center;
+            border-top: 2px solid #00d4aa;
+            margin-top: 80px;
+        }
+
+        .footer-links {
+            margin: 20px 0;
+        }
+
+        footer a {
+            color: #00d4aa;
+            text-decoration: none;
+            margin: 0 15px;
+            font-size: 0.95rem;
+            font-family: 'Courier New', monospace;
+            transition: color 0.2s;
+        }
+
+        footer a:hover {
+            color: #00b894;
+        }
+
+        .footer-copyright {
+            margin-top: 30px;
+            font-size: 0.85rem;
+            color: #666;
+        }
+
+        .footer-tagline {
+            margin-top: 15px;
+            font-size: 0.9rem;
+            color: #888;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="index.html" class="logo">Valid</a>
+            <div class="nav-links">
+                <a href="start.html">/start</a>
+                <a href="#technology">/technology</a>
+                <a href="https://github.com/HiImRook/accessible-pos-chain/blob/main/ROADMAP.md" target="_blank">/roadmap</a>
+                <a href="https://github.com/HiImRook/accessible-pos-chain" target="_blank">/github</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="hero">
+        <h1>/START</h1>
+        <p class="prompt">$ initializing valid.blockchain<span class="cursor"></span></p>
+    </div>
+
+    <div class="container">
+        <section id="overview">
+            <h2>Overview</h2>
+            <p>
+                Valid Blockchain is a <span class="highlight">lightweight proof-of-stake blockchain</span> designed to run on modest hardware in developing regions. Unlike traditional blockchains that require expensive infrastructure or large token holdings to participate, Valid operates on as little as <span class="highlight">2GB of RAM</span>.
+            </p>
+            <p>
+                The network uses <span class="highlight">merit-based validator selection</span> rather than wealth-based staking. Validators earn rewards through reliable uptime and honest participation, not by holding large amounts of tokens. This creates a system where anyone with basic hardware and internet access can contribute to network security.
+            </p>
+            <p>
+                With <span class="highlight">10-second blocks</span> and sub-second finality through Three-Validator Integrity (3VI) consensus, Valid delivers fast transaction confirmation without sacrificing decentralization or accessibility.
+            </p>
+        </section>
+
+        <section id="mission">
+            <h2>The Mission</h2>
+            <p>
+                Most blockchains optimize for Silicon Valley. Valid optimizes for <span class="highlight">everywhere else</span>.
+            </p>
+            <p>
+                The blockchain industry has created barriers that exclude billions of people: expensive validator hardware, large minimum stakes, high-bandwidth requirements, and complex technical knowledge. Valid removes these barriers.
+            </p>
+            <ul class="mission-list">
+                <li><strong>Global Accessibility:</strong> 2GB RAM means validators can run on Raspberry Pi units affordable in any economy</li>
+                <li><strong>Merit Over Wealth:</strong> Validator selection based on uptime and reliability, not token holdings</li>
+                <li><strong>Community Sovereignty:</strong> No venture capital, no foundation, no pre-mine - just open-source code</li>
+                <li><strong>Honest Economics:</strong> 33M VLid minted over 21 years through proof-of-work validation, 0.1% genesis allocation for testnet contributors</li>
+                <li><strong>Real Decentralization:</strong> Designed for thousands of validators, not a handful of whales</li>
+            </ul>
+        </section>
+
+        <section id="how">
+            <h2>How it Works</h2>
+            <p>
+                Valid uses <span class="highlight">Three-Validator Integrity (3VI)</span> consensus. For each block, three validators are selected based on merit to verify transactions and broadcast the result. If all three agree, the block is finalized instantly. If two agree, the majority wins. If consensus fails, a backup validator (the "racer") steps in.
+            </p>
+            <p>
+                All blockchain state lives <span class="highlight">in-memory</span> using Rust's efficient Maps and HashMaps. No external database. No bloated storage requirements. Every 6 hours, a snapshot is archived to ensure persistence without sacrificing performance.
+            </p>
+            <p>
+                Validators earn <span class="highlight">block rewards</span> (0.0808 VLid per block in Epoch 0) plus transaction fees. Rewards decrease over three 7-year epochs (60%/30%/10% distribution), ensuring a predictable 21-year emission schedule with no sudden inflation.
+            </p>
+            <p>
+                The network prioritizes <span class="highlight">high-fee transactions</span> while maintaining fairness. Anti-frontrunning protections (planned for v0.6.0) will use the parent block hash as a deterministic seed to prevent manipulation.
+            </p>
+        </section>
+
+        <section id="future">
+            <h2>Into the Future</h2>
+            <p>
+                Valid is a <span class="highlight">Layer 1 foundation</span> designed to support specialized Layer 2 networks:
+            </p>
+            <p>
+                <strong>VNS (Valid Name Service):</strong> Decentralized domain registry running on 16GB validators<br>
+                <strong>VIPFS (Valid InterPlanetary File System):</strong> Content distribution with efficient routing<br>
+                <strong>KEVIN (Distributed AI Inference):</strong> GPU-powered compute network for AI workloads
+            </p>
+            <p>
+                The testnet launches soon with <span class="highlight">33,000 VLid</span> allocated for early validators and community contributors. Mainnet follows once the network proves stable under real-world conditions.
+            </p>
+            <p>
+                This isn't about competing with Ethereum or Solana on enterprise features. This is about building infrastructure that works for <span class="highlight">the 90% of the world they've ignored</span>.
+            </p>
+        </section>
+    </div>
+
+    <footer>
+        <p>Valid Blockchain</p>
+        <div class="footer-links">
+            <a href="https://github.com/HiImRook/accessible-pos-chain">/github</a>
+            <a href="https://github.com/HiImRook/accessible-pos-chain/blob/main/CHANGELOG.md">/changelog</a>
+            <a href="https://github.com/HiImRook/accessible-pos-chain/blob/main/ROADMAP.md">/roadmap</a>
+        </div>
+        <p class="footer-tagline">No venture capital. No pre-mine. No foundation.</p>
+        <p class="footer-copyright">© 2024-2026 Rook. All rights reserved.</p>
+    </footer>
+</body>
+</html>
