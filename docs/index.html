@@ -11,11 +11,65 @@
             box-sizing: border-box;
         }
 
+        html {
+            scroll-behavior: smooth;
+        }
+
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             background: #0a0a0a;
             color: #e0e0e0;
             line-height: 1.6;
+            padding-top: 60px;
+        }
+
+        .navbar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: rgba(26, 26, 26, 0.95);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid #333;
+            z-index: 1000;
+        }
+
+        .nav-container {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: #00d4aa;
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+
+        .logo:hover {
+            color: #00b894;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 30px;
+        }
+
+        .nav-links a {
+            color: #e0e0e0;
+            text-decoration: none;
+            font-size: 0.95rem;
+            font-weight: 500;
+            transition: color 0.2s;
+        }
+
+        .nav-links a:hover {
+            color: #00d4aa;
         }
 
         .hero {
@@ -176,10 +230,15 @@
             margin-top: 80px;
         }
 
+        .footer-links {
+            margin: 20px 0;
+        }
+
         footer a {
             color: #00d4aa;
             text-decoration: none;
             margin: 0 15px;
+            font-size: 0.95rem;
             transition: color 0.2s;
         }
 
@@ -187,15 +246,33 @@
             color: #00b894;
         }
 
-        .footer-tagline {
+        .footer-copyright {
             margin-top: 30px;
+            font-size: 0.85rem;
+            color: #666;
+        }
+
+        .footer-tagline {
+            margin-top: 15px;
             font-size: 0.9rem;
             color: #888;
         }
     </style>
 </head>
 <body>
-    <div class="hero">
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="#top" class="logo">Valid</a>
+            <div class="nav-links">
+                <a href="#features">Features</a>
+                <a href="#status">Status</a>
+                <a href="#quickstart">Quick Start</a>
+                <a href="https://github.com/HiImRook/accessible-pos-chain" target="_blank">GitHub</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="hero" id="top">
         <h1>Valid Blockchain</h1>
         <p class="tagline">Accessible Proof-of-Stake for Everyone</p>
         <p class="description">
@@ -209,7 +286,7 @@
     </div>
 
     <div class="container">
-        <h2>Core Features</h2>
+        <h2 id="features">Core Features</h2>
         <div class="feature-grid">
             <div class="feature-card">
                 <div class="feature-icon">🏆</div>
@@ -233,7 +310,7 @@
             </div>
         </div>
 
-        <h2>Current Status</h2>
+        <h2 id="status">Current Status</h2>
         <div class="stats-grid">
             <div class="stat-card">
                 <div class="stat-value">v0.5.0-rc1</div>
@@ -253,7 +330,7 @@
             </div>
         </div>
 
-        <h2>Quick Start</h2>
+        <h2 id="quickstart">Quick Start</h2>
         <pre><code># Install Rust
 curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 
@@ -267,13 +344,14 @@ cargo build --release
     </div>
 
     <footer>
-        <p>Built with ❤️ by the Valid Blockchain community</p>
-        <div style="margin: 20px 0;">
+        <p>Valid Blockchain</p>
+        <div class="footer-links">
             <a href="https://github.com/HiImRook/accessible-pos-chain">GitHub</a>
             <a href="https://github.com/HiImRook/accessible-pos-chain/blob/main/CHANGELOG.md">Changelog</a>
             <a href="https://github.com/HiImRook/accessible-pos-chain/blob/main/ROADMAP.md">Roadmap</a>
         </div>
-        <p class="footer-tagline">No venture capital. No pre-mine. No foundation. Just code.</p>
+        <p class="footer-tagline">No venture capital. No pre-mine. No foundation.</p>
+        <p class="footer-copyright">© 2024-2026 Rook. All rights reserved.</p>
     </footer>
 </body>
 </html>
