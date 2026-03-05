@@ -22,7 +22,7 @@ A lightweight proof-of-stake blockchain focused on accessibility, decentralizati
 - Built-in metrics dashboard
 - Vendored dependencies for supply-chain security
 
-## Current Status: v0.5.0-rc1
+## Current Status: v0.5.0-final
 
 **Completed:**
 * ✅ TPI consensus with merit-based selection
@@ -37,10 +37,11 @@ A lightweight proof-of-stake blockchain focused on accessibility, decentralizati
 * ✅ Block reward minting (validators earn 0.0808 VLid/block)
 * ✅ Supply cap enforcement (33M VLid hard limit)
 * ✅ Fee priority ordering (high-fee transactions first)
-* ✅ Comprehensive test suite (33 tests, 42% coverage)
+* ✅ Ed25519 signature verification on block acceptance
+* ✅ Comprehensive test suite (41 tests, ~52% coverage)
 
 **In Development:**
-* 🔄 Additional test coverage (target: 70% for v0.5.0 final)
+* 📋 Memory pruning and snapshot recovery (v0.6.0)
 * 📋 Layer 2 networks (VNS, VIPFS, KEVIN)
 
 ## Development Phases
@@ -58,16 +59,20 @@ A lightweight proof-of-stake blockchain focused on accessibility, decentralizati
 - Token foundation prep (nonces, fees, supply tracking)
 - Mempool security hardening (duplicate detection, size limits)
 
-### Phase 3: Tokenomics & Testing 🔄 (Active Development - v0.5.0)
+### Phase 3: Tokenomics & Testing ✅ (Complete - v0.5.0-final)
 - ✅ Block reward minting (0.0808 VLid/block in Epoch 0)
 - ✅ Supply cap enforcement (33M VLid)
-- ✅ Epoch-based reward decay
-- 🔄 TPI participation rewards
-- 🔄 Racer save bonuses
-- 🔄 Snapshot upload rewards
-- 🔄 Genesis allocation (33K VLid distribution)
-- 🔄 Fee priority ordering
-- 🔄 Comprehensive test suite (40% → 70% coverage target)
+- ✅ Epoch-based reward decay (60%/30%/10% over 21 years)
+- ✅ Fee priority ordering (high-fee transactions first)
+- ✅ Fees 100% to block producer
+- ✅ Ed25519 signature verification on block acceptance
+- ✅ Transaction nonce enforcement (replay protection)
+- ✅ Comprehensive test suite (41 tests, ~52% coverage)
+  - Mempool tests (6)
+  - Minting tests (7)
+  - Tokenomics tests (8 external + 6 inline)
+  - TPI consensus tests (6)
+  - Crypto unit tests (8)
 
 ### Phase 4: State Management 📋 (Planned - v0.6.0)
 - Memory pruning (2,160 block retention)
@@ -87,7 +92,7 @@ A lightweight proof-of-stake blockchain focused on accessibility, decentralizati
 - KEVIN (Distributed AI inference)
 - L2 validator rewards
 
-Phase 7: Community Governance 📋 (Future)
+### Phase 7: Community Governance 📋 (Future)
 - Merit-based voting (XP + wallet age, not token balance)
 - Development grants (mint-on-milestone)
 - Protocol parameter voting
@@ -164,13 +169,13 @@ cargo run --bin wallet send <recipient> <amount> http://localhost:3000
 - **Total Cap:** 33 million VLid
 - **Timeline:** 21 years (3 epochs × 7 years)
 - **Decimals:** 9 (nanoVLid = 0.000000001 VLid)
-- **Genesis:** ~33,000 VLid (minimal bootstrap)
+- **Genesis:** 33,000 VLid (0.1% bootstrap allocation)
 
 **Emission Schedule (Divide by 3 every 7 years):**
 ```
-Year 0-7:   60% of supply (19.8B)
-Year 7-14:  30% of supply (9.9B)
-Year 14-21: 10% of supply (3.3B)
+Year 0-7:   60% of supply
+Year 7-14:  30% of supply
+Year 14-21: 10% of supply
 ```
 
 **Distribution Categories:**
@@ -189,6 +194,7 @@ Year 14-21: 10% of supply (3.3B)
 
 **Zero-Comment Code:**
 Self-documenting variable names eliminate need for comments. Complexity that requires explanation is unnecessary and just an extra layer of work.
+
 **In-Memory State:**
 Complete state management using HashMaps. No external database dependencies ensures sovereignty and auditability.
 
@@ -214,7 +220,6 @@ Contributions welcome! This project maintains a compact, readable codebase with 
 - Snapshot system stress testing
 - Network partition recovery
 - Comprehensive test coverage
-- Tokenomics implementation (v0.5.0)
 
 **Guidelines:**
 - Open issue for large changes first

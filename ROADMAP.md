@@ -1,7 +1,7 @@
 # Valid Blockchain - Development Roadmap
 
-**Current Version:** v0.4.8
-**Status:** Pre-release (Testnet development)
+**Current Version:** v0.5.0-final
+**Status:** v0.5.0-final released (Testnet development)
 
 ---
 
@@ -9,7 +9,7 @@
 
 Valid Blockchain follows staged implementation:
 - **Foundation first:** Core consensus and transaction handling
-- **Economics second:** Tokenomics and validator incentives  
+- **Economics second:** Tokenomics and validator incentives
 - **Optimization third:** Pruning, performance, and scaling
 
 Features are documented **after** implementation to prevent roadmap drift.
@@ -17,6 +17,25 @@ Features are documented **after** implementation to prevent roadmap drift.
 ---
 
 ## Version History (Completed)
+
+### v0.5.0-final - Tokenomics & Testing (Mar 2026)
+- ✅ Block reward minting (0.0808 VLid/block, Epoch 0)
+- ✅ Supply cap enforcement (33M VLid hard limit)
+- ✅ Epoch-based reward decay (60%/30%/10% over 21 years)
+- ✅ Fee priority ordering (high-fee transactions first)
+- ✅ Fees 100% to block producer
+- ✅ Transaction nonce enforcement (replay protection)
+- ✅ Ed25519 signature verification on block acceptance
+- ✅ Comprehensive test suite (41 tests, ~52% coverage)
+  - Mempool tests (6)
+  - Minting tests (7)
+  - Tokenomics tests (8 external + 6 inline)
+  - TPI consensus tests (6)
+  - Crypto unit tests (8)
+
+### v0.4.8 - Security Hardening (Feb 2026)
+- ✅ Block hash includes transaction nonce and fee (security fix)
+- ✅ Mempool size limit enforced (10,000 transactions max)
 
 ### v0.4.6 - Documentation Clarity (Feb 2026)
 - ✅ Clarified v0.4.0 deferred features
@@ -51,50 +70,6 @@ Features are documented **after** implementation to prevent roadmap drift.
 
 ## Current Priorities
 
-### v0.5.0 - Tokenomics & Testing (Target: Q2 2026)
-
-**Scope:** VLid token economics implementation with comprehensive test coverage
-
-#### Features:
-- **Block reward minting**
-  - Epoch-based decay (÷3 every 7 years)
-  - 0.0808 VLid/block → 0.0269 VLid → 0.0090 VLid
-- **TPI participation rewards**
-  - 0.0045 VLid per validator per slot (Epoch 0)
-  - 0.0015 VLid → 0.0005 VLid (subsequent epochs)
-- **Racer save rewards**
-  - 0.00337 VLid per emergency activation (Epoch 0)
-  - Decays ÷3 each epoch
-- **Snapshot upload rewards**
-  - Amount TBD (placeholder calculations for budget planning)
-- **Total supply enforcement**
-  - 33M VLid hard cap
-  - Epoch budget tracking
-- **Genesis allocation**
-  - Initial validator distribution
-  - Early supporter rewards
-  - Testnet bootstrap strategy
-- **Fee priority ordering**
-  - High-fee transactions processed first
-  - Economic incentives for users
-- **Comprehensive test suite**
-  - Unit tests for mempool behavior
-  - TPI consensus scenario tests (3/3, 2/3, 2/2)
-  - Transaction validation tests
-  - Tokenomics function tests (minting, caps, rewards)
-  - Target coverage: 70%+
-
-#### Status:
-- Token foundation complete (v0.4.5-v0.4.8)
-- Fee distribution simplified (v0.4.7)
-- Security hardening complete (v0.4.8)
-- Minting logic: Design phase
-- Test framework: Planning phase
-
----
-
-## Upcoming Releases
-
 ### v0.6.0 - State Management & Error Handling (Target: Q3 2026)
 
 **Scope:** Production-ready state management with proper error handling
@@ -120,9 +95,11 @@ Features are documented **after** implementation to prevent roadmap drift.
   - Network partition handling
 
 #### Dependencies:
-- Requires v0.5.0 tokenomics (supply tracking)
+- Requires v0.5.0 tokenomics ✅
 
 ---
+
+## Upcoming Releases
 
 ### v0.7.0 - Validator Economics & Network Security (Target: Q4 2026)
 
@@ -150,7 +127,7 @@ Features are documented **after** implementation to prevent roadmap drift.
   - Address type wrappers
 
 #### Dependencies:
-- Requires v0.5.0 tokenomics (fees have value)
+- Requires v0.5.0 tokenomics ✅
 - Requires v0.6.0 pruning (mainnet-ready state)
 
 ---
@@ -186,16 +163,16 @@ Features are documented **after** implementation to prevent roadmap drift.
 - VIPFS (Valid IPFS)
   - Content distribution network
 - KEVIN (Distributed AI)
-  - AI database cernter alternative
+  - AI inference network
 
 ---
 
-## Known Limitations (Pre-v0.5.0)
+## Known Limitations (v0.5.0-final)
 
-⚠️ **No tokenomics:** Validators don't earn rewards yet
-⚠️ **No pruning:** All blocks stored in RAM indefinitely  
+⚠️ **No pruning:** All blocks stored in RAM indefinitely
 ⚠️ **No state persistence:** Node restart = chain loss
 ⚠️ **Placeholder SPO logic:** Fee distribution incomplete
+⚠️ **No TLS:** P2P connections unencrypted
 
 **These are intentional staging decisions, not bugs, oversights, or knowledge gaps.**
 
@@ -216,4 +193,4 @@ MIT License - See LICENSE file for details
 
 ---
 
-**Last Updated:** February 7, 2026
+**Last Updated:** March 5, 2026
