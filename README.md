@@ -22,7 +22,7 @@ A lightweight proof-of-stake blockchain focused on accessibility, decentralizati
 - Built-in metrics dashboard
 - Vendored dependencies for supply-chain security
 
-## Current Status: v0.5.0-final
+## Current Status: v0.5.1
 
 **Completed:**
 * ✅ TPI consensus with merit-based selection
@@ -38,7 +38,7 @@ A lightweight proof-of-stake blockchain focused on accessibility, decentralizati
 * ✅ Supply cap enforcement (33M VLid hard limit)
 * ✅ Fee priority ordering (high-fee transactions first)
 * ✅ Ed25519 signature verification on block acceptance
-* ✅ Comprehensive test suite (41 tests, ~52% coverage)
+* ✅ Comprehensive test suite (46 tests, ~57% coverage)
 
 **In Development:**
 * 📋 Memory pruning and snapshot recovery (v0.6.0)
@@ -59,7 +59,7 @@ A lightweight proof-of-stake blockchain focused on accessibility, decentralizati
 - Token foundation prep (nonces, fees, supply tracking)
 - Mempool security hardening (duplicate detection, size limits)
 
-### Phase 3: Tokenomics & Testing ✅ (Complete - v0.5.0-final)
+### Phase 3: Tokenomics & Testing ✅ (Complete - v0.5.1)
 - ✅ Block reward minting (0.0808 VLid/block in Epoch 0)
 - ✅ Supply cap enforcement (33M VLid)
 - ✅ Epoch-based reward decay (60%/30%/10% over 21 years)
@@ -67,12 +67,13 @@ A lightweight proof-of-stake blockchain focused on accessibility, decentralizati
 - ✅ Fees 100% to block producer
 - ✅ Ed25519 signature verification on block acceptance
 - ✅ Transaction nonce enforcement (replay protection)
-- ✅ Comprehensive test suite (41 tests, ~52% coverage)
+- ✅ Comprehensive test suite (46 tests, ~57% coverage)
   - Mempool tests (6)
   - Minting tests (7)
   - Tokenomics tests (8 external + 6 inline)
   - TPI consensus tests (6)
   - Crypto unit tests (8)
+  - ChainState validation tests (5)
 
 ### Phase 4: State Management 📋 (Planned - v0.6.0)
 - Memory pruning (2,160 block retention)

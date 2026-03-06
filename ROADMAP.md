@@ -1,7 +1,7 @@
 # Valid Blockchain - Development Roadmap
 
-**Current Version:** v0.5.0-final
-**Status:** v0.5.0-final released (Testnet development)
+**Current Version:** v0.5.1
+**Status:** v0.5.1 released (Testnet development)
 
 ---
 
@@ -17,6 +17,15 @@ Features are documented **after** implementation to prevent roadmap drift.
 ---
 
 ## Version History (Completed)
+
+### v0.5.1 - ChainState Validation Testing (Mar 2026)
+- ✅ ChainState validation tests (5 tests)
+  - Duplicate block rejection
+  - Insufficient balance validation
+  - Invalid nonce detection
+  - Balance update correctness
+  - Nonce increment validation
+- ✅ Test coverage increased to ~57% (46 tests total)
 
 ### v0.5.0-final - Tokenomics & Testing (Mar 2026)
 - ✅ Block reward minting (0.0808 VLid/block, Epoch 0)
@@ -167,7 +176,7 @@ Features are documented **after** implementation to prevent roadmap drift.
 
 ---
 
-## Known Limitations (v0.5.0-final)
+## Known Limitations (v0.5.1)
 
 ⚠️ **No pruning:** All blocks stored in RAM indefinitely
 ⚠️ **No state persistence:** Node restart = chain loss
@@ -193,4 +202,4 @@ MIT License - See LICENSE file for details
 
 ---
 
-**Last Updated:** March 5, 2026
+**Last Updated:** March 6, 2026
