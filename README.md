@@ -1,4 +1,4 @@
-# Accessible PoS Chain — Valid Blockchain
+# Accessible PoS Chain — Main Branch
 
 A lightweight proof-of-stake blockchain focused on accessibility, decentralization, and merit-based participation. Designed to run efficiently on modest hardware in developing regions while supporting advanced Layer 2 networks.
 
