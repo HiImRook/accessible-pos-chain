@@ -139,31 +139,6 @@ cd accessible-pos-chain
 cargo build --release
 ```
 
-### Run a Validator
-```bash
-# Generate validator keypair
-cargo run --bin keygen
-
-# Start validator node
-cargo run --release --bin validator -- \
-  --keys validator_keys.json \
-  --rpc 0.0.0.0:3000 \
-  --p2p 0.0.0.0:4000 \
-  --bootstrap /ip4/seed.validchain.io/tcp/4000
-```
-
-### Use the Wallet
-```bash
-# Create wallet
-cargo run --bin wallet new
-
-# Check balance
-cargo run --bin wallet balance http://localhost:3000
-
-# Send transaction
-cargo run --bin wallet send <recipient> <amount> http://localhost:3000
-```
-
 ## Token Economics (VLid)
 
 **Supply Model:**
