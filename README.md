@@ -1,262 +1,63 @@
-# Accessible PoS Chain — Valid Blockchain
+# Valid Testnet
 
-A lightweight proof-of-stake blockchain focused on accessibility, decentralization, and merit-based participation. Designed to run efficiently on modest hardware in developing regions while supporting advanced Layer 2 networks.
+Live testnet for the Valid Blockchain network. This branch mirrors `valid-blockchain` exactly — same consensus, same minting, same tokenomics. Test VLid has no monetary value.
 
-## Core Features
+Join the Discord for real-time bug fixes, testnet discussion, support, reward tracking, and announcements.
 
-**Consensus:**
-- TPI (Three-Party Integrity) consensus with 3 validators per block
-- Merit-based validator selection
-- Racer backup system for network resilience
-- 10-second block times with sub-second finality
+**Discord:** https://discord.gg/2SP383cJs9
 
-**Token Economics:**
-- 33 million VLid supply over 21 years
-- Proof-of-work minting (tokens mint when work is proven)
-- Nonce-based replay protection
-- Ultra-low transaction fees with SPO delegation
+## What You Are Testing
 
-**Infrastructure:**
-- Snapshot system (6-hour intervals)
-- WebSocket real-time updates
-- Built-in metrics dashboard
-- Vendored dependencies for supply-chain security
+- Validator connectivity and peer discovery
+- TPI consensus under real network conditions
+- Block production and reward minting
+- Transaction submission and fee handling
+- Network resilience across varied hardware and regions
+- Snapshot persistance backup
+- Racer conditions and edge cases
 
-## Current Status: v0.5.1
+## Requirements
 
-**Completed:**
-* ✅ TPI consensus with merit-based selection
-* ✅ Transaction nonces and fee structure
-* ✅ Racer backup system
-* ✅ Snapshot archival (Arweave)
-* ✅ RPC server with WebSocket support
-* ✅ Wallet CLI
-* ✅ Token foundation (supply tracking, epoch calculations)
-* ✅ Mempool duplicate detection and size limits
-* ✅ Block hash security hardening
-* ✅ Block reward minting (validators earn 0.0808 VLid/block)
-* ✅ Supply cap enforcement (33M VLid hard limit)
-* ✅ Fee priority ordering (high-fee transactions first)
-* ✅ Ed25519 signature verification on block acceptance
-* ✅ Comprehensive test suite (46 tests, ~57% coverage)
-
-**In Development:**
-* 📋 Memory pruning and snapshot recovery (v0.6.0)
-* 📋 Layer 2 networks (VNS, VIPFS, KEVIN)
-
-## Development Phases
-
-### Phase 1: Foundation ✅ (Complete)
-- Core blockchain infrastructure
-- TPI consensus mechanism
-- P2P networking with discovery
-- Basic transaction system
-
-### Phase 2: Validator Economy ✅ (Complete)
-- Merit-based validator selection
-- Racer backup system
-- Snapshot system
-- Token foundation prep (nonces, fees, supply tracking)
-- Mempool security hardening (duplicate detection, size limits)
-
-### Phase 3: Tokenomics & Testing ✅ (Complete - v0.5.1)
-- ✅ Block reward minting (0.0808 VLid/block in Epoch 0)
-- ✅ Supply cap enforcement (33M VLid)
-- ✅ Epoch-based reward decay (60%/30%/10% over 21 years)
-- ✅ Fee priority ordering (high-fee transactions first)
-- ✅ Fees 100% to block producer
-- ✅ Ed25519 signature verification on block acceptance
-- ✅ Transaction nonce enforcement (replay protection)
-- ✅ Comprehensive test suite (46 tests, ~57% coverage)
-  - Mempool tests (6)
-  - Minting tests (7)
-  - Tokenomics tests (8 external + 6 inline)
-  - TPI consensus tests (6)
-  - Crypto unit tests (8)
-  - ChainState validation tests (5)
-
-### Phase 4: State Management 📋 (Planned - v0.6.0)
-- Memory pruning (2,160 block retention)
-- Snapshot system for recovery
-- Error handling refactor
-- Integration testing
-
-### Phase 5: Network Security & SPO 📋 (Planned - v0.7.0)
-- Stake Pool Operator (SPO) delegation
-- TLS encryption for P2P
-- Authentication and rate limiting
-- Type safety improvements
-
-### Phase 6: Layer 2 Networks 📋 (Future - v0.8.0+)
-- VNS (Valid Name Service - domain registry)
-- VIPFS (Valid IPFS - content distribution)
-- KEVIN (Distributed AI inference)
-- L2 validator rewards
-
-### Phase 7: Community Governance 📋 (Future)
-- Merit-based voting (XP + wallet age, not token balance)
-- Development grants (mint-on-milestone)
-- Protocol parameter voting
-- No treasury, no foundation needed
-
-## Hardware Requirements
-
-### MINIMUM - Developing Regions/Experimental Builds
-*Works, but not ideal*
-
-- **RAM:** 2 GB
-- **Disk:** 500 MB free
-- **Internet:** 10 Mbps down / 5 Mbps up
-- **Bandwidth:** 10 GB/month (uses 2.6-3.7 GB)
-
-### RECOMMENDED - Raspberry Pi Equivalent
-*Goldilocks zone, plenty of clearance*
-
-- **RAM:** 4 GB
-- **Disk:** 1 GB free
-- **Internet:** 50 Mbps down / 10 Mbps up
-- **Bandwidth:** No concern (<4 GB/month)
-
-### MODERN - Most PCs/Laptops
-*Overkill, tons of headroom*
-
-- **RAM:** 8 GB
-- **Disk:** 5 GB free
-- **Internet:** 100 Mbps down / 100 Mbps up
-- **Bandwidth:** Negligible
+- Rust 1.70+ ([Install Rust](https://rustup.rs/))
+- 2 GB RAM minimum
+- Port 4000 open for P2P
 
 ## Quick Start
-
-### Prerequisites
-- Rust 1.70+ ([Install Rust](https://rustup.rs/))
-- 4GB RAM recommended
-- Internet connection
-
-### Build from Source
 ```bash
-git clone https://github.com/HiImRook/accessible-pos-chain.git
+git clone -b valid-testnet https://github.com/HiImRook/accessible-pos-chain.git
 cd accessible-pos-chain
 cargo build --release
 ```
 
-### Run a Validator
-```bash
-# Generate validator keypair
-cargo run --bin keygen
+Bootstrap peer addresses are posted in Discord before each testnet launch.
 
-# Start validator node
-cargo run --release --bin validator -- \
-  --keys validator_keys.json \
-  --rpc 0.0.0.0:3000 \
-  --p2p 0.0.0.0:4000 \
-  --bootstrap /ip4/seed.validchain.io/tcp/4000
-```
+## Getting Test VLid
 
-### Use the Wallet
-```bash
-# Create wallet
-cargo run --bin wallet new
+**Coming Soon** Test VLid is earned through block production on the testnet — the same minting process as mainnet. A faucet bot is available in the `#faucet` channel on Discord to get you started. The initial testnet supply will start with the amount set aside for mainet genesis allocations(33,000).
 
-# Check balance
-cargo run --bin wallet balance http://localhost:3000
+## Reporting Issues
 
-# Send transaction
-cargo run --bin wallet send <recipient> <amount> http://localhost:3000
-```
+Use the testnet forum and channels on Discord. Include:
+- What happened
+- What you expected
+- Your hardware specs
+- Your region and connection type
+- Any relevant logs
+- Feel free to ding me or join me in voice chat if I'm online to discuss
 
-## Token Economics (VLid)
+## Known Limitations
 
-**Supply Model:**
-- **Total Cap:** 33 million VLid
-- **Timeline:** 21 years (3 epochs × 7 years)
-- **Decimals:** 9 (nanoVLid = 0.000000001 VLid)
-- **Genesis:** 33,000 VLid (0.1% bootstrap allocation)
+- No state persistence(coming very soon) — node restart loses chain state(all restarts will be intentional and documented).
+- No memory pruning yet — long-running nodes will grow in RAM over time(10-45 mb ram without pruning) 
+- No TLS on P2P connections
 
-**Emission Schedule (Divide by 3 every 7 years):**
-```
-Year 0-7:   60% of supply
-Year 7-14:  30% of supply
-Year 14-21: 10% of supply
-```
-
-**Distribution Categories:**
-- **L1 Validators:** 15% (block production, TPI, snapshots)
-- **L2 Validators:** 20% (VNS, VIPFS, KEVIN coordination)
-- **P2P Hosters:** 40% (browser extension infrastructure)
-- **Development Grants:** 25% (merit-based, mint-on-milestone)
-
-**Philosophy:**
-- Tokens mint ONLY when work is proven
-- No pre-mine, no VC allocations
-- No treasury, no foundation
-- Merit-based governance (not token-weighted, anti-whale)
-
-## Architecture Highlights
-
-**Zero-Comment Code:**
-Self-documenting variable names eliminate need for comments. Complexity that requires explanation is unnecessary and just an extra layer of work.
-
-**In-Memory State:**
-Complete state management using HashMaps. No external database dependencies ensures sovereignty and auditability.
-
-**Vendored Dependencies:**
-All dependencies vendored for supply-chain security.
-
-**One Validator Per IP:**
-Anti-Sybil protection at network level. This provides decentralization through geographic distribution.
-
-## Related Projects
-
-- **Valid Blockchain Wallet:** https://github.com/HiImRook/Valid-Blockchain-Wallet
-- **K.E.V.I.N. AI Agent:** https://github.com/HiImRook/K.E.V.I.N.
-- **NFT Assembler:** https://github.com/HiImRook/nft-assembler
-- **Valid Browser:** (Brave fork) - In development
-
-## Contributing
-
-Contributions welcome! This project maintains a compact, readable codebase with strict architectural principles.
-
-**High Priority:**
-- Multi-validator testing and optimization
-- Snapshot system stress testing
-- Network partition recovery
-- Comprehensive test coverage
-
-**Guidelines:**
-- Open issue for large changes first
-- Include tests with all PRs
-- Follow existing code style:
-  - Zero comments (self-documenting names)
-  - In-memory state management (Maps/HashMaps)
-  - Constants in SCREAMING_SNAKE_CASE
-  - Complete file implementations (no fragments)
-
-**Code Review Philosophy:**
-Only change what's absolutely necessary. Preserve established patterns even if they appear inefficient. Ask permission before optimizations.
-
-## Security
-
-**Vulnerability Reporting:**
-Report security issues via GitHub Security Advisories or direct message on Discord.
-
-**Supply Chain:**
-All dependencies vendored. CI runs `cargo audit` on every commit. GPG-signed commits recommended.
-
-**Audit Status:**
-Pre-mainnet. Community audits welcome. Professional audit planned before mainnet launch.
+These are active development items, not bugs to report.
 
 ## License
 
-MIT License - See LICENSE file
+MIT License — See LICENSE file
 
 Copyright (c) 2024-2026 Rook
-
-## Acknowledgements
-
-Built and maintained by Rook.
-
-Questions or inquiries welcome via GitHub issues, or:
-- **Join the Discord:** https://discord.gg/2SP383cJs9
 
 ---
 
