@@ -1,6 +1,6 @@
 # Valid Testnet
 
-Live testnet for the Valid Blockchain network. This branch mirrors `valid-blockchain` exactly — same consensus, same minting, same tokenomics. Test VLid has no monetary value.
+Live testnet for the Valid Blockchain network. This branch mirrors `valid-blockchain` exactly — same consensus, minting process, tokenomics, etc. Test VLid has no monetary value.
 
 Join the Discord for real-time bug fixes, testnet discussion, support, reward tracking, and announcements.
 
@@ -9,7 +9,7 @@ Join the Discord for real-time bug fixes, testnet discussion, support, reward tr
 ## What You Are Testing
 
 - Validator connectivity and peer discovery
-- TPI consensus under real network conditions
+- "TPI consensus" under real network conditions
 - Block production and reward minting
 - Transaction submission and fee handling
 - Network resilience across varied hardware and regions
@@ -33,7 +33,7 @@ Bootstrap peer addresses are posted in Discord before each testnet launch.
 
 ## Getting Test VLid
 
-**Coming Soon** Test VLid is earned through block production on the testnet — the same minting process as mainnet. A faucet bot is available in the `#faucet` channel on Discord to get you started. The initial testnet supply will start with the amount set aside for mainet genesis allocations(33,000).
+**Coming Soon** Test VLid is earned through block production on the testnet, the same minting process as mainnet. A faucet bot is available in the `#faucet` channel on Discord to get you started. The initial testnet supply will start with the amount set aside for mainet genesis allocations(33,000).
 
 ## Reporting Issues
 
@@ -43,7 +43,7 @@ Use the testnet forum and channels on Discord. Include:
 - Your hardware specs
 - Your region and connection type
 - Any relevant logs
-- Feel free to ding me or join me in voice chat if I'm online to discuss
+- Feel free to join me in voice chat to discuss
 
 ## Known Limitations
 
