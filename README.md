@@ -85,12 +85,12 @@ Bootstrap peers and testnet details are announced on Discord before each launch.
 
 ## Architecture Highlights
 
-- Pure in-memory state using HashMaps — no database or disk writes during operation
-- Snapshot system — full state dumped to Arweave every 6 hours, frequent "updating" internal snapshots keep memory bounded and recoverable
+- Pure in-memory state using HashMaps. No database or disk writes during operation
+- Snapshot system. Full state dumped to Arweave every 6 hours, frequent "updating" internal snapshots keep memory bounded and recoverable
 - Custom P2P and racer system built from scratch
 - All constants in SCREAMING_SNAKE_CASE (important for contributers)
 - Complete file implementations, no partial modules, compact-by-design code base
-- One validator per IP — Sybil resistance without staking minimums
+- One validator per IP. Sybil resistance without staking minimums
 
 ## Valid Ecosystem
 
@@ -110,7 +110,7 @@ Protocol changes go through a community governance program. Merit-based, no toke
 
 ## License
 
-MIT License — See LICENSE file
+MIT License - See LICENSE file
 
 Copyright (c) 2024-2026 Rook
 
