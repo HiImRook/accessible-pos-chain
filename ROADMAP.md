@@ -1,7 +1,7 @@
 # Valid Blockchain - Development Roadmap
 
-**Current Version:** v0.5.1
-**Status:** v0.5.1 released (Testnet development)
+**Current Version:** v0.6.0-alpha
+**Status:** v0.6.0-alpha in progress (Testnet development)
 
 ---
 
@@ -17,6 +17,18 @@ Features are documented **after** implementation to prevent roadmap drift.
 ---
 
 ## Version History (Completed)
+
+### v0.6.0-alpha - Snapshot System Foundation (May 2026)
+- ✅ Snapshot structs (SnapshotPayload, SnapshotMetadata, RecentBlockRef, Snapshot)
+- ✅ Deterministic genesis hash computation
+- ✅ Deterministic payload checksum with canonical serialization
+- ✅ Atomic snapshot write via temp file and rename
+- ✅ Snapshot verification and load_verified_snapshot() helper
+- ✅ restore_state() for startup recovery
+- ✅ recent_block_tips tracking (last 10 blocks, slot + hash + parent_hash)
+- ✅ GET /head RPC endpoint (latest_slot + latest_block_hash)
+- ✅ GET /block/:slot RPC endpoint (full block by slot)
+- 📋 main.rs integration pending (v0.6.1)
 
 ### v0.5.1 - ChainState Validation Testing (Mar 2026)
 - ✅ ChainState validation tests (5 tests)
