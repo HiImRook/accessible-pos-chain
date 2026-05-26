@@ -5,6 +5,33 @@ All notable changes to Valid Blockchain will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.0-alpha] - 2026-05-26
+
+### Added
+- Snapshot system (snapshot.rs)
+  - SnapshotPayload, SnapshotMetadata, RecentBlockRef, Snapshot structs
+  - Deterministic genesis hash computation
+  - Deterministic payload checksum with canonical serialization
+  - Atomic write via temp file and rename
+  - Snapshot verification on load
+  - load_verified_snapshot() safe helper
+  - restore_state() for startup recovery
+  - snapshot_exists() and snapshot_path() helpers
+  - recent_block_tips tracking (last 10 blocks, slot + hash + parent_hash)
+- Recovery RPC endpoints in rpc.rs
+  - GET /head — returns latest_slot and latest_block_hash
+  - GET /block/:slot — returns full block by slot for recovery sync
+- HeadResponse struct in rpc.rs
+
+### Changed
+- Version bumped to 0.6.0-alpha
+- lib.rs — added pub mod snapshot
+
+### Notes
+- main.rs integration pending (v0.6.1)
+- Snapshot writes and startup restore not yet wired into node
+- Node operates identically to v0.5.1 until v0.6.1 lands
+
 ## [0.5.1] - 2026-03-06
 
 ### Added
