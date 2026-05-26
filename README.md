@@ -14,15 +14,15 @@ A lightweight proof-of-stake blockchain focused on accessibility, decentralizati
 - 33 million VLid supply over 21 years
 - Proof-of-work minting (tokens mint when work is proven)
 - Nonce-based replay protection
-- Ultra-low transaction fees with SPO delegation
+- Low flat transaction fees
 
 **Infrastructure:**
-- Snapshot system (6-hour intervals)
+- Snapshot system (hourly local, 6-hour Arweave)
 - WebSocket real-time updates
 - Built-in metrics dashboard
 - Vendored dependencies for supply-chain security
 
-## Current Status: v0.5.1
+## Current Status: v0.6.0-alpha
 
 **Completed:**
 * ✅ TPI consensus with merit-based selection
@@ -39,9 +39,12 @@ A lightweight proof-of-stake blockchain focused on accessibility, decentralizati
 * ✅ Fee priority ordering (high-fee transactions first)
 * ✅ Ed25519 signature verification on block acceptance
 * ✅ Comprehensive test suite (46 tests, ~57% coverage)
+* ✅ Snapshot system with deterministic checksums and atomic writes
+* ✅ Recovery RPC endpoints (GET /head, GET /block/:slot)
 
 **In Development:**
-* 📋 Memory pruning and snapshot recovery (v0.6.0)
+* 📋 Startup restore from snapshot and hourly snapshot writes (v0.6.1)
+* 📋 Memory pruning and condition gate before production (v0.6.1)
 * 📋 Layer 2 networks (VNS, VIPFS, KEVIN)
 
 ## Development Phases
@@ -75,11 +78,15 @@ A lightweight proof-of-stake blockchain focused on accessibility, decentralizati
   - Crypto unit tests (8)
   - ChainState validation tests (5)
 
-### Phase 4: State Management 📋 (Planned - v0.6.0)
-- Memory pruning (2,160 block retention)
-- Snapshot system for recovery
-- Error handling refactor
-- Integration testing
+### Phase 4: State Management 🔄 (In Progress - v0.6.x)
+- ✅ Snapshot structs and deterministic checksums
+- ✅ Atomic snapshot write and verified load
+- ✅ Recovery RPC endpoints (GET /head, GET /block/:slot)
+- 📋 Startup restore wired into node (v0.6.1)
+- 📋 Hourly snapshot writes wired into node (v0.6.1)
+- 📋 Condition gate before production on restart (v0.6.1)
+- 📋 Memory pruning (2,160 block retention)
+- 📋 Error handling refactor
 
 ### Phase 5: Network Security & SPO 📋 (Planned - v0.7.0)
 - Stake Pool Operator (SPO) delegation
@@ -148,11 +155,9 @@ cargo build --release
 - **Genesis:** 33,000 VLid (0.1% bootstrap allocation)
 
 **Emission Schedule (Divide by 3 every 7 years):**
-```
-Year 0-7:   60% of supply
-Year 7-14:  30% of supply
-Year 14-21: 10% of supply
-```
+- **Year 0-7:** 60% of supply
+- **Year 7-14:** 30% of supply
+- **Year 14-21:** 10% of supply
 
 **Distribution Categories:**
 - **L1 Validators:** 15% (block production, TPI, snapshots)
@@ -189,13 +194,7 @@ Anti-Sybil protection at network level. This provides decentralization through g
 
 ## Contributing
 
-Contributions welcome! This project maintains a compact, readable codebase with strict architectural principles.
-
-**High Priority:**
-- Multi-validator testing and optimization
-- Snapshot system stress testing
-- Network partition recovery
-- Comprehensive test coverage
+Contributions welcome. This project maintains a compact, readable codebase with strict architectural principles.
 
 **Guidelines:**
 - Open issue for large changes first
@@ -205,9 +204,6 @@ Contributions welcome! This project maintains a compact, readable codebase with 
   - In-memory state management (Maps/HashMaps)
   - Constants in SCREAMING_SNAKE_CASE
   - Complete file implementations (no fragments)
-
-**Code Review Philosophy:**
-Only change what's absolutely necessary. Preserve established patterns even if they appear inefficient. Ask permission before optimizations.
 
 ## Security
 
@@ -222,7 +218,7 @@ Pre-mainnet. Community audits welcome. Professional audit planned before mainnet
 
 ## License
 
-MIT License - See LICENSE file
+MIT License — See LICENSE file
 
 Copyright (c) 2024-2026 Rook
 
