@@ -4,7 +4,7 @@ Live `valid-blockchain` branch of the Accessible PoS Chain.
 
 A sovereign proof-of-stake blockchain written from scratch in Rust. No frameworks, pallets, or inherited consensus primitives.
 
-Designed as a reaction to the "heavy" blockchain concensus and PC requirements.
+Designed as a reaction to the "heavy" blockchain consensus and PC requirements.
 
 The `main` branch holds the forkable protocol base.
 
@@ -28,33 +28,35 @@ The `main` branch holds the forkable protocol base.
 ## Token Economics (VLid)
 
 - Hard cap: 33 million VLid over exactly 21 years (3 epochs of 7 years each).
-- Tokens mint only when validated work is proven(when a block is produced).
-- No VC allocations, no traditional treasury. Completely non-custodial
-- Epoch 0 block reward: 0.0808 VLid(still a WiP).
-- Fees: 100% to SPO auto-delegation, developer funding rounds, and legal services
+- Tokens mint only when validated work is proven (when a block is produced).
+- No VC allocations, no traditional treasury. Completely non-custodial.
+- Epoch 0 block reward: 0.0808 VLid.
+- Fees: 100% to block producer.
 - Genesis bootstrap: 33,000 VLid (0.1%).
 
 Future governance will be merit-based (participation + wallet age).
 
-## Current Status: v0.5.1
+## Current Status: v0.6.0-alpha
 
 **Completed**
 - Full TPI consensus (random trio + merit producer + 2/3 finality)
 - Merit scoring, penalization, and quarantine logic
 - Racer backup system
 - In-memory ChainState using HashMaps
-- 6-hour Arweave snapshots
 - Custom P2P with discovery, one-per-IP enforcement, and gossip
 - Mempool with fee priority and duplicate protection
 - Ed25519 signature verification
 - Wallet CLI
 - WebSocket RPC and metrics dashboard
 - 46 tests (~57% coverage) covering TPI, mempool, minting, tokenomics, and ChainState
+- Snapshot system with deterministic checksums and atomic writes
+- Recovery RPC endpoints (GET /head, GET /block/:slot)
 
-**Next (v0.6.0)**
-- Valid Network testnet
+**Next (v0.6.1)**
+- Startup restore from snapshot wired into node
+- Hourly snapshot writes wired into node
+- Condition gate before block production on restart
 - Memory pruning (keep last ~2,160 blocks)
-- Full snapshot recovery
 
 ## Hardware Requirements
 
@@ -73,6 +75,7 @@ Future governance will be merit-based (participation + wallet age).
 - Can resume normal PC activity while minimized
 
 ## Quick Start
+
 ```bash
 git clone -b valid-blockchain https://github.com/HiImRook/accessible-pos-chain.git
 cd accessible-pos-chain
@@ -86,10 +89,10 @@ Bootstrap peers and testnet details are announced on Discord before each launch.
 ## Architecture Highlights
 
 - Pure in-memory state using HashMaps. No database or disk writes during operation
-- Snapshot system. Full state dumped to Arweave every 6 hours, frequent "updating" internal snapshots keep memory bounded and recoverable
+- Snapshot system. Full state dumped to Arweave every 6 hours, frequent internal snapshots keep memory bounded and recoverable
 - Custom P2P and racer system built from scratch
-- All constants in SCREAMING_SNAKE_CASE (important for contributers)
-- Complete file implementations, no partial modules, compact-by-design code base
+- All constants in SCREAMING_SNAKE_CASE (important for contributors)
+- Complete file implementations, no partial modules, compact-by-design codebase
 - One validator per IP. Sybil resistance without staking minimums
 
 ## Valid Ecosystem
@@ -102,15 +105,15 @@ Bootstrap peers and testnet details are announced on Discord before each launch.
 
 ## Security
 
-All dependencies vendored. CI runs `cargo audit` on *every* commit. GPG-signed commits recommended.
+All dependencies vendored. CI runs `cargo audit` on every commit. GPG-signed commits recommended.
 
 Protocol changes go through a community governance program. Merit-based, no token-weighted voting.
 
-**Report vulnerabilities** Review our security policy and reporting process in [SECURITY.md](https://github.com/HiImRook/accessible-pos-chain/blob/main/SECURITY.md).
+**Report vulnerabilities:** Review our security policy and reporting process in [SECURITY.md](https://github.com/HiImRook/accessible-pos-chain/blob/main/SECURITY.md).
 
 ## License
 
-MIT License - See LICENSE file
+MIT License — See LICENSE file
 
 Copyright (c) 2024-2026 Rook
 
