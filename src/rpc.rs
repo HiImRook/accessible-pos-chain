@@ -1,5 +1,5 @@
 use axum::{
-    extract::{State, WebSocketUpgrade},
+    extract::{Path, State, WebSocketUpgrade},
     response::IntoResponse,
     routing::{get, post},
     Json, Router,
@@ -33,6 +33,12 @@ struct BlockResponse {
     producer: String,
     timestamp: u64,
     transactions: Vec<Transaction>,
+}
+
+#[derive(Serialize)]
+struct HeadResponse {
+    latest_slot: u64,
+    latest_block_hash: String,
 }
 
 #[derive(Deserialize)]
@@ -70,11 +76,41 @@ async fn get_latest_slot(State(state): State<RpcState>) -> Json<u64> {
     Json(chain.latest_slot)
 }
 
+async fn get_head(State(state): State<RpcState>) -> Json<HeadResponse> {
+    let chain = state.chain.read().await;
+    let latest_block_hash = chain.blocks
+        .get(&chain.latest_slot)
+        .map(|b| b.hash.clone())
+        .unwrap_or_default();
+    Json(HeadResponse {
+        latest_slot: chain.latest_slot,
+        latest_block_hash,
+    })
+}
+
 async fn get_block(
     State(state): State<RpcState>,
     Json(payload): Json<serde_json::Value>,
 ) -> Json<Option<BlockResponse>> {
     let slot = payload["slot"].as_u64().unwrap_or(0);
+    let chain = state.chain.read().await;
+    if let Some(block) = chain.blocks.get(&slot) {
+        Json(Some(BlockResponse {
+            slot: block.slot,
+            hash: block.hash.clone(),
+            producer: block.producer.clone(),
+            timestamp: block.timestamp,
+            transactions: block.transactions.clone(),
+        }))
+    } else {
+        Json(None)
+    }
+}
+
+async fn get_block_by_slot(
+    State(state): State<RpcState>,
+    Path(slot): Path<u64>,
+) -> Json<Option<BlockResponse>> {
     let chain = state.chain.read().await;
     if let Some(block) = chain.blocks.get(&slot) {
         Json(Some(BlockResponse {
@@ -194,7 +230,9 @@ pub async fn start_rpc_server(
     let app = Router::new()
         .route("/balance", post(get_balance))
         .route("/latest_slot", get(get_latest_slot))
+        .route("/head", get(get_head))
         .route("/block", post(get_block))
+        .route("/block/:slot", get(get_block_by_slot))
         .route("/submit", post(submit_transaction))
         .route("/status", get(get_status))
         .route("/blocks", get(get_blocks))
