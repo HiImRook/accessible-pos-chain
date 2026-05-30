@@ -5,6 +5,23 @@ All notable changes to Valid Blockchain will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.0-alpha.2] - 2026-05-30
+
+### Changed
+- Removed hardcoded snapshot path constants — path is now caller-supplied
+- snapshot_exists(), write_snapshot(), read_snapshot() now take path parameter
+- Dropped hourly local snapshot cadence as primary architecture direction
+- Persistence direction reframed toward 6-hour archive segments and peer-based live sync
+- Version bumped to 0.6.0-alpha.2
+
+### Kept
+- All reusable snapshot primitives (checksums, metadata, verification, restore helpers)
+- GET /head and GET /block/:slot RPC endpoints
+
+### Notes
+- main.rs remains untouched — no runtime snapshot integration yet
+- v0.6.1 will implement 6-hour archive segment generation and peer sync path
+
 ## [0.6.0-alpha] - 2026-05-26
 
 ### Added

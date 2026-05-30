@@ -1,7 +1,7 @@
 # Valid Blockchain - Development Roadmap
 
-**Current Version:** v0.6.0-alpha
-**Status:** v0.6.0-alpha in progress (Testnet development)
+**Current Version:** v0.6.0-alpha.2
+**Status:** v0.6.0-alpha.2 released (Testnet development)
 
 ---
 

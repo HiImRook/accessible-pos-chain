@@ -5,8 +5,6 @@ use std::time::{SystemTime, UNIX_EPOCH};
 use crate::types::ChainState;
 
 const SNAPSHOT_VERSION: u32 = 1;
-const SNAPSHOT_PATH: &str = "./snapshot_hourly.json";
-const SNAPSHOT_TEMP_PATH: &str = "./snapshot_hourly.json.tmp";
 const RECENT_BLOCK_TIP_COUNT: usize = 10;
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -42,12 +40,8 @@ pub struct Snapshot {
     pub payload: SnapshotPayload,
 }
 
-pub fn snapshot_exists() -> bool {
-    std::path::Path::new(SNAPSHOT_PATH).exists()
-}
-
-pub fn snapshot_path() -> &'static str {
-    SNAPSHOT_PATH
+pub fn snapshot_exists(path: &str) -> bool {
+    std::path::Path::new(path).exists()
 }
 
 pub fn compute_genesis_hash(
@@ -172,15 +166,16 @@ pub fn build_snapshot(state: &ChainState, genesis_hash: &str) -> Snapshot {
     Snapshot { metadata, payload }
 }
 
-pub fn write_snapshot(snapshot: &Snapshot) -> Result<(), Box<dyn std::error::Error>> {
+pub fn write_snapshot(snapshot: &Snapshot, path: &str) -> Result<(), Box<dyn std::error::Error>> {
+    let temp_path = format!("{}.tmp", path);
     let json = serde_json::to_string_pretty(snapshot)?;
-    std::fs::write(SNAPSHOT_TEMP_PATH, &json)?;
-    std::fs::rename(SNAPSHOT_TEMP_PATH, SNAPSHOT_PATH)?;
+    std::fs::write(&temp_path, &json)?;
+    std::fs::rename(&temp_path, path)?;
     Ok(())
 }
 
-pub fn read_snapshot() -> Result<Snapshot, Box<dyn std::error::Error>> {
-    let json = std::fs::read_to_string(SNAPSHOT_PATH)?;
+pub fn read_snapshot(path: &str) -> Result<Snapshot, Box<dyn std::error::Error>> {
+    let json = std::fs::read_to_string(path)?;
     let snapshot: Snapshot = serde_json::from_str(&json)?;
     Ok(snapshot)
 }
@@ -204,8 +199,8 @@ pub fn verify_snapshot(snapshot: &Snapshot) -> bool {
     true
 }
 
-pub fn load_verified_snapshot() -> Result<Snapshot, Box<dyn std::error::Error>> {
-    let snapshot = read_snapshot()?;
+pub fn load_verified_snapshot(path: &str) -> Result<Snapshot, Box<dyn std::error::Error>> {
+    let snapshot = read_snapshot(path)?;
     if !verify_snapshot(&snapshot) {
         return Err("snapshot verification failed".into());
     }
