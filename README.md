@@ -17,18 +17,17 @@ A lightweight proof-of-stake blockchain focused on accessibility, decentralizati
 - Low flat transaction fees
 
 **Infrastructure:**
-- Snapshot system (hourly local, 6-hour Arweave)
+- 6-hour archive segments for durable chain persistence
 - WebSocket real-time updates
 - Built-in metrics dashboard
 - Vendored dependencies for supply-chain security
 
-## Current Status: v0.6.0-alpha
+## Current Status: v0.6.0-alpha.2
 
 **Completed:**
 * ✅ TPI consensus with merit-based selection
 * ✅ Transaction nonces and fee structure
 * ✅ Racer backup system
-* ✅ Snapshot archival (Arweave)
 * ✅ RPC server with WebSocket support
 * ✅ Wallet CLI
 * ✅ Token foundation (supply tracking, epoch calculations)
@@ -39,12 +38,14 @@ A lightweight proof-of-stake blockchain focused on accessibility, decentralizati
 * ✅ Fee priority ordering (high-fee transactions first)
 * ✅ Ed25519 signature verification on block acceptance
 * ✅ Comprehensive test suite (46 tests, ~57% coverage)
-* ✅ Snapshot system with deterministic checksums and atomic writes
+* ✅ Snapshot primitives with deterministic checksums and atomic writes
 * ✅ Recovery RPC endpoints (GET /head, GET /block/:slot)
 
 **In Development:**
-* 📋 Startup restore from snapshot and hourly snapshot writes (v0.6.1)
-* 📋 Memory pruning and condition gate before production (v0.6.1)
+* 📋 6-hour archive segment generation (v0.6.1)
+* 📋 Peer-based live sync as primary catch-up path (v0.6.1)
+* 📋 production_ready gate on peer connection (v0.6.1)
+* 📋 Memory pruning (v0.6.1)
 * 📋 Layer 2 networks (VNS, VIPFS, KEVIN)
 
 ## Development Phases
@@ -79,12 +80,12 @@ A lightweight proof-of-stake blockchain focused on accessibility, decentralizati
   - ChainState validation tests (5)
 
 ### Phase 4: State Management 🔄 (In Progress - v0.6.x)
-- ✅ Snapshot structs and deterministic checksums
+- ✅ Snapshot primitives and deterministic checksums
 - ✅ Atomic snapshot write and verified load
 - ✅ Recovery RPC endpoints (GET /head, GET /block/:slot)
-- 📋 Startup restore wired into node (v0.6.1)
-- 📋 Hourly snapshot writes wired into node (v0.6.1)
-- 📋 Condition gate before production on restart (v0.6.1)
+- 📋 6-hour archive segment generation (v0.6.1)
+- 📋 Peer-based live sync as primary catch-up path (v0.6.1)
+- 📋 production_ready gate on peer connection (v0.6.1)
 - 📋 Memory pruning (2,160 block retention)
 - 📋 Error handling refactor
 
