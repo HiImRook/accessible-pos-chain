@@ -36,7 +36,7 @@ The `main` branch holds the forkable protocol base.
 
 Future governance will be merit-based (participation + wallet age).
 
-## Current Status: v0.6.0-alpha
+## Current Status: v0.6.0-alpha.2
 
 **Completed**
 - Full TPI consensus (random trio + merit producer + 2/3 finality)
@@ -49,13 +49,13 @@ Future governance will be merit-based (participation + wallet age).
 - Wallet CLI
 - WebSocket RPC and metrics dashboard
 - 46 tests (~57% coverage) covering TPI, mempool, minting, tokenomics, and ChainState
-- Snapshot system with deterministic checksums and atomic writes
+- Snapshot primitives with deterministic checksums and atomic writes
 - Recovery RPC endpoints (GET /head, GET /block/:slot)
 
 **Next (v0.6.1)**
-- Startup restore from snapshot wired into node
-- Hourly snapshot writes wired into node
-- Condition gate before block production on restart
+- 6-hour archive segment generation
+- Peer-based live sync as primary catch-up path
+- production_ready gate on peer connection
 - Memory pruning (keep last ~2,160 blocks)
 
 ## Hardware Requirements
@@ -89,7 +89,8 @@ Bootstrap peers and testnet details are announced on Discord before each launch.
 ## Architecture Highlights
 
 - Pure in-memory state using HashMaps. No database or disk writes during operation
-- Snapshot system. Full state dumped to Arweave every 6 hours, frequent internal snapshots keep memory bounded and recoverable
+- 6-hour archive segments for durable chain persistence and historical record
+- Peer-based live sync as primary catch-up path
 - Custom P2P and racer system built from scratch
 - All constants in SCREAMING_SNAKE_CASE (important for contributors)
 - Complete file implementations, no partial modules, compact-by-design codebase
