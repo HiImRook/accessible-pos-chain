@@ -1,5 +1,7 @@
 use pos_chain::{types::*, consensus::Consensus, network, config::Config, peer_manager::PeerManager, metrics::Metrics, tpi::TpiHashMessage};
 use pos_chain::tpi_production::produce_block_with_tpi;
+use pos_chain::archive::{build_archive_segment, write_archive_segment, load_verified_archive_segment, segment_archive_path, blocks_per_segment};
+use pos_chain::snapshot::compute_genesis_hash;
 use tokio::sync::mpsc;
 use tokio::time::{interval, Duration};
 use std::sync::Arc;
@@ -35,6 +37,68 @@ fn get_memory_usage() -> u64 {
 
 fn get_cpu_usage() -> f64 {
     0.0
+}
+
+fn maybe_archive_and_prune(state: &mut ChainState, genesis_hash: &str, latest_slot: u64) {
+    let seg = blocks_per_segment();
+    if latest_slot < seg * 2 || latest_slot % seg != 0 {
+        return;
+    }
+
+    let archive_start = latest_slot - (seg * 2) + 1;
+    let archive_end = latest_slot - seg;
+    let path = segment_archive_path(archive_start, archive_end);
+
+    if std::path::Path::new(&path).exists() {
+        return;
+    }
+
+    let blocks: Vec<Block> = (archive_start..=archive_end)
+        .filter_map(|slot| state.blocks.get(&slot).cloned())
+        .collect();
+
+    if blocks.len() != seg as usize {
+        println!("[ARCHIVE] Incomplete segment {}-{}: expected {}, got {} blocks",
+            archive_start, archive_end, seg, blocks.len());
+        return;
+    }
+
+    let previous_segment_checksum = if archive_start > 1 {
+        let prev_end = archive_start - 1;
+        let prev_start = prev_end - seg + 1;
+        let prev_path = segment_archive_path(prev_start, prev_end);
+        match load_verified_archive_segment(&prev_path) {
+            Ok(prev_seg) => prev_seg.metadata.payload_checksum,
+            Err(_) => String::new(),
+        }
+    } else {
+        String::new()
+    };
+
+    if let Some(segment) = build_archive_segment(blocks, genesis_hash, &previous_segment_checksum) {
+        match write_archive_segment(&segment, &path) {
+            Ok(_) => {
+                match load_verified_archive_segment(&path) {
+                    Ok(_) => {
+                        for slot in archive_start..=archive_end {
+                            state.blocks.remove(&slot);
+                        }
+                        println!("[ARCHIVE] Segment {}-{} written, verified, and pruned",
+                            archive_start, archive_end);
+                    }
+                    Err(e) => {
+                        println!("[ARCHIVE] Write verification failed for segment {}-{}: {}",
+                            archive_start, archive_end, e);
+                        let _ = std::fs::remove_file(&path);
+                    }
+                }
+            }
+            Err(e) => {
+                println!("[ARCHIVE] Write failed for segment {}-{}: {}",
+                    archive_start, archive_end, e);
+            }
+        }
+    }
 }
 
 #[tokio::main]
@@ -74,13 +138,13 @@ async fn main() {
             .duration_since(UNIX_EPOCH)
             .unwrap()
             .as_secs();
-        
+
         if config.genesis_timestamp > now + 300 {
             eprintln!("ERROR: Genesis timestamp is more than 5 minutes in the future");
             eprintln!("genesis_timestamp: {}, current time: {}", config.genesis_timestamp, now);
             std::process::exit(1);
         }
-        
+
         if config.genesis_timestamp < now.saturating_sub(86400 * 365) {
             eprintln!("ERROR: Genesis timestamp is more than 1 year in the past");
             eprintln!("genesis_timestamp: {}, current time: {}", config.genesis_timestamp, now);
@@ -92,12 +156,6 @@ async fn main() {
     let rpc_addr = config.rpc_addr.clone();
     let my_addr = listen_addr.clone();
 
-    let state = Arc::new(RwLock::new(ChainState::new()));
-    let consensus = Arc::new(RwLock::new(Consensus::new()));
-    let peer_manager = Arc::new(Mutex::new(PeerManager::new(config.bootstrap_nodes.clone())));
-    let mempool = Arc::new(Mutex::new(Mempool::new()));
-    let metrics = Metrics::new();
-
     let my_genesis = if config.genesis_timestamp == 0 {
         let now = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs();
         println!("First validator - setting genesis to current time: {}", now);
@@ -106,8 +164,21 @@ async fn main() {
         println!("Using genesis from config: {}", config.genesis_timestamp);
         config.genesis_timestamp
     };
+
+    let genesis_hash = compute_genesis_hash(
+        my_genesis,
+        &config.genesis,
+        &config.validators,
+    );
+
     let genesis_timestamp = Arc::new(Mutex::new(my_genesis));
     let genesis_ms = my_genesis * 1000;
+
+    let state = Arc::new(RwLock::new(ChainState::new()));
+    let consensus = Arc::new(RwLock::new(Consensus::new()));
+    let peer_manager = Arc::new(Mutex::new(PeerManager::new(config.bootstrap_nodes.clone())));
+    let mempool = Arc::new(Mutex::new(Mempool::new()));
+    let metrics = Metrics::new();
 
     {
         let mut s = state.write().await;
@@ -217,17 +288,11 @@ async fn main() {
                         println!("[{}] Handshake from {} ({} peers, genesis: {})",
                             timestamp(), peer_id_short, known_peers.len(), their_genesis);
 
-                        let now = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs();
-                        let mut our_genesis = genesis_timestamp.lock().await;
-                        if their_genesis > 0
-                            && their_genesis < *our_genesis
-                            && their_genesis > now.saturating_sub(86400)
-                            && their_genesis < now + 300
-                        {
-                            println!("[{}] Adopting earlier genesis: {} -> {}", timestamp(), *our_genesis, their_genesis);
-                            *our_genesis = their_genesis;
+                        let our_genesis = *genesis_timestamp.lock().await;
+                        if their_genesis > 0 && their_genesis != our_genesis {
+                            println!("[{}] Genesis mismatch from {}: theirs={}, ours={}",
+                                timestamp(), peer_id_short, their_genesis, our_genesis);
                         }
-                        drop(our_genesis);
 
                         let mut pm = peer_manager.lock().await;
                         for peer in known_peers {
@@ -246,6 +311,9 @@ async fn main() {
                             let peer_id_short = if peer_id.len() > 12 { &peer_id[..12] } else { &peer_id };
                             println!("[{}] Block from {}: slot {}, next slot at +10s",
                                 timestamp(), peer_id_short, block.slot);
+
+                            let latest_slot = s.latest_slot;
+                            maybe_archive_and_prune(&mut s, &genesis_hash, latest_slot);
 
                             drop(s);
 
@@ -307,6 +375,7 @@ async fn main() {
                 let peer_manager_clone_spawn = Arc::clone(&peer_manager_clone);
                 let metrics_clone_spawn = Arc::clone(&metrics_clone);
                 let my_id = validator_id_for_block.clone();
+                let genesis_hash_spawn = genesis_hash.clone();
 
                 tokio::spawn(async move {
                     if let Some(block) = produce_block_with_tpi(
@@ -330,6 +399,9 @@ async fn main() {
                             };
                             println!("[PRODUCE] Slot {}: Producer {} ({} tx)",
                                 current_slot, producer_short, block.transactions.len());
+
+                            let latest_slot = s.latest_slot;
+                            maybe_archive_and_prune(&mut s, &genesis_hash_spawn, latest_slot);
 
                             drop(s);
 

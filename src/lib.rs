@@ -12,3 +12,4 @@ pub mod snapshot;
 pub mod pruning;
 pub mod tpi_production;
 pub mod tokenomics;
+pub mod archive;
