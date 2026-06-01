@@ -5,6 +5,30 @@ All notable changes to Valid Blockchain will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.0-alpha.3] - 2026-05-31
+
+### Added
+- archive.rs — 6-hour archive segment module
+  - ArchiveSegment and ArchiveMetadata structs
+  - Deterministic segment checksum over full block and transaction content
+  - build_archive_segment() — builds segment from a block range
+  - write_archive_segment() — atomic write via temp file and rename
+  - read_archive_segment() — deserialize from disk
+  - verify_archive_segment() — version, checksum, and block count validation
+  - load_verified_archive_segment() — combined read and verify
+  - segment_archive_path() — deterministic file naming by slot range
+  - blocks_per_segment() — 2,160 blocks per 6-hour segment
+
+### Changed
+- Version bumped to 0.6.0-alpha.3
+- lib.rs — added pub mod archive
+
+### Notes
+- Archive segment is the durable chain persistence unit
+- Peers handle live catch-up sync
+- Arweave delivery deferred to later release
+- main.rs integration pending
+
 ## [0.6.0-alpha.2] - 2026-05-30
 
 ### Changed
