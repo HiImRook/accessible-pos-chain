@@ -1,7 +1,7 @@
 # Valid Blockchain - Development Roadmap
 
-**Current Version:** v0.6.0-alpha.3
-**Status:** v0.6.0-alpha.3 released (Testnet development)
+**Current Version:** v0.6.1
+**Status:** v0.6.0.1 released (Testnet development)
 
 ---
 
@@ -17,6 +17,14 @@ Features are documented **after** implementation to prevent roadmap drift.
 ---
 
 ## Version History (Completed)
+
+### v0.6.1 - Archive Segment Integration (Jun 2026)
+- ✅ Archive segment generation wired into main.rs
+- ✅ Triggers every 2,160 blocks on both received and produced blocks
+- ✅ Full segment count required before archive/prune
+- ✅ Read-back verification after write
+- ✅ Genesis identity fixed at startup — no peer adoption
+- ✅ Genesis mismatch logging on handshake
 
 ### v0.6.0-alpha.3 - Archive Segment Module (May 2026)
 - ✅ archive.rs — 6-hour archive segment module
