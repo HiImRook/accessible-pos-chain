@@ -22,7 +22,7 @@ A lightweight proof-of-stake blockchain focused on accessibility, decentralizati
 - Built-in metrics dashboard
 - Vendored dependencies for supply-chain security
 
-## Current Status: v0.6.0-alpha.2
+## Current Status: v0.6.0-alpha.3
 
 **Completed:**
 * ✅ TPI consensus with merit-based selection
@@ -40,12 +40,17 @@ A lightweight proof-of-stake blockchain focused on accessibility, decentralizati
 * ✅ Comprehensive test suite (46 tests, ~57% coverage)
 * ✅ Snapshot primitives with deterministic checksums and atomic writes
 * ✅ Recovery RPC endpoints (GET /head, GET /block/:slot)
+* ✅ Archive segment module (archive.rs) — 6-hour durable chain persistence unit
+  * Deterministic segment checksum over full block and transaction content
+  * Atomic write, read, verify, and load helpers
+  * 2,160 blocks per segment (6-hour window)
+  * Deterministic file naming by slot range
 
 **In Development:**
-* 📋 6-hour archive segment generation (v0.6.1)
-* 📋 Peer-based live sync as primary catch-up path (v0.6.1)
-* 📋 production_ready gate on peer connection (v0.6.1)
-* 📋 Memory pruning (v0.6.1)
+* 📋 Wire archive segment generation into main.rs (v0.6.x)
+* 📋 Peer-based live sync as primary catch-up path (v0.6.x)
+* 📋 production_ready gate on peer connection (v0.6.x)
+* 📋 Memory pruning tied to segment writes (v0.6.x)
 * 📋 Layer 2 networks (VNS, VIPFS, KEVIN)
 
 ## Development Phases
@@ -83,9 +88,10 @@ A lightweight proof-of-stake blockchain focused on accessibility, decentralizati
 - ✅ Snapshot primitives and deterministic checksums
 - ✅ Atomic snapshot write and verified load
 - ✅ Recovery RPC endpoints (GET /head, GET /block/:slot)
-- 📋 6-hour archive segment generation (v0.6.1)
-- 📋 Peer-based live sync as primary catch-up path (v0.6.1)
-- 📋 production_ready gate on peer connection (v0.6.1)
+- ✅ Archive segment module with deterministic checksums and atomic writes
+- 📋 Wire archive generation into main.rs
+- 📋 Peer-based live sync as primary catch-up path
+- 📋 production_ready gate on peer connection
 - 📋 Memory pruning (2,160 block retention)
 - 📋 Error handling refactor
 
@@ -179,6 +185,9 @@ Self-documenting variable names eliminate need for comments. Complexity that req
 
 **In-Memory State:**
 Complete state management using HashMaps. No external database dependencies ensures sovereignty and auditability.
+
+**6-Hour Archive Segments:**
+Every 2,160 blocks, the retiring block range is written as a durable archive segment. This is the chain's long-term memory — not a restore checkpoint, but a permanent historical record. Peers handle live catch-up sync.
 
 **Vendored Dependencies:**
 All dependencies vendored for supply-chain security.
