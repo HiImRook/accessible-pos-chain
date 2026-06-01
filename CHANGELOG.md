@@ -5,6 +5,27 @@ All notable changes to Valid Blockchain will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.1] - 2026-06-01
+
+### Added
+- maybe_archive_and_prune() — triggers every 2,160 blocks on both received and produced blocks
+- Archive segment generation wired into main.rs block handling paths
+- Genesis mismatch logging on handshake — peer genesis disagreement now logged, not adopted
+- Genesis hash computed from effective runtime genesis timestamp, not config value
+- Full segment count validation before archive/prune (must have exactly 2,160 blocks)
+- Read-back verification after archive write via load_verified_archive_segment()
+- Previous segment checksum linkage in archive metadata
+
+### Changed
+- Genesis adoption removed — chain identity is now fixed at startup
+- Version bumped to 0.6.1
+
+### Notes
+- Archive segments write to ./archive_{start}_{end}.json
+- Pruning only occurs after successful write and read-back verification
+- Previous segment linkage is optional for now
+- Disk IO during state write lock is acceptable at current block cadence
+
 ## [0.6.0-alpha.3] - 2026-05-31
 
 ### Added
