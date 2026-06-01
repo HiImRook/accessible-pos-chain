@@ -1,7 +1,7 @@
 # Valid Blockchain - Development Roadmap
 
-**Current Version:** v0.6.0-alpha.2
-**Status:** v0.6.0-alpha.2 released (Testnet development)
+**Current Version:** v0.6.0-alpha.3
+**Status:** v0.6.0-alpha.3 released (Testnet development)
 
 ---
 
@@ -18,6 +18,23 @@ Features are documented **after** implementation to prevent roadmap drift.
 
 ## Version History (Completed)
 
+### v0.6.0-alpha.3 - Archive Segment Module (May 2026)
+- ✅ archive.rs — 6-hour archive segment module
+- ✅ ArchiveSegment and ArchiveMetadata structs
+- ✅ Deterministic segment checksum over full block and transaction content
+- ✅ build_archive_segment() from block range
+- ✅ Atomic write, read, verify, and load_verified_archive_segment()
+- ✅ segment_archive_path() deterministic file naming by slot range
+- ✅ 2,160 blocks per segment (6-hour window)
+
+### v0.6.0-alpha.2 - Snapshot Cleanup and Persistence Reframe (May 2026)
+- ✅ Removed hardcoded snapshot path constants
+- ✅ snapshot_exists(), write_snapshot(), read_snapshot() now take path parameter
+- ✅ Dropped hourly local snapshot cadence as primary architecture direction
+- ✅ Persistence direction reframed toward 6-hour archive segments
+- ✅ Peer-based live sync established as primary catch-up path
+- ✅ GET /head and GET /block/:slot RPC endpoints retained
+
 ### v0.6.0-alpha - Snapshot System Foundation (May 2026)
 - ✅ Snapshot structs (SnapshotPayload, SnapshotMetadata, RecentBlockRef, Snapshot)
 - ✅ Deterministic genesis hash computation
@@ -28,7 +45,6 @@ Features are documented **after** implementation to prevent roadmap drift.
 - ✅ recent_block_tips tracking (last 10 blocks, slot + hash + parent_hash)
 - ✅ GET /head RPC endpoint (latest_slot + latest_block_hash)
 - ✅ GET /block/:slot RPC endpoint (full block by slot)
-- 📋 main.rs integration pending (v0.6.1)
 
 ### v0.5.1 - ChainState Validation Testing (Mar 2026)
 - ✅ ChainState validation tests (5 tests)
@@ -91,32 +107,21 @@ Features are documented **after** implementation to prevent roadmap drift.
 
 ## Current Priorities
 
-### v0.6.0 - State Management & Error Handling (Target: Q3 2026)
+### v0.6.0 - State Management (In Progress)
 
-**Scope:** Production-ready state management with proper error handling
+**Scope:** Durable chain persistence via 6-hour archive segments and peer-based sync
 
-#### Features:
-- **Pruning system**
-  - Keep 2,160 blocks (1 epoch) in RAM
-  - Archive older blocks to disk snapshots
-- **Snapshot mechanism**
-  - Periodic in-memory state dumps to disk
-  - Fast validator recovery from snapshots
-  - No external database dependencies
-- **State sync protocol**
-  - Download snapshots from peers
-  - Verify via merkle proofs
-- **Error handling refactor**
-  - Replace `.unwrap()` with `Result<T, E>`
-  - Graceful failure modes
-  - Proper error propagation
-- **Integration tests**
-  - Full validator workflow tests
-  - State recovery scenarios
-  - Network partition handling
+#### Completed in alpha series:
+- ✅ Snapshot primitives and checksum utilities
+- ✅ Recovery RPC endpoints
+- ✅ Archive segment module (local build, verify, write)
 
-#### Dependencies:
-- Requires v0.5.0 tokenomics ✅
+#### Remaining:
+- Wire archive segment generation into main.rs (triggered every 2,160 blocks)
+- Peer-based live sync as primary catch-up path
+- production_ready gate on peer connection
+- Memory pruning (retire blocks after archive segment written)
+- Error handling refactor (`.unwrap()` → `Result<T, E>`)
 
 ---
 
@@ -127,71 +132,39 @@ Features are documented **after** implementation to prevent roadmap drift.
 **Scope:** Stake Pool Operator (SPO) model with production network security
 
 #### Features:
-- **SPO delegation system**
-  - Users choose validators
-  - Transaction fees route to chosen validator
-- **Fee distribution logic**
-  - Corrected routing (block producer's delegate)
-  - Saturation mechanics (prevent whale dominance)
-- **Merit system refinement**
-  - XP-based voting power
-  - Anti-gaming measures
-- **Validator slashing**
-  - Penalties for TPI consensus failures
-  - Economic security enforcement
-- **Network security hardening**
-  - TLS encryption for P2P connections
-  - Authentication beyond IP address
-  - Per-peer rate limiting
-- **Type safety improvements**
-  - Refactor String hashes to [u8; 32] (breaking change)
-  - Address type wrappers
-
-#### Dependencies:
-- Requires v0.5.0 tokenomics ✅
-- Requires v0.6.0 pruning (mainnet-ready state)
+- SPO delegation system
+- Fee distribution logic
+- Merit system refinement
+- Validator slashing
+- TLS encryption for P2P connections
+- Per-peer rate limiting
+- Type safety improvements
 
 ---
 
 ## Future Considerations (v0.8.0+)
 
 ### Performance & Scaling
-- Transaction mempool improvements
-  - Duplicate detection
-  - Fee market and priority ordering
-- Cryptographic randomness
-  - Replace XOR-based selection with VRF
-- Network optimizations
-  - Bandwidth reduction
-  - Message batching
+- Replace XOR-based selection with VRF
+- Bandwidth reduction and message batching
 
 ### Developer Experience
-- Comprehensive test suite
-  - Unit tests for crypto operations
-  - Integration tests for TPI consensus
-  - Load testing (100 TPS target)
-- Logging framework
-  - Replace `println!` with `tracing` crate
-  - Structured logging for analysis
-- Documentation
-  - Developer guide
-  - API reference
-  - Consensus specification
+- Integration tests for TPI consensus
+- Load testing (100 TPS target)
+- Replace `println!` with `tracing` crate
 
 ### Layer 2 Infrastructure
 - VNS (Valid Name Service)
-  - Blockchain-based DNS
 - VIPFS (Valid IPFS)
-  - Content distribution network
-- KEVIN (Distributed AI)
-  - AI inference network
+- KEVIN (Distributed AI inference)
 
 ---
 
-## Known Limitations (v0.5.1)
+## Known Limitations (v0.6.0-alpha.3)
 
 ⚠️ **No pruning:** All blocks stored in RAM indefinitely
 ⚠️ **No state persistence:** Node restart = chain loss
+⚠️ **Archive segments not wired:** Generation not yet triggered in node
 ⚠️ **Placeholder SPO logic:** Fee distribution incomplete
 ⚠️ **No TLS:** P2P connections unencrypted
 
@@ -214,4 +187,4 @@ MIT License - See LICENSE file for details
 
 ---
 
-**Last Updated:** March 6, 2026
+**Last Updated:** May 31, 2026
