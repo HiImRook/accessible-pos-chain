@@ -36,7 +36,7 @@ The `main` branch holds the forkable protocol base.
 
 Future governance will be merit-based (participation + wallet age).
 
-## Current Status: v0.6.0-alpha.3
+## Current Status: v0.6.1
 
 **Completed**
 - Full TPI consensus (random trio + merit producer + 2/3 finality)
@@ -51,17 +51,15 @@ Future governance will be merit-based (participation + wallet age).
 - 46 tests (~57% coverage) covering TPI, mempool, minting, tokenomics, and ChainState
 - Snapshot primitives with deterministic checksums and atomic writes
 - Recovery RPC endpoints (GET /head, GET /block/:slot)
-- Archive segment module (archive.rs) — 6-hour durable chain persistence unit
-  - Deterministic segment checksum over full block and transaction content
-  - Atomic write, read, verify, and load helpers
-  - 2,160 blocks per segment (6-hour window)
-  - Deterministic file naming by slot range
+- Archive segment module — 6-hour durable chain persistence unit
+- Archive segment generation wired into node — triggers every 2,160 blocks
+- Genesis identity fixed at startup — peer adoption removed
+- Genesis mismatch logging on handshake
 
 **Next**
-- Wire archive segment generation into main.rs (every 2,160 blocks)
 - Peer-based live sync as primary catch-up path
 - production_ready gate on peer connection
-- Memory pruning tied to segment writes
+- Error handling refactor
 
 ## Hardware Requirements
 
