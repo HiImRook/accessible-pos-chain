@@ -1,7 +1,7 @@
 # Valid Blockchain - Development Roadmap
 
 **Current Version:** v0.6.1
-**Status:** v0.6.0.1 released (Testnet development)
+**Status:** v0.6.0.2 released (Testnet development)
 
 ---
 
@@ -17,6 +17,15 @@ Features are documented **after** implementation to prevent roadmap drift.
 ---
 
 ## Version History (Completed)
+
+### v0.6.2 - Validator-Aware Network Identity (Jun 2026)
+- ✅ Validator ID carried in direct peer handshake
+- ✅ Canonical peer address normalization
+- ✅ Distinct validator ID counting for quorum
+- ✅ production_ready gate — blocks production until quorum confirmed
+- ✅ Solo node exception — immediate production when no bootstrap nodes
+- ✅ 120 second startup timeout with clean exit
+- ⚠️ Transitional bootstrap mechanism — planned replacement in v0.7.0
 
 ### v0.6.1 - Archive Segment Integration (Jun 2026)
 - ✅ Archive segment generation wired into main.rs

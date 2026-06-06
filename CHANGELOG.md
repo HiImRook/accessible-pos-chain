@@ -5,6 +5,29 @@ All notable changes to Valid Blockchain will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.2] - 2026-06-06
+
+### Added
+- validator_id: Option<String> in Handshake NetworkMessage
+- validator_id: Option<String> in PeerInfo
+- bind_validator() in PeerManager
+- normalize_peer_address() in PeerManager — promotes canonical address, removes transport-only entry
+- connected_validator_count() — counts distinct connected validator IDs against configured set
+- production_ready Arc<AtomicBool> gate — blocks production until validator quorum confirmed
+- Solo node detection — production enabled immediately when bootstrap_nodes is empty
+- 120 second startup timeout — exits cleanly if quorum not reached
+- validator_id passed in all outbound peer connections
+
+### Changed
+- connect_and_handle_peer signature extended with validator_id: Option<String>
+- Version bumped to 0.6.2
+
+### Notes
+- Validator identity in handshake is transitional bootstrap mechanism
+- Suitable for private trusted validator testnets only
+- Public adversarial validator testnets not recommended until v0.7.0
+- Planned replacement in v0.7.0 with ephemeral network identity and validator proof/binding
+
 ## [0.6.1] - 2026-06-01
 
 ### Added
