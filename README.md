@@ -22,7 +22,7 @@ A lightweight proof-of-stake blockchain focused on accessibility, decentralizati
 - Built-in metrics dashboard
 - Vendored dependencies for supply-chain security
 
-## Current Status: v0.6.0-alpha.3
+## Current Status: v0.6.1
 
 **Completed:**
 * ✅ TPI consensus with merit-based selection
@@ -40,17 +40,15 @@ A lightweight proof-of-stake blockchain focused on accessibility, decentralizati
 * ✅ Comprehensive test suite (46 tests, ~57% coverage)
 * ✅ Snapshot primitives with deterministic checksums and atomic writes
 * ✅ Recovery RPC endpoints (GET /head, GET /block/:slot)
-* ✅ Archive segment module (archive.rs) — 6-hour durable chain persistence unit
-  * Deterministic segment checksum over full block and transaction content
-  * Atomic write, read, verify, and load helpers
-  * 2,160 blocks per segment (6-hour window)
-  * Deterministic file naming by slot range
+* ✅ Archive segment module — 6-hour durable chain persistence unit
+* ✅ Archive segment generation wired into node — triggers every 2,160 blocks
+* ✅ Genesis identity fixed at startup — peer adoption removed
+* ✅ Genesis mismatch logging on handshake
 
 **In Development:**
-* 📋 Wire archive segment generation into main.rs (v0.6.x)
-* 📋 Peer-based live sync as primary catch-up path (v0.6.x)
-* 📋 production_ready gate on peer connection (v0.6.x)
-* 📋 Memory pruning tied to segment writes (v0.6.x)
+* 📋 Peer-based live sync as primary catch-up path
+* 📋 production_ready gate on peer connection
+* 📋 Error handling refactor
 * 📋 Layer 2 networks (VNS, VIPFS, KEVIN)
 
 ## Development Phases
@@ -89,7 +87,8 @@ A lightweight proof-of-stake blockchain focused on accessibility, decentralizati
 - ✅ Atomic snapshot write and verified load
 - ✅ Recovery RPC endpoints (GET /head, GET /block/:slot)
 - ✅ Archive segment module with deterministic checksums and atomic writes
-- 📋 Wire archive generation into main.rs
+- ✅ Archive generation wired into node (every 2,160 blocks)
+- ✅ Genesis identity hardened — fixed at startup
 - 📋 Peer-based live sync as primary catch-up path
 - 📋 production_ready gate on peer connection
 - 📋 Memory pruning (2,160 block retention)
