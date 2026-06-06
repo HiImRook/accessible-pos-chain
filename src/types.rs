@@ -32,6 +32,7 @@ pub enum NetworkMessage {
         peer_addr: String,
         known_peers: Vec<String>,
         genesis_timestamp: u64,
+        validator_id: Option<String>,
     },
     NewBlock(Block),
     Ping,
@@ -48,6 +49,7 @@ pub struct PeerInfo {
     pub address: String,
     pub last_seen: u64,
     pub connected: bool,
+    pub validator_id: Option<String>,
 }
 
 pub struct ChainState {
@@ -105,9 +107,7 @@ impl ChainState {
 
             self.accounts.insert(tx.from.clone(), from_balance - tx.amount - tx.fee);
             *self.accounts.entry(tx.to.clone()).or_insert(0) += tx.amount;
-
             *self.accounts.entry(block.producer.clone()).or_insert(0) += tx.fee;
-
             self.nonces.insert(tx.from.clone(), expected_nonce + 1);
         }
 
@@ -143,7 +143,6 @@ impl ChainState {
 
         *self.accounts.entry(block.producer.clone()).or_insert(0) += rewards.block_reward;
         self.total_supply += rewards.block_reward;
-
         true
     }
 }
@@ -181,12 +180,10 @@ impl Mempool {
     pub fn get_pending(&mut self, max: usize) -> Vec<Transaction> {
         let count = max.min(self.transactions.len());
         let mut txs = self.transactions.drain(..count).collect::<Vec<_>>();
-
         for tx in &txs {
             let tx_hash = compute_tx_hash(tx);
             self.seen_hashes.remove(&tx_hash);
         }
-
         txs.sort_by_key(|tx| std::cmp::Reverse(tx.fee));
         txs
     }

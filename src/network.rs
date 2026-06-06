@@ -13,14 +13,14 @@ const MAX_MESSAGE_SIZE: usize = 256 * 1024;
 async fn send_framed_message(stream: &mut TcpStream, msg: &NetworkMessage) -> Result<(), std::io::Error> {
     let data = serde_json::to_vec(msg)?;
     let len = data.len() as u32;
-    
+
     if len > MAX_MESSAGE_SIZE as u32 {
         return Err(std::io::Error::new(
             std::io::ErrorKind::InvalidData,
             "message too large"
         ));
     }
-    
+
     stream.write_all(&len.to_be_bytes()).await?;
     stream.write_all(&data).await?;
     Ok(())
@@ -32,22 +32,22 @@ async fn read_framed_message(stream: &mut TcpStream) -> Result<NetworkMessage, s
         Duration::from_secs(30),
         stream.read_exact(&mut len_buf)
     ).await.map_err(|_| std::io::Error::new(std::io::ErrorKind::TimedOut, "read timeout"))??;
-    
+
     let len = u32::from_be_bytes(len_buf) as usize;
-    
+
     if len > MAX_MESSAGE_SIZE {
         return Err(std::io::Error::new(
             std::io::ErrorKind::InvalidData,
             "message too large"
         ));
     }
-    
+
     let mut msg_buf = vec![0u8; len];
     tokio::time::timeout(
         Duration::from_secs(30),
         stream.read_exact(&mut msg_buf)
     ).await.map_err(|_| std::io::Error::new(std::io::ErrorKind::TimedOut, "read timeout"))??;
-    
+
     serde_json::from_slice(&msg_buf)
         .map_err(|e| std::io::Error::new(std::io::ErrorKind::InvalidData, e))
 }
@@ -126,6 +126,7 @@ pub async fn connect_and_handle_peer(
     tpi_tx: mpsc::Sender<TpiHashMessage>,
     peer_manager: Arc<Mutex<PeerManager>>,
     genesis_timestamp: u64,
+    validator_id: Option<String>,
 ) {
     match TcpStream::connect(&addr).await {
         Ok(mut stream) => {
@@ -140,6 +141,7 @@ pub async fn connect_and_handle_peer(
                 peer_addr: my_addr.clone(),
                 known_peers,
                 genesis_timestamp,
+                validator_id,
             };
 
             if let Err(e) = send_framed_message(&mut stream, &handshake).await {

@@ -1,5 +1,5 @@
 use crate::types::PeerInfo;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::time::{SystemTime, UNIX_EPOCH};
 
 const PEER_TIMEOUT_SECS: u64 = 120;
@@ -23,6 +23,7 @@ impl PeerManager {
                 address,
                 last_seen: current_timestamp(),
                 connected: false,
+                validator_id: None,
             });
         }
     }
@@ -44,6 +45,51 @@ impl PeerManager {
         if let Some(peer) = self.peers.get_mut(address) {
             peer.last_seen = current_timestamp();
         }
+    }
+
+    pub fn bind_validator(&mut self, address: &str, validator_id: String) {
+        if let Some(peer) = self.peers.get_mut(address) {
+            peer.validator_id = Some(validator_id);
+        }
+    }
+
+    pub fn normalize_peer_address(&mut self, transport_addr: &str, canonical_addr: &str) {
+        if transport_addr == canonical_addr {
+            return;
+        }
+        let inherited_validator_id = self.peers
+            .get(transport_addr)
+            .and_then(|p| p.validator_id.clone());
+
+        if let Some(existing) = self.peers.get_mut(canonical_addr) {
+            existing.connected = true;
+            existing.last_seen = current_timestamp();
+            if existing.validator_id.is_none() {
+                existing.validator_id = inherited_validator_id;
+            }
+        } else {
+            self.peers.insert(canonical_addr.to_string(), PeerInfo {
+                address: canonical_addr.to_string(),
+                last_seen: current_timestamp(),
+                connected: true,
+                validator_id: inherited_validator_id,
+            });
+        }
+        self.peers.remove(transport_addr);
+    }
+
+    pub fn connected_validator_count(&self, validator_set: &HashMap<String, u64>) -> usize {
+        let mut distinct_validators: HashSet<String> = HashSet::new();
+        for peer in self.peers.values() {
+            if peer.connected {
+                if let Some(vid) = &peer.validator_id {
+                    if validator_set.contains_key(vid) {
+                        distinct_validators.insert(vid.clone());
+                    }
+                }
+            }
+        }
+        distinct_validators.len()
     }
 
     pub fn get_connected_peers(&self) -> Vec<String> {
