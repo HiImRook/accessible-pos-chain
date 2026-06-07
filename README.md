@@ -8,6 +8,14 @@ Designed as a reaction to the "heavy" blockchain consensus and PC requirements.
 
 The `main` branch holds the forkable protocol base.
 
+---
+
+> ⚠️ **Network Identity Notice — v0.6.2**
+>
+> Validator identity is carried in the direct peer handshake as a transitional bootstrap mechanism. Validator IDs are visible to directly connected peers. Public or adversarial validator testnets are not recommended until v0.7.0 network identity hardening lands. Forks should keep validator testnets private until then. See [NETWORKING.md](https://github.com/HiImRook/accessible-pos-chain/blob/main/NETWORKING.md) for full details. Contact me directly for questions or guidance regarding this matter.
+
+---
+
 ## Core Principles
 
 - Single Rust binary: one `cargo build --release` executable
@@ -36,7 +44,7 @@ The `main` branch holds the forkable protocol base.
 
 Future governance will be merit-based (participation + wallet age).
 
-## Current Status: v0.6.1
+## Current Status: v0.6.2
 
 **Completed**
 - Full TPI consensus (random trio + merit producer + 2/3 finality)
@@ -55,11 +63,15 @@ Future governance will be merit-based (participation + wallet age).
 - Archive segment generation wired into node — triggers every 2,160 blocks
 - Genesis identity fixed at startup — peer adoption removed
 - Genesis mismatch logging on handshake
+- Validator-aware peer handshake — validator ID binding and quorum gate
+- production_ready gate — blocks production until validator quorum confirmed
+- Canonical peer address normalization
+- 120 second startup timeout with clean exit
 
 **Next**
 - Peer-based live sync as primary catch-up path
-- production_ready gate on peer connection
 - Error handling refactor
+- v0.7.0 network identity hardening — ephemeral network identity, validator proof/binding
 
 ## Hardware Requirements
 
