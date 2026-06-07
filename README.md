@@ -2,6 +2,14 @@
 
 A lightweight proof-of-stake blockchain focused on accessibility, decentralization, and merit-based participation. Designed to run efficiently on modest hardware in developing regions while supporting advanced Layer 2 networks.
 
+---
+
+> ⚠️ **Network Identity Notice — v0.6.2**
+>
+> Validator identity is carried in the direct peer handshake as a transitional bootstrap mechanism. Validator IDs are visible to directly connected peers. **Public or adversarial validator testnets are not recommended until v0.7.0 network identity hardening lands.** Forks should keep validator testnets private until then. See [NETWORKING.md](NETWORKING.md) for full details. Contact me directly for questions or guidance regarding this matter.
+
+---
+
 ## Core Features
 
 **Consensus:**
@@ -22,7 +30,7 @@ A lightweight proof-of-stake blockchain focused on accessibility, decentralizati
 - Built-in metrics dashboard
 - Vendored dependencies for supply-chain security
 
-## Current Status: v0.6.1
+## Current Status: v0.6.2
 
 **Completed:**
 * ✅ TPI consensus with merit-based selection
@@ -44,11 +52,15 @@ A lightweight proof-of-stake blockchain focused on accessibility, decentralizati
 * ✅ Archive segment generation wired into node — triggers every 2,160 blocks
 * ✅ Genesis identity fixed at startup — peer adoption removed
 * ✅ Genesis mismatch logging on handshake
+* ✅ Validator-aware peer handshake — validator ID binding and quorum gate
+* ✅ production_ready gate — blocks production until validator quorum confirmed
+* ✅ Canonical peer address normalization
+* ✅ 120 second startup timeout with clean exit
 
 **In Development:**
 * 📋 Peer-based live sync as primary catch-up path
-* 📋 production_ready gate on peer connection
 * 📋 Error handling refactor
+* 📋 v0.7.0 network identity hardening — ephemeral network identity, validator proof/binding
 * 📋 Layer 2 networks (VNS, VIPFS, KEVIN)
 
 ## Development Phases
@@ -89,12 +101,13 @@ A lightweight proof-of-stake blockchain focused on accessibility, decentralizati
 - ✅ Archive segment module with deterministic checksums and atomic writes
 - ✅ Archive generation wired into node (every 2,160 blocks)
 - ✅ Genesis identity hardened — fixed at startup
+- ✅ Validator-aware handshake and production readiness gate
 - 📋 Peer-based live sync as primary catch-up path
-- 📋 production_ready gate on peer connection
 - 📋 Memory pruning (2,160 block retention)
 - 📋 Error handling refactor
 
 ### Phase 5: Network Security & SPO 📋 (Planned - v0.7.0)
+- Ephemeral network identity — validator proof/binding without direct identity disclosure
 - Stake Pool Operator (SPO) delegation
 - TLS encryption for P2P
 - Authentication and rate limiting
