@@ -27,15 +27,6 @@ struct BalanceResponse {
 }
 
 #[derive(Serialize)]
-struct BlockResponse {
-    slot: u64,
-    hash: String,
-    producer: String,
-    timestamp: u64,
-    transactions: Vec<Transaction>,
-}
-
-#[derive(Serialize)]
 struct HeadResponse {
     latest_slot: u64,
     latest_block_hash: String,
@@ -91,38 +82,18 @@ async fn get_head(State(state): State<RpcState>) -> Json<HeadResponse> {
 async fn get_block(
     State(state): State<RpcState>,
     Json(payload): Json<serde_json::Value>,
-) -> Json<Option<BlockResponse>> {
+) -> Json<Option<Block>> {
     let slot = payload["slot"].as_u64().unwrap_or(0);
     let chain = state.chain.read().await;
-    if let Some(block) = chain.blocks.get(&slot) {
-        Json(Some(BlockResponse {
-            slot: block.slot,
-            hash: block.hash.clone(),
-            producer: block.producer.clone(),
-            timestamp: block.timestamp,
-            transactions: block.transactions.clone(),
-        }))
-    } else {
-        Json(None)
-    }
+    Json(chain.blocks.get(&slot).cloned())
 }
 
 async fn get_block_by_slot(
     State(state): State<RpcState>,
     Path(slot): Path<u64>,
-) -> Json<Option<BlockResponse>> {
+) -> Json<Option<Block>> {
     let chain = state.chain.read().await;
-    if let Some(block) = chain.blocks.get(&slot) {
-        Json(Some(BlockResponse {
-            slot: block.slot,
-            hash: block.hash.clone(),
-            producer: block.producer.clone(),
-            timestamp: block.timestamp,
-            transactions: block.transactions.clone(),
-        }))
-    } else {
-        Json(None)
-    }
+    Json(chain.blocks.get(&slot).cloned())
 }
 
 async fn submit_transaction(
@@ -245,7 +216,7 @@ pub async fn start_rpc_server(
 
     let listener = tokio::net::TcpListener::bind(addr).await.unwrap();
     println!("RPC server listening on {}", addr);
-    println!("Dashboard available at http://localhost:3000/dashboard");
+    println!("Dashboard available at http://{}/dashboard", addr);
 
     axum::serve(listener, app).await.unwrap();
 }

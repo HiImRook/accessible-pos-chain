@@ -102,6 +102,131 @@ fn maybe_archive_and_prune(state: &mut ChainState, genesis_hash: &str, latest_sl
     }
 }
 
+fn normalize_rpc_addr(rpc_addr: &str, peer_transport_addr: &str) -> String {
+    if rpc_addr.starts_with("0.0.0.0:") {
+        let port = rpc_addr.split(':').last().unwrap_or("3000");
+        let peer_ip = peer_transport_addr.split(':').next().unwrap_or(peer_transport_addr);
+        format!("{}:{}", peer_ip, port)
+    } else {
+        rpc_addr.to_string()
+    }
+}
+
+async fn perform_startup_sync(
+    state: Arc<RwLock<ChainState>>,
+    peer_manager: Arc<Mutex<PeerManager>>,
+    production_ready: Arc<AtomicBool>,
+) {
+    let rpc_addrs = {
+        let pm = peer_manager.lock().await;
+        pm.get_connected_peer_rpc_addrs()
+    };
+
+    if rpc_addrs.is_empty() {
+        println!("[SYNC] No peer RPC addresses available — skipping catch-up");
+        production_ready.store(true, Ordering::SeqCst);
+        return;
+    }
+
+    let client = reqwest::Client::builder()
+        .timeout(std::time::Duration::from_secs(10))
+        .build()
+        .unwrap_or_else(|_| reqwest::Client::new());
+
+    let mut best_peer_slot = 0u64;
+    let mut best_peer_rpc = String::new();
+
+    for rpc_addr in &rpc_addrs {
+        let url = format!("http://{}/head", rpc_addr);
+        match client.get(&url).send().await {
+            Ok(resp) => {
+                if let Ok(text) = resp.text().await {
+                    if let Ok(value) = serde_json::from_str::<serde_json::Value>(&text) {
+                        if let Some(slot) = value["latest_slot"].as_u64() {
+                            if slot > best_peer_slot {
+                                best_peer_slot = slot;
+                                best_peer_rpc = rpc_addr.clone();
+                            }
+                        }
+                    }
+                }
+            }
+            Err(e) => println!("[SYNC] Failed to query head from {}: {}", rpc_addr, e),
+        }
+    }
+
+    let local_slot = {
+        let s = state.read().await;
+        s.latest_slot
+    };
+
+    if local_slot >= best_peer_slot || best_peer_rpc.is_empty() {
+        println!("[SYNC] No catch-up needed (local={}, peer={})", local_slot, best_peer_slot);
+        production_ready.store(true, Ordering::SeqCst);
+        return;
+    }
+
+    println!("[SYNC] Catching up from slot {} to {}", local_slot + 1, best_peer_slot);
+
+    let mut sync_ok = true;
+    for slot in (local_slot + 1)..=best_peer_slot {
+        let url = format!("http://{}/block/{}", best_peer_rpc, slot);
+        match client.get(&url).send().await {
+            Ok(resp) => {
+                match resp.text().await {
+                    Ok(text) => {
+                        match serde_json::from_str::<Option<Block>>(&text) {
+                            Ok(Some(block)) => {
+                                let mut s = state.write().await;
+                                if !s.add_block(block) {
+                                    println!("[SYNC] Failed to apply block at slot {} — stopping", slot);
+                                    sync_ok = false;
+                                    break;
+                                }
+                                if slot % 100 == 0 {
+                                    println!("[SYNC] Applied through slot {}", slot);
+                                }
+                            }
+                            Ok(None) => {
+                                println!("[SYNC] Peer has no block at slot {} — stopping", slot);
+                                sync_ok = false;
+                                break;
+                            }
+                            Err(e) => {
+                                println!("[SYNC] Failed to deserialize block at slot {}: {} — stopping", slot, e);
+                                sync_ok = false;
+                                break;
+                            }
+                        }
+                    }
+                    Err(e) => {
+                        println!("[SYNC] Failed to read response at slot {}: {} — stopping", slot, e);
+                        sync_ok = false;
+                        break;
+                    }
+                }
+            }
+            Err(e) => {
+                println!("[SYNC] Failed to fetch block at slot {}: {} — stopping", slot, e);
+                sync_ok = false;
+                break;
+            }
+        }
+    }
+
+    if sync_ok {
+        let final_slot = {
+            let s = state.read().await;
+            s.latest_slot
+        };
+        println!("[SYNC] Catch-up complete at slot {}", final_slot);
+        production_ready.store(true, Ordering::SeqCst);
+    } else {
+        eprintln!("[SYNC] Partial sync failure — node will not produce to protect chain integrity");
+        std::process::exit(1);
+    }
+}
+
 #[tokio::main]
 async fn main() {
     let args: Vec<String> = std::env::args().collect();
@@ -156,6 +281,7 @@ async fn main() {
     let listen_addr = config.listen_addr.clone();
     let rpc_addr = config.rpc_addr.clone();
     let my_addr = listen_addr.clone();
+    let my_rpc_addr = rpc_addr.clone();
 
     let my_genesis = if config.genesis_timestamp == 0 {
         let now = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs();
@@ -177,6 +303,7 @@ async fn main() {
     let solo_node = config.bootstrap_nodes.is_empty();
 
     let production_ready = Arc::new(AtomicBool::new(solo_node));
+    let sync_triggered = Arc::new(AtomicBool::new(solo_node));
 
     if solo_node {
         println!("[STARTUP] Solo node — production enabled immediately");
@@ -241,6 +368,7 @@ async fn main() {
     let tpi_tx_clone = tpi_tx.clone();
     let genesis_timestamp_connect = Arc::clone(&genesis_timestamp);
     let my_validator_id_connect = my_validator_id.clone();
+    let my_rpc_addr_connect = my_rpc_addr.clone();
     tokio::spawn(async move {
         let mut connect_interval = interval(Duration::from_secs(30));
 
@@ -262,8 +390,9 @@ async fn main() {
                     let tpi_tx = tpi_tx_clone.clone();
                     let node = node.clone();
                     let my_id = my_validator_id_connect.clone();
+                    let my_rpc = Some(my_rpc_addr_connect.clone());
                     tokio::spawn(async move {
-                        network::connect_and_handle_peer(node, addr, tx, tpi_tx, pm, genesis_ts, Some(my_id)).await;
+                        network::connect_and_handle_peer(node, addr, tx, tpi_tx, pm, genesis_ts, Some(my_id), my_rpc).await;
                     });
                 }
             }
@@ -280,8 +409,9 @@ async fn main() {
                     let tx = tx_clone.clone();
                     let tpi_tx = tpi_tx_clone.clone();
                     let my_id = my_validator_id_connect.clone();
+                    let my_rpc = Some(my_rpc_addr_connect.clone());
                     tokio::spawn(async move {
-                        network::connect_and_handle_peer(peer, addr, tx, tpi_tx, pm, genesis_ts, Some(my_id)).await;
+                        network::connect_and_handle_peer(peer, addr, tx, tpi_tx, pm, genesis_ts, Some(my_id), my_rpc).await;
                     });
                 }
             }
@@ -310,7 +440,7 @@ async fn main() {
         tokio::select! {
             Some((msg, peer_addr)) = rx.recv() => {
                 match msg {
-                    NetworkMessage::Handshake { peer_addr: their_addr, known_peers, genesis_timestamp: their_genesis, validator_id } => {
+                    NetworkMessage::Handshake { peer_addr: their_addr, known_peers, genesis_timestamp: their_genesis, validator_id, rpc_addr: their_rpc_addr } => {
                         let peer_id = generate_peer_id(&peer_addr);
                         let peer_id_short = if peer_id.len() > 12 { &peer_id[..12] } else { &peer_id };
                         println!("[{}] Handshake from {} ({} peers, genesis: {})",
@@ -337,14 +467,27 @@ async fn main() {
                                 peer_addr.clone()
                             };
 
+                            if let Some(ref rpc) = their_rpc_addr {
+                                let normalized = normalize_rpc_addr(rpc, &peer_addr);
+                                pm.bind_rpc_addr(&canonical_addr, normalized);
+                            }
+
                             if let Some(vid) = &validator_id {
                                 pm.bind_validator(&canonical_addr, vid.clone());
                                 let connected_count = pm.connected_validator_count(&validator_set);
                                 let self_count = if validator_set.contains_key(&my_validator_id) { 1 } else { 0 };
-                                if connected_count + self_count >= validator_count && !production_ready.load(Ordering::SeqCst) {
-                                    production_ready.store(true, Ordering::SeqCst);
-                                    println!("[{}] Validator quorum reached ({}/{}), production enabled",
+                                if connected_count + self_count >= validator_count
+                                    && !sync_triggered.load(Ordering::SeqCst)
+                                {
+                                    sync_triggered.store(true, Ordering::SeqCst);
+                                    println!("[{}] Validator quorum reached ({}/{}), starting catch-up sync",
                                         timestamp(), connected_count + self_count, validator_count);
+                                    let production_ready_sync = Arc::clone(&production_ready);
+                                    let state_sync = Arc::clone(&state_clone);
+                                    let peer_manager_sync = Arc::clone(&peer_manager);
+                                    tokio::spawn(async move {
+                                        perform_startup_sync(state_sync, peer_manager_sync, production_ready_sync).await;
+                                    });
                                 }
                             }
 
