@@ -27,6 +27,12 @@ struct BalanceResponse {
 }
 
 #[derive(Serialize)]
+struct NonceResponse {
+    address: String,
+    nonce: u64,
+}
+
+#[derive(Serialize)]
 struct HeadResponse {
     latest_slot: u64,
     latest_block_hash: String,
@@ -59,6 +65,18 @@ async fn get_balance(
     Json(BalanceResponse {
         address: address.to_string(),
         balance,
+    })
+}
+
+async fn get_nonce(
+    State(state): State<RpcState>,
+    Path(address): Path<String>,
+) -> Json<NonceResponse> {
+    let chain = state.chain.read().await;
+    let nonce = chain.get_nonce(&address);
+    Json(NonceResponse {
+        address,
+        nonce,
     })
 }
 
@@ -200,6 +218,7 @@ pub async fn start_rpc_server(
 
     let app = Router::new()
         .route("/balance", post(get_balance))
+        .route("/nonce/:address", get(get_nonce))
         .route("/latest_slot", get(get_latest_slot))
         .route("/head", get(get_head))
         .route("/block", post(get_block))
