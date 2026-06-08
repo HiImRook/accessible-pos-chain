@@ -71,3 +71,10 @@ pub fn verifying_key_to_address(verifying_key: &VerifyingKey) -> String {
     let public_key_bytes = verifying_key.to_bytes();
     bs58::encode(public_key_bytes).into_string()
 }
+
+pub fn pubkey_hex_to_address(public_key_hex: &str) -> Option<String> {
+    let bytes = hex::decode(public_key_hex).ok()?;
+    let arr: [u8; 32] = bytes.try_into().ok()?;
+    let vk = VerifyingKey::from_bytes(&arr).ok()?;
+    Some(verifying_key_to_address(&vk))
+}

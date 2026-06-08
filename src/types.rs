@@ -81,7 +81,8 @@ impl ChainState {
         }
 
         for tx in &block.transactions {
-            use crate::crypto::verify_transaction;
+            use crate::crypto::{verify_transaction, pubkey_hex_to_address};
+
             if !verify_transaction(
                 &tx.from_pubkey,
                 &tx.from,
@@ -93,6 +94,14 @@ impl ChainState {
             ) {
                 println!("Invalid signature for tx from {}", tx.from);
                 return false;
+            }
+
+            match pubkey_hex_to_address(&tx.from_pubkey) {
+                Some(derived) if derived == tx.from => {}
+                _ => {
+                    println!("Auth binding failure: pubkey does not match from address for {}", tx.from);
+                    return false;
+                }
             }
 
             let expected_nonce = self.nonces.get(&tx.from).copied().unwrap_or(0);
@@ -126,6 +135,10 @@ impl ChainState {
 
     pub fn get_balance(&self, address: &str) -> u64 {
         self.accounts.get(address).copied().unwrap_or(0)
+    }
+
+    pub fn get_nonce(&self, address: &str) -> u64 {
+        self.nonces.get(address).copied().unwrap_or(0)
     }
 
     pub fn current_epoch(&self) -> usize {

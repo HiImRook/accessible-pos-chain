@@ -91,6 +91,19 @@ fn check_balance(args: &[String]) {
     }
 }
 
+fn fetch_nonce(rpc_url: &str, address: &str) -> u64 {
+    let client = reqwest::blocking::Client::new();
+    let url = format!("{}/nonce/{}", rpc_url, address);
+    let resp = client.get(&url).send()
+        .expect("Failed to reach RPC server for nonce")
+        .error_for_status()
+        .expect("RPC server returned error status for nonce");
+    let value: serde_json::Value = resp.json()
+        .expect("Failed to parse nonce response");
+    value["nonce"].as_u64()
+        .expect("Nonce field missing or invalid in response")
+}
+
 fn send_transaction(args: &[String]) {
     if args.len() < 5 {
         println!("Usage: wallet send <to_address> <amount> <rpc_url>");
@@ -112,12 +125,12 @@ fn send_transaction(args: &[String]) {
         verifying_key,
     };
 
-    let nonce = 0;
+    let nonce = fetch_nonce(rpc_url, &wallet.address);
     let fee = 1_000_000;
 
     let signature = sign_transaction(&keypair, &wallet.address, to, amount, nonce, fee);
 
-    println!("Sending {} to {}...", amount, to);
+    println!("Sending {} to {} (nonce: {})...", amount, to, nonce);
 
     let client = reqwest::blocking::Client::new();
     let response = client
@@ -136,7 +149,7 @@ fn send_transaction(args: &[String]) {
     match response {
         Ok(resp) => {
             let result: serde_json::Value = resp.json().unwrap();
-            println!("Success: {}", result["message"]);
+            println!("Result: {}", result["message"]);
         }
         Err(e) => println!("Error: {}", e),
     }
