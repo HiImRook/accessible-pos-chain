@@ -127,6 +127,7 @@ pub async fn connect_and_handle_peer(
     peer_manager: Arc<Mutex<PeerManager>>,
     genesis_timestamp: u64,
     validator_id: Option<String>,
+    my_rpc_addr: Option<String>,
 ) {
     match TcpStream::connect(&addr).await {
         Ok(mut stream) => {
@@ -142,6 +143,7 @@ pub async fn connect_and_handle_peer(
                 known_peers,
                 genesis_timestamp,
                 validator_id,
+                rpc_addr: my_rpc_addr,
             };
 
             if let Err(e) = send_framed_message(&mut stream, &handshake).await {

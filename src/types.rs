@@ -33,6 +33,7 @@ pub enum NetworkMessage {
         known_peers: Vec<String>,
         genesis_timestamp: u64,
         validator_id: Option<String>,
+        rpc_addr: Option<String>,
     },
     NewBlock(Block),
     Ping,
@@ -50,6 +51,7 @@ pub struct PeerInfo {
     pub last_seen: u64,
     pub connected: bool,
     pub validator_id: Option<String>,
+    pub rpc_addr: Option<String>,
 }
 
 pub struct ChainState {

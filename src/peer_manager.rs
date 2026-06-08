@@ -24,6 +24,7 @@ impl PeerManager {
                 last_seen: current_timestamp(),
                 connected: false,
                 validator_id: None,
+                rpc_addr: None,
             });
         }
     }
@@ -53,6 +54,12 @@ impl PeerManager {
         }
     }
 
+    pub fn bind_rpc_addr(&mut self, address: &str, rpc_addr: String) {
+        if let Some(peer) = self.peers.get_mut(address) {
+            peer.rpc_addr = Some(rpc_addr);
+        }
+    }
+
     pub fn normalize_peer_address(&mut self, transport_addr: &str, canonical_addr: &str) {
         if transport_addr == canonical_addr {
             return;
@@ -60,6 +67,9 @@ impl PeerManager {
         let inherited_validator_id = self.peers
             .get(transport_addr)
             .and_then(|p| p.validator_id.clone());
+        let inherited_rpc_addr = self.peers
+            .get(transport_addr)
+            .and_then(|p| p.rpc_addr.clone());
 
         if let Some(existing) = self.peers.get_mut(canonical_addr) {
             existing.connected = true;
@@ -67,12 +77,16 @@ impl PeerManager {
             if existing.validator_id.is_none() {
                 existing.validator_id = inherited_validator_id;
             }
+            if existing.rpc_addr.is_none() {
+                existing.rpc_addr = inherited_rpc_addr;
+            }
         } else {
             self.peers.insert(canonical_addr.to_string(), PeerInfo {
                 address: canonical_addr.to_string(),
                 last_seen: current_timestamp(),
                 connected: true,
                 validator_id: inherited_validator_id,
+                rpc_addr: inherited_rpc_addr,
             });
         }
         self.peers.remove(transport_addr);
@@ -90,6 +104,16 @@ impl PeerManager {
             }
         }
         distinct_validators.len()
+    }
+
+    pub fn get_connected_peer_rpc_addrs(&self) -> Vec<String> {
+        let mut seen: HashSet<String> = HashSet::new();
+        self.peers
+            .values()
+            .filter(|p| p.connected)
+            .filter_map(|p| p.rpc_addr.clone())
+            .filter(|addr| seen.insert(addr.clone()))
+            .collect()
     }
 
     pub fn get_connected_peers(&self) -> Vec<String> {
