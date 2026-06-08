@@ -4,7 +4,7 @@ A lightweight proof-of-stake blockchain focused on accessibility, decentralizati
 
 ---
 
-> ⚠️ **Network Identity Notice — v0.6.2**
+> ⚠️ **Network Identity Notice — v0.6.3**
 >
 > Validator identity is carried in the direct peer handshake as a transitional bootstrap mechanism. Validator IDs are visible to directly connected peers. **Public or adversarial validator testnets are not recommended until v0.7.0 network identity hardening lands.** Forks should keep validator testnets private until then. See [NETWORKING.md](NETWORKING.md) for full details. Contact me directly for questions or guidance regarding this matter.
 
@@ -26,11 +26,12 @@ A lightweight proof-of-stake blockchain focused on accessibility, decentralizati
 
 **Infrastructure:**
 - 6-hour archive segments for durable chain persistence
+- Peer-based live sync catch-up on startup
 - WebSocket real-time updates
 - Built-in metrics dashboard
 - Vendored dependencies for supply-chain security
 
-## Current Status: v0.6.2
+## Current Status: v0.6.3
 
 **Completed:**
 * ✅ TPI consensus with merit-based selection
@@ -56,10 +57,13 @@ A lightweight proof-of-stake blockchain focused on accessibility, decentralizati
 * ✅ production_ready gate — blocks production until validator quorum confirmed
 * ✅ Canonical peer address normalization
 * ✅ 120 second startup timeout with clean exit
+* ✅ RPC address advertised in handshake — explicit peer sync endpoint discovery
+* ✅ Peer-based live sync — one-time catch-up on startup via /head and /block/:slot
+* ✅ Sync failure exits cleanly — no partial-state production
 
 **In Development:**
-* 📋 Peer-based live sync as primary catch-up path
 * 📋 Error handling refactor
+* 📋 Memory pruning (2,160 block retention)
 * 📋 v0.7.0 network identity hardening — ephemeral network identity, validator proof/binding
 * 📋 Layer 2 networks (VNS, VIPFS, KEVIN)
 
@@ -102,7 +106,7 @@ A lightweight proof-of-stake blockchain focused on accessibility, decentralizati
 - ✅ Archive generation wired into node (every 2,160 blocks)
 - ✅ Genesis identity hardened — fixed at startup
 - ✅ Validator-aware handshake and production readiness gate
-- 📋 Peer-based live sync as primary catch-up path
+- ✅ RPC address in handshake and peer-based live sync catch-up
 - 📋 Memory pruning (2,160 block retention)
 - 📋 Error handling refactor
 
@@ -200,6 +204,9 @@ Complete state management using HashMaps. No external database dependencies ensu
 
 **6-Hour Archive Segments:**
 Every 2,160 blocks, the retiring block range is written as a durable archive segment. This is the chain's long-term memory — not a restore checkpoint, but a permanent historical record. Peers handle live catch-up sync.
+
+**Peer-Based Live Sync:**
+On startup, after validator quorum is confirmed, the node queries peers for their current head and fetches any missing blocks sequentially. Production only begins after successful catch-up. Partial sync failure exits cleanly rather than allowing stale-state production.
 
 **Vendored Dependencies:**
 All dependencies vendored for supply-chain security.
