@@ -5,6 +5,32 @@ All notable changes to Valid Blockchain will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.3] - 2026-06-08
+
+### Added
+- rpc_addr: Option<String> in Handshake NetworkMessage
+- rpc_addr: Option<String> in PeerInfo
+- bind_rpc_addr() in PeerManager
+- get_connected_peer_rpc_addrs() with deduplication in PeerManager
+- normalize_rpc_addr() — replaces 0.0.0.0 with peer transport IP
+- perform_startup_sync() — one-time catch-up task on startup
+- sync_triggered Arc<AtomicBool> — prevents duplicate sync tasks
+- Peer-based live sync via /head and /block/:slot RPC endpoints
+- production_ready now flips only after successful catch-up
+- Partial sync failure exits cleanly rather than allowing stale production
+
+### Changed
+- connect_and_handle_peer signature extended with my_rpc_addr: Option<String>
+- /block and /block/:slot now return Option<Block> directly
+- BlockResponse struct removed from rpc.rs
+- Dashboard log now shows actual configured RPC address
+- Version bumped to 0.6.3
+
+### Notes
+- Sync runs once on startup after quorum is reached
+- Sync failure exits the node — does not allow partial-state production
+- RPC address advertised in handshake, normalized from 0.0.0.0 to peer IP
+
 ## [0.6.2] - 2026-06-06
 
 ### Added

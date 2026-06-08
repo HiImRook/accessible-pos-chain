@@ -1,7 +1,7 @@
 # Valid Blockchain - Development Roadmap
 
-**Current Version:** v0.6.1
-**Status:** v0.6.0.2 released (Testnet development)
+**Current Version:** v0.6.3
+**Status:** v0.6.0.3 released (Testnet development)
 
 ---
 
@@ -17,6 +17,14 @@ Features are documented **after** implementation to prevent roadmap drift.
 ---
 
 ## Version History (Completed)
+
+### v0.6.3 - Peer-Based Live Sync (Jun 2026)
+- ✅ RPC address carried in peer handshake
+- ✅ RPC address normalization (0.0.0.0 → peer IP)
+- ✅ One-time startup catch-up sync via /head and /block/:slot
+- ✅ production_ready flips only after successful sync
+- ✅ Partial sync failure exits cleanly
+- ✅ Duplicate sync task prevention via sync_triggered flag
 
 ### v0.6.2 - Validator-Aware Network Identity (Jun 2026)
 - ✅ Validator ID carried in direct peer handshake
