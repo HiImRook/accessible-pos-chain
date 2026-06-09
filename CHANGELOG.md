@@ -5,6 +5,21 @@ All notable changes to Valid Blockchain will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.4] - 2026-06-09
+
+### Fixed
+- Auth binding gap — from address now verified to derive from from_pubkey in add_block()
+- Wallet nonce hardcoded to 0 — wallet now queries GET /nonce/:address before signing
+
+### Added
+- pubkey_hex_to_address() helper in crypto.rs
+- get_nonce() method on ChainState
+- GET /nonce/:address RPC endpoint
+- fetch_nonce() in wallet.rs with loud failure on RPC error or bad response
+
+### Changed
+- Version bumped to 0.6.4
+
 ## [0.6.3] - 2026-06-08
 
 ### Added
