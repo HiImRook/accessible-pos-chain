@@ -4,7 +4,7 @@ A lightweight proof-of-stake blockchain focused on accessibility, decentralizati
 
 ---
 
-> ⚠️ **Network Identity Notice — v0.6.3**
+> ⚠️ **Network Identity Notice — v0.6.4**
 >
 > Validator identity is carried in the direct peer handshake as a transitional bootstrap mechanism. Validator IDs are visible to directly connected peers. **Public or adversarial validator testnets are not recommended until v0.7.0 network identity hardening lands.** Forks should keep validator testnets private until then. See [NETWORKING.md](NETWORKING.md) for full details. Contact me directly for questions or guidance regarding this matter.
 
@@ -31,7 +31,7 @@ A lightweight proof-of-stake blockchain focused on accessibility, decentralizati
 - Built-in metrics dashboard
 - Vendored dependencies for supply-chain security
 
-## Current Status: v0.6.3
+## Current Status: v0.6.4
 
 **Completed:**
 * ✅ TPI consensus with merit-based selection
@@ -60,6 +60,9 @@ A lightweight proof-of-stake blockchain focused on accessibility, decentralizati
 * ✅ RPC address advertised in handshake — explicit peer sync endpoint discovery
 * ✅ Peer-based live sync — one-time catch-up on startup via /head and /block/:slot
 * ✅ Sync failure exits cleanly — no partial-state production
+* ✅ Auth binding gap fixed — from address verified against from_pubkey
+* ✅ Wallet nonce fixed — live nonce fetched from RPC before signing
+* ✅ GET /nonce/:address RPC endpoint
 
 **In Development:**
 * 📋 Error handling refactor
@@ -107,6 +110,7 @@ A lightweight proof-of-stake blockchain focused on accessibility, decentralizati
 - ✅ Genesis identity hardened — fixed at startup
 - ✅ Validator-aware handshake and production readiness gate
 - ✅ RPC address in handshake and peer-based live sync catch-up
+- ✅ Auth binding and wallet nonce correctness fixes
 - 📋 Memory pruning (2,160 block retention)
 - 📋 Error handling refactor
 
