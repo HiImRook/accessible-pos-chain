@@ -1,7 +1,7 @@
 # Valid Blockchain - Development Roadmap
 
-**Current Version:** v0.6.3
-**Status:** v0.6.0.3 released (Testnet development)
+**Current Version:** v0.6.4
+**Status:** v0.6.0.4 released (Testnet development)
 
 ---
 
@@ -17,6 +17,13 @@ Features are documented **after** implementation to prevent roadmap drift.
 ---
 
 ## Version History (Completed)
+
+### v0.6.4 - Auth Binding and Nonce Fixes (Jun 2026)
+- ✅ Auth binding gap fixed — from address verified against from_pubkey
+- ✅ Wallet nonce hardcoded 0 fixed — live nonce fetched from RPC before signing
+- ✅ GET /nonce/:address RPC endpoint added
+- ✅ pubkey_hex_to_address() helper in crypto.rs
+- ✅ fetch_nonce() fails loudly on RPC error
 
 ### v0.6.3 - Peer-Based Live Sync (Jun 2026)
 - ✅ RPC address carried in peer handshake
