@@ -4,7 +4,7 @@ A lightweight proof-of-stake blockchain focused on accessibility, decentralizati
 
 ---
 
-> ⚠️ **Network Identity Notice — v0.6.5**
+> ⚠️ **Network Identity Notice — v0.6.6**
 >
 > Validator identity is carried in the direct peer handshake as a transitional bootstrap mechanism. Validator IDs are visible to directly connected peers. **Public or adversarial validator testnets are not recommended until v0.7.0 network identity hardening lands.** Forks should keep validator testnets private until then. See [NETWORKING.md](NETWORKING.md) for full details. Contact me directly for questions or guidance regarding this matter.
 
@@ -26,12 +26,13 @@ A lightweight proof-of-stake blockchain focused on accessibility, decentralizati
 
 **Infrastructure:**
 - 6-hour archive segments for durable chain persistence
+- Archive/prune operations decoupled from chain lock and async runtime threads
 - Peer-based live sync catch-up on startup
 - WebSocket real-time updates
 - Built-in metrics dashboard
 - Vendored dependencies for supply-chain security
 
-## Current Status: v0.6.5
+## Current Status: v0.6.6
 
 **Completed:**
 * ✅ TPI consensus with merit-based selection
@@ -46,7 +47,7 @@ A lightweight proof-of-stake blockchain focused on accessibility, decentralizati
 * ✅ Supply cap enforcement (33M VLid hard limit)
 * ✅ Fee priority ordering (high-fee transactions first)
 * ✅ Ed25519 signature verification on block acceptance
-* ✅ Comprehensive test suite (46 tests, ~57% coverage)
+* ✅ Comprehensive test suite (57 tests)
 * ✅ Snapshot primitives with deterministic checksums and atomic writes
 * ✅ Recovery RPC endpoints (GET /head, GET /block/:slot)
 * ✅ Archive segment module — 6-hour durable chain persistence unit
@@ -66,9 +67,12 @@ A lightweight proof-of-stake blockchain focused on accessibility, decentralizati
 * ✅ /submit returns real success/failure with proper HTTP status codes
 * ✅ /balance and /block reject malformed requests with 400 instead of silent defaults
 * ✅ MempoolRejection enum for precise rejection reasons
+* ✅ Archive/prune no longer holds the ChainState write lock during disk I/O
+* ✅ Archive file I/O moved off Tokio worker threads via spawn_blocking
+* ✅ Duplicate concurrent archive task guard prevents racing on the same segment
 
 **In Development:**
-* 📋 Memory pruning (2,160 block retention)
+* 📋 v0.6.7 Arweave upload wiring for archive segments
 * 📋 v0.7.0 network identity hardening — ephemeral network identity, validator proof/binding
 * 📋 Layer 2 networks (VNS, VIPFS, KEVIN)
 
@@ -114,7 +118,8 @@ A lightweight proof-of-stake blockchain focused on accessibility, decentralizati
 - ✅ RPC address in handshake and peer-based live sync catch-up
 - ✅ Auth binding and wallet nonce correctness fixes
 - ✅ RPC error handling hardening (precise rejection reasons, proper HTTP status codes)
-- 📋 Memory pruning (2,160 block retention)
+- ✅ Archive/prune lock-scope and concurrency hardening (v0.6.6)
+- ✅ 11 new archive unit tests — checksum, version, block-count, round-trip coverage
 
 ### Phase 5: Network Security & SPO 📋 (Planned - v0.7.0)
 - Ephemeral network identity — validator proof/binding without direct identity disclosure
@@ -209,7 +214,10 @@ Self-documenting variable names eliminate need for comments. Complexity that req
 Complete state management using HashMaps. No external database dependencies ensures sovereignty and auditability.
 
 **6-Hour Archive Segments:**
-Every 2,160 blocks, the retiring block range is written as a durable archive segment. This is the chain's long-term memory — not a restore checkpoint, but a permanent historical record. Peers handle live catch-up sync.
+Every 2,160 blocks, the retiring block range is written as a durable archive segment. This is the chain's long-term memory, not a restore checkpoint, but a permanent historical record. Peers handle live catch-up sync.
+
+**Lock-Scoped Archive Generation:**
+Archive segment building, writing, and verification run without holding the chain state lock and without blocking the async runtime. File I/O is isolated via spawn_blocking, and the chain lock is only briefly acquired to clone the block range and, after success, to prune it. Duplicate concurrent archive attempts for the same segment are prevented by an in-memory guard.
 
 **Peer-Based Live Sync:**
 On startup, after validator quorum is confirmed, the node queries peers for their current head and fetches any missing blocks sequentially. Production only begins after successful catch-up. Partial sync failure exits cleanly rather than allowing stale-state production.
@@ -269,4 +277,4 @@ Questions or inquiries welcome via GitHub issues, or:
 
 ---
 
-**"Valid, empowering Communities with Sovereign, Decentralized, and Accessible In-Memory Tools, Fostering Freedom and Transparency Through Open-Source Self-Reliance."**
+**"Valid, empowering Communities with Sovereign, Decentralized, and Accessible In-Memory Tools. Fostering Freedom and Transparency Through Open-Source Self-Reliance."**
