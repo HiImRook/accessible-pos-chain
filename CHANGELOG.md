@@ -5,6 +5,28 @@ All notable changes to Valid Blockchain will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.5] - 2026-06-19
+
+### Fixed
+- /submit no longer always reports success — uses mempool.add_detailed() and returns real result
+- /balance rejects missing or empty address with 400 instead of silently defaulting to empty string
+- /block rejects missing or invalid slot with 400 instead of silently defaulting to 0
+
+### Added
+- MempoolRejection enum — Duplicate, Full
+- Mempool.add_detailed() — returns Result<(), MempoolRejection> for precise rejection reasons
+- ErrorResponse struct for consistent malformed-request error bodies
+- /submit returns 200 OK, 409 Conflict (duplicate), or 503 Service Unavailable (full mempool)
+
+### Changed
+- Mempool.add() now wraps add_detailed() — same bool interface, no test breakage
+- add_transaction() removed from Mempool — add() is the single insertion path
+- Version bumped to 0.6.5
+
+### Notes
+- All 19 existing tests pass unchanged
+- Surgical, backward-compatible refactor — no breaking API changes for existing callers
+
 ## [0.6.4] - 2026-06-09
 
 ### Fixed
