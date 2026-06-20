@@ -4,7 +4,7 @@ A lightweight proof-of-stake blockchain focused on accessibility, decentralizati
 
 ---
 
-> ⚠️ **Network Identity Notice — v0.6.4**
+> ⚠️ **Network Identity Notice — v0.6.5**
 >
 > Validator identity is carried in the direct peer handshake as a transitional bootstrap mechanism. Validator IDs are visible to directly connected peers. **Public or adversarial validator testnets are not recommended until v0.7.0 network identity hardening lands.** Forks should keep validator testnets private until then. See [NETWORKING.md](NETWORKING.md) for full details. Contact me directly for questions or guidance regarding this matter.
 
@@ -31,7 +31,7 @@ A lightweight proof-of-stake blockchain focused on accessibility, decentralizati
 - Built-in metrics dashboard
 - Vendored dependencies for supply-chain security
 
-## Current Status: v0.6.4
+## Current Status: v0.6.5
 
 **Completed:**
 * ✅ TPI consensus with merit-based selection
@@ -63,9 +63,11 @@ A lightweight proof-of-stake blockchain focused on accessibility, decentralizati
 * ✅ Auth binding gap fixed — from address verified against from_pubkey
 * ✅ Wallet nonce fixed — live nonce fetched from RPC before signing
 * ✅ GET /nonce/:address RPC endpoint
+* ✅ /submit returns real success/failure with proper HTTP status codes
+* ✅ /balance and /block reject malformed requests with 400 instead of silent defaults
+* ✅ MempoolRejection enum for precise rejection reasons
 
 **In Development:**
-* 📋 Error handling refactor
 * 📋 Memory pruning (2,160 block retention)
 * 📋 v0.7.0 network identity hardening — ephemeral network identity, validator proof/binding
 * 📋 Layer 2 networks (VNS, VIPFS, KEVIN)
@@ -101,7 +103,7 @@ A lightweight proof-of-stake blockchain focused on accessibility, decentralizati
   - Crypto unit tests (8)
   - ChainState validation tests (5)
 
-### Phase 4: State Management 🔄 (In Progress - v0.6.x)
+### Phase 4: State Management ✅ (Complete - v0.6.x)
 - ✅ Snapshot primitives and deterministic checksums
 - ✅ Atomic snapshot write and verified load
 - ✅ Recovery RPC endpoints (GET /head, GET /block/:slot)
@@ -111,8 +113,8 @@ A lightweight proof-of-stake blockchain focused on accessibility, decentralizati
 - ✅ Validator-aware handshake and production readiness gate
 - ✅ RPC address in handshake and peer-based live sync catch-up
 - ✅ Auth binding and wallet nonce correctness fixes
+- ✅ RPC error handling hardening (precise rejection reasons, proper HTTP status codes)
 - 📋 Memory pruning (2,160 block retention)
-- 📋 Error handling refactor
 
 ### Phase 5: Network Security & SPO 📋 (Planned - v0.7.0)
 - Ephemeral network identity — validator proof/binding without direct identity disclosure
@@ -211,6 +213,9 @@ Every 2,160 blocks, the retiring block range is written as a durable archive seg
 
 **Peer-Based Live Sync:**
 On startup, after validator quorum is confirmed, the node queries peers for their current head and fetches any missing blocks sequentially. Production only begins after successful catch-up. Partial sync failure exits cleanly rather than allowing stale-state production.
+
+**Precise RPC Error Handling:**
+Malformed requests and mempool rejections return proper HTTP status codes with clear reasons rather than silently defaulting or always reporting success. /submit distinguishes accepted, duplicate, and full-mempool outcomes.
 
 **Vendored Dependencies:**
 All dependencies vendored for supply-chain security.
