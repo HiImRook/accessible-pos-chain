@@ -5,6 +5,30 @@ All notable changes to Valid Blockchain will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.6] - 2026-06-20
+
+### Fixed
+- Archive/prune generation no longer holds the ChainState write lock during disk I/O
+- Archive file writes, reads, and verification no longer block the Tokio async runtime worker threads
+- Duplicate concurrent archive attempts for the same segment path now prevented
+
+### Added
+- archive_segment_to_disk() — isolated synchronous archive logic for use with spawn_blocking
+- archiving_in_progress: Arc<Mutex<HashSet<String>>> guard preventing duplicate archive tasks
+- tests/archive_tests.rs — 11 new unit tests covering checksum validation, version mismatch, block count mismatch, empty-segment rejection, sort-on-build, and write/read round trips
+- Clearer archive start/success/failure logging
+
+### Changed
+- maybe_archive_and_prune() is now async, taking Arc<RwLock<ChainState>> instead of &mut ChainState
+- Archive work is spawned as an independent tokio task, decoupled from block production and block receipt
+- Disk I/O during archive generation now runs via tokio::task::spawn_blocking
+- Prune range is fixed at archive-trigger time and never re-derived from a changed chain tip
+- Both block-handling call sites (received and produced) updated to drop the chain lock before triggering archive work
+
+### Notes
+- All 51 tests pass (40 existing + 11 new archive tests)
+- Surgical, scope-disciplined refactor. Pruning correctness logic itself was already sound and untouched
+
 ## [0.6.5] - 2026-06-19
 
 ### Fixed
