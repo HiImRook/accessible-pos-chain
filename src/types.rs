@@ -162,6 +162,12 @@ impl ChainState {
     }
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum MempoolRejection {
+    Duplicate,
+    Full,
+}
+
 pub struct Mempool {
     transactions: Vec<Transaction>,
     seen_hashes: HashSet<String>,
@@ -176,20 +182,20 @@ impl Mempool {
     }
 
     pub fn add(&mut self, tx: Transaction) -> bool {
+        self.add_detailed(tx).is_ok()
+    }
+
+    pub fn add_detailed(&mut self, tx: Transaction) -> Result<(), MempoolRejection> {
         if self.transactions.len() >= MAX_MEMPOOL_SIZE {
-            return false;
+            return Err(MempoolRejection::Full);
         }
         let tx_hash = compute_tx_hash(&tx);
         if self.seen_hashes.contains(&tx_hash) {
-            return false;
+            return Err(MempoolRejection::Duplicate);
         }
         self.seen_hashes.insert(tx_hash);
         self.transactions.push(tx);
-        true
-    }
-
-    pub fn add_transaction(&mut self, tx: Transaction) {
-        self.add(tx);
+        Ok(())
     }
 
     pub fn get_pending(&mut self, max: usize) -> Vec<Transaction> {

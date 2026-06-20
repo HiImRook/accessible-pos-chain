@@ -1,5 +1,6 @@
 use axum::{
     extract::{Path, State, WebSocketUpgrade},
+    http::StatusCode,
     response::IntoResponse,
     routing::{get, post},
     Json, Router,
@@ -55,17 +56,31 @@ struct SubmitTransactionResponse {
     message: String,
 }
 
+#[derive(Serialize)]
+struct ErrorResponse {
+    success: bool,
+    message: String,
+}
+
 async fn get_balance(
     State(state): State<RpcState>,
     Json(payload): Json<serde_json::Value>,
-) -> Json<BalanceResponse> {
-    let address = payload["address"].as_str().unwrap_or("");
+) -> Result<Json<BalanceResponse>, (StatusCode, Json<ErrorResponse>)> {
+    let address = match payload["address"].as_str() {
+        Some(addr) if !addr.is_empty() => addr,
+        _ => {
+            return Err((StatusCode::BAD_REQUEST, Json(ErrorResponse {
+                success: false,
+                message: "missing or invalid address".to_string(),
+            })));
+        }
+    };
     let chain = state.chain.read().await;
     let balance = chain.get_balance(address);
-    Json(BalanceResponse {
+    Ok(Json(BalanceResponse {
         address: address.to_string(),
         balance,
-    })
+    }))
 }
 
 async fn get_nonce(
@@ -100,10 +115,18 @@ async fn get_head(State(state): State<RpcState>) -> Json<HeadResponse> {
 async fn get_block(
     State(state): State<RpcState>,
     Json(payload): Json<serde_json::Value>,
-) -> Json<Option<Block>> {
-    let slot = payload["slot"].as_u64().unwrap_or(0);
+) -> Result<Json<Option<Block>>, (StatusCode, Json<ErrorResponse>)> {
+    let slot = match payload["slot"].as_u64() {
+        Some(s) => s,
+        None => {
+            return Err((StatusCode::BAD_REQUEST, Json(ErrorResponse {
+                success: false,
+                message: "missing or invalid slot".to_string(),
+            })));
+        }
+    };
     let chain = state.chain.read().await;
-    Json(chain.blocks.get(&slot).cloned())
+    Ok(Json(chain.blocks.get(&slot).cloned()))
 }
 
 async fn get_block_by_slot(
@@ -117,7 +140,7 @@ async fn get_block_by_slot(
 async fn submit_transaction(
     State(state): State<RpcState>,
     Json(payload): Json<SubmitTransactionRequest>,
-) -> Json<SubmitTransactionResponse> {
+) -> axum::response::Response {
     let tx = Transaction {
         from: payload.from,
         from_pubkey: payload.from_pubkey,
@@ -128,12 +151,27 @@ async fn submit_transaction(
         signature: payload.signature,
     };
     let mut mempool = state.mempool.lock().await;
-    mempool.add_transaction(tx);
-    let len = mempool.len();
-    Json(SubmitTransactionResponse {
-        success: true,
-        message: format!("Transaction added to mempool ({} pending)", len),
-    })
+    match mempool.add_detailed(tx) {
+        Ok(()) => {
+            let len = mempool.len();
+            (StatusCode::OK, Json(SubmitTransactionResponse {
+                success: true,
+                message: format!("Transaction accepted ({} pending)", len),
+            })).into_response()
+        }
+        Err(MempoolRejection::Duplicate) => {
+            (StatusCode::CONFLICT, Json(ErrorResponse {
+                success: false,
+                message: "Transaction rejected — duplicate".to_string(),
+            })).into_response()
+        }
+        Err(MempoolRejection::Full) => {
+            (StatusCode::SERVICE_UNAVAILABLE, Json(ErrorResponse {
+                success: false,
+                message: "Transaction rejected — mempool full".to_string(),
+            })).into_response()
+        }
+    }
 }
 
 async fn get_status(State(state): State<RpcState>) -> Json<StatusResponse> {
