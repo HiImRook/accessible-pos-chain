@@ -1,7 +1,7 @@
 # Valid Blockchain - Development Roadmap
 
-**Current Version:** v0.6.4
-**Status:** v0.6.0.4 released (Testnet development)
+**Current Version:** v0.6.5
+**Status:** v0.6.0.5 released (Testnet development)
 
 ---
 
@@ -17,6 +17,13 @@ Features are documented **after** implementation to prevent roadmap drift.
 ---
 
 ## Version History (Completed)
+
+### v0.6.5 - RPC Error Handling Hardening (Jun 2026)
+- ✅ /submit returns real success/failure instead of always reporting success
+- ✅ MempoolRejection enum distinguishes Duplicate vs Full
+- ✅ /balance and /block reject malformed requests with 400 instead of silent defaults
+- ✅ Consistent ErrorResponse body across RPC error paths
+- ✅ Backward-compatible — all existing tests pass unchanged
 
 ### v0.6.4 - Auth Binding and Nonce Fixes (Jun 2026)
 - ✅ Auth binding gap fixed — from address verified against from_pubkey
