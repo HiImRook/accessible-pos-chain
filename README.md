@@ -10,7 +10,7 @@ The `main` branch holds the forkable protocol base.
 
 ---
 
-> ⚠️ **Network Identity Notice — v0.6.4**
+> ⚠️ **Network Identity Notice — v0.6.5**
 >
 > Validator identity is carried in the direct peer handshake as a transitional bootstrap mechanism. Validator IDs are visible to directly connected peers. Public or adversarial validator testnets are not recommended until v0.7.0 network identity hardening lands. Forks should keep validator testnets private until then. See [NETWORKING.md](https://github.com/HiImRook/accessible-pos-chain/blob/main/NETWORKING.md) for full details. Contact me directly for questions or guidance regarding this matter.
 
@@ -44,7 +44,7 @@ The `main` branch holds the forkable protocol base.
 
 Future governance will be merit-based (participation + wallet age).
 
-## Current Status: v0.6.4
+## Current Status: v0.6.5
 
 **Completed**
 - Full TPI consensus (random trio + merit producer + 2/3 finality)
@@ -73,9 +73,11 @@ Future governance will be merit-based (participation + wallet age).
 - Auth binding gap fixed — from address verified against from_pubkey
 - Wallet nonce fixed — live nonce fetched from RPC before signing
 - GET /nonce/:address RPC endpoint
+- /submit returns real success/failure with proper HTTP status codes
+- /balance and /block reject malformed requests with 400 instead of silent defaults
+- MempoolRejection enum for precise rejection reasons
 
 **Next**
-- Error handling refactor
 - Memory pruning (2,160 block retention)
 - v0.7.0 network identity hardening — ephemeral network identity, validator proof/binding
 
@@ -112,6 +114,7 @@ Bootstrap peers and testnet details are announced on Discord before each launch.
 - Pure in-memory state using HashMaps. No database or disk writes during operation
 - 6-hour archive segments for durable chain persistence and historical record
 - Peer-based live sync — one-time startup catch-up via peer RPC endpoints
+- Precise RPC error handling — malformed requests and mempool rejections return proper HTTP status codes instead of silent defaults
 - Custom P2P and racer system built from scratch
 - All constants in SCREAMING_SNAKE_CASE (important for contributors)
 - Complete file implementations, no partial modules, compact-by-design codebase
