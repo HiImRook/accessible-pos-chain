@@ -10,7 +10,7 @@ The `main` branch holds the forkable protocol base.
 
 ---
 
-> ⚠️ **Network Identity Notice — v0.6.5**
+> ⚠️ **Network Identity Notice — v0.6.6**
 >
 > Validator identity is carried in the direct peer handshake as a transitional bootstrap mechanism. Validator IDs are visible to directly connected peers. Public or adversarial validator testnets are not recommended until v0.7.0 network identity hardening lands. Forks should keep validator testnets private until then. See [NETWORKING.md](https://github.com/HiImRook/accessible-pos-chain/blob/main/NETWORKING.md) for full details. Contact me directly for questions or guidance regarding this matter.
 
@@ -39,12 +39,12 @@ The `main` branch holds the forkable protocol base.
 - Tokens mint only when validated work is proven (when a block is produced).
 - No VC allocations, no traditional treasury. Completely non-custodial.
 - Epoch 0 block reward: 0.0808 VLid.
-- Fees: 100% to block producer.
+- Fees: 100% to block producer (temporary).
 - Genesis bootstrap: 33,000 VLid (0.1%).
 
 Future governance will be merit-based (participation + wallet age).
 
-## Current Status: v0.6.5
+## Current Status: v0.6.6
 
 **Completed**
 - Full TPI consensus (random trio + merit producer + 2/3 finality)
@@ -56,7 +56,7 @@ Future governance will be merit-based (participation + wallet age).
 - Ed25519 signature verification
 - Wallet CLI
 - WebSocket RPC and metrics dashboard
-- 46 tests (~57% coverage) covering TPI, mempool, minting, tokenomics, and ChainState
+- 57 tests covering TPI, mempool, minting, tokenomics, ChainState, and archive segments
 - Snapshot primitives with deterministic checksums and atomic writes
 - Recovery RPC endpoints (GET /head, GET /block/:slot)
 - Archive segment module — 6-hour durable chain persistence unit
@@ -76,9 +76,12 @@ Future governance will be merit-based (participation + wallet age).
 - /submit returns real success/failure with proper HTTP status codes
 - /balance and /block reject malformed requests with 400 instead of silent defaults
 - MempoolRejection enum for precise rejection reasons
+- Archive/prune no longer holds the ChainState write lock during disk I/O
+- Archive file I/O moved off Tokio worker threads via spawn_blocking
+- Duplicate concurrent archive task guard prevents racing on the same segment
 
 **Next**
-- Memory pruning (2,160 block retention)
+- v0.6.7 Arweave upload wiring for archive segments
 - v0.7.0 network identity hardening — ephemeral network identity, validator proof/binding
 
 ## Hardware Requirements
@@ -113,6 +116,7 @@ Bootstrap peers and testnet details are announced on Discord before each launch.
 
 - Pure in-memory state using HashMaps. No database or disk writes during operation
 - 6-hour archive segments for durable chain persistence and historical record
+- Archive generation runs without holding the chain lock or blocking the async runtime. File I/O isolated via spawn_blocking, duplicate concurrent archive attempts prevented
 - Peer-based live sync — one-time startup catch-up via peer RPC endpoints
 - Precise RPC error handling — malformed requests and mempool rejections return proper HTTP status codes instead of silent defaults
 - Custom P2P and racer system built from scratch
@@ -144,4 +148,4 @@ Copyright (c) 2024-2026 Rook
 
 ---
 
-**"Valid, empowering Communities with Sovereign, Decentralized, and Accessible In-Memory Tools, Fostering Freedom and Transparency Through Open-Source Self-Reliance."**
+**"Valid, empowering Communities with Sovereign, Decentralized, and Accessible In-Memory Tools. Fostering Freedom and Transparency Through Open-Source Self-Reliance."**
