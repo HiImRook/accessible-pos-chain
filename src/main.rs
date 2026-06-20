@@ -8,7 +8,7 @@ use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
 use tokio::sync::{Mutex, RwLock};
 use std::time::{SystemTime, UNIX_EPOCH};
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 fn timestamp() -> String {
     let now = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs();
@@ -40,7 +40,46 @@ fn get_cpu_usage() -> f64 {
     0.0
 }
 
-fn maybe_archive_and_prune(state: &mut ChainState, genesis_hash: &str, latest_slot: u64) {
+fn archive_segment_to_disk(
+    blocks: Vec<Block>,
+    genesis_hash: String,
+    archive_start: u64,
+    seg: u64,
+    path: String,
+) -> Result<(), String> {
+    let previous_segment_checksum = if archive_start > 1 {
+        let prev_end = archive_start - 1;
+        let prev_start = prev_end - seg + 1;
+        let prev_path = segment_archive_path(prev_start, prev_end);
+        match load_verified_archive_segment(&prev_path) {
+            Ok(prev_seg) => prev_seg.metadata.payload_checksum,
+            Err(_) => String::new(),
+        }
+    } else {
+        String::new()
+    };
+
+    let segment = build_archive_segment(blocks, &genesis_hash, &previous_segment_checksum)
+        .ok_or_else(|| "failed to build archive segment".to_string())?;
+
+    write_archive_segment(&segment, &path)
+        .map_err(|e| format!("write failed: {}", e))?;
+
+    load_verified_archive_segment(&path)
+        .map_err(|e| {
+            let _ = std::fs::remove_file(&path);
+            format!("verify failed: {}", e)
+        })?;
+
+    Ok(())
+}
+
+async fn maybe_archive_and_prune(
+    state: Arc<RwLock<ChainState>>,
+    genesis_hash: String,
+    latest_slot: u64,
+    archiving_in_progress: Arc<Mutex<HashSet<String>>>,
+) {
     let seg = blocks_per_segment();
     if latest_slot < seg * 2 || latest_slot % seg != 0 {
         return;
@@ -54,52 +93,55 @@ fn maybe_archive_and_prune(state: &mut ChainState, genesis_hash: &str, latest_sl
         return;
     }
 
-    let blocks: Vec<Block> = (archive_start..=archive_end)
-        .filter_map(|slot| state.blocks.get(&slot).cloned())
-        .collect();
+    {
+        let mut in_progress = archiving_in_progress.lock().await;
+        if !in_progress.insert(path.clone()) {
+            return;
+        }
+    }
+
+    let blocks: Vec<Block> = {
+        let s = state.read().await;
+        (archive_start..=archive_end)
+            .filter_map(|slot| s.blocks.get(&slot).cloned())
+            .collect()
+    };
 
     if blocks.len() != seg as usize {
         println!("[ARCHIVE] Incomplete segment {}-{}: expected {}, got {} blocks",
             archive_start, archive_end, seg, blocks.len());
+        let mut in_progress = archiving_in_progress.lock().await;
+        in_progress.remove(&path);
         return;
     }
 
-    let previous_segment_checksum = if archive_start > 1 {
-        let prev_end = archive_start - 1;
-        let prev_start = prev_end - seg + 1;
-        let prev_path = segment_archive_path(prev_start, prev_end);
-        match load_verified_archive_segment(&prev_path) {
-            Ok(prev_seg) => prev_seg.metadata.payload_checksum,
-            Err(_) => String::new(),
-        }
-    } else {
-        String::new()
-    };
+    println!("[ARCHIVE] Starting archive for segment {}-{}", archive_start, archive_end);
 
-    if let Some(segment) = build_archive_segment(blocks, genesis_hash, &previous_segment_checksum) {
-        match write_archive_segment(&segment, &path) {
-            Ok(_) => {
-                match load_verified_archive_segment(&path) {
-                    Ok(_) => {
-                        for slot in archive_start..=archive_end {
-                            state.blocks.remove(&slot);
-                        }
-                        println!("[ARCHIVE] Segment {}-{} written, verified, and pruned",
-                            archive_start, archive_end);
-                    }
-                    Err(e) => {
-                        println!("[ARCHIVE] Write verification failed for segment {}-{}: {}",
-                            archive_start, archive_end, e);
-                        let _ = std::fs::remove_file(&path);
-                    }
-                }
+    let path_for_blocking = path.clone();
+    let result = tokio::task::spawn_blocking(move || {
+        archive_segment_to_disk(blocks, genesis_hash, archive_start, seg, path_for_blocking)
+    }).await;
+
+    match result {
+        Ok(Ok(())) => {
+            let mut s = state.write().await;
+            for slot in archive_start..=archive_end {
+                s.blocks.remove(&slot);
             }
-            Err(e) => {
-                println!("[ARCHIVE] Write failed for segment {}-{}: {}",
-                    archive_start, archive_end, e);
-            }
+            println!("[ARCHIVE] Segment {}-{} written, verified, and pruned",
+                archive_start, archive_end);
+        }
+        Ok(Err(e)) => {
+            println!("[ARCHIVE] Segment {}-{} failed: {}", archive_start, archive_end, e);
+        }
+        Err(e) => {
+            println!("[ARCHIVE] Blocking task join error for segment {}-{}: {}",
+                archive_start, archive_end, e);
         }
     }
+
+    let mut in_progress = archiving_in_progress.lock().await;
+    in_progress.remove(&path);
 }
 
 fn normalize_rpc_addr(rpc_addr: &str, peer_transport_addr: &str) -> String {
@@ -319,6 +361,7 @@ async fn main() {
     let peer_manager = Arc::new(Mutex::new(PeerManager::new(config.bootstrap_nodes.clone())));
     let mempool = Arc::new(Mutex::new(Mempool::new()));
     let metrics = Metrics::new();
+    let archiving_in_progress: Arc<Mutex<HashSet<String>>> = Arc::new(Mutex::new(HashSet::new()));
 
     {
         let mut s = state.write().await;
@@ -510,9 +553,14 @@ async fn main() {
                                 timestamp(), peer_id_short, block.slot);
 
                             let latest_slot = s.latest_slot;
-                            maybe_archive_and_prune(&mut s, &genesis_hash, latest_slot);
-
                             drop(s);
+
+                            let archive_state = Arc::clone(&state_clone);
+                            let archive_genesis_hash = genesis_hash.clone();
+                            let archive_guard = Arc::clone(&archiving_in_progress);
+                            tokio::spawn(async move {
+                                maybe_archive_and_prune(archive_state, archive_genesis_hash, latest_slot, archive_guard).await;
+                            });
 
                             {
                                 let mempool_size = {
@@ -578,6 +626,7 @@ async fn main() {
                 let metrics_clone_spawn = Arc::clone(&metrics_clone);
                 let my_id = validator_id_for_block.clone();
                 let genesis_hash_spawn = genesis_hash.clone();
+                let archive_guard_spawn = Arc::clone(&archiving_in_progress);
 
                 tokio::spawn(async move {
                     if let Some(block) = produce_block_with_tpi(
@@ -603,9 +652,14 @@ async fn main() {
                                 current_slot, producer_short, block.transactions.len());
 
                             let latest_slot = s.latest_slot;
-                            maybe_archive_and_prune(&mut s, &genesis_hash_spawn, latest_slot);
-
                             drop(s);
+
+                            let archive_state = Arc::clone(&state_clone_spawn);
+                            let archive_genesis_hash = genesis_hash_spawn.clone();
+                            let archive_guard = Arc::clone(&archive_guard_spawn);
+                            tokio::spawn(async move {
+                                maybe_archive_and_prune(archive_state, archive_genesis_hash, latest_slot, archive_guard).await;
+                            });
 
                             {
                                 let mempool_size = {
