@@ -1,7 +1,7 @@
 # Valid Blockchain - Development Roadmap
 
-**Current Version:** v0.6.5
-**Status:** v0.6.0.5 released (Testnet development)
+**Current Version:** v0.6.6
+**Status:** v0.6.6 released (Testnet development)
 
 ---
 
@@ -17,6 +17,14 @@ Features are documented **after** implementation to prevent roadmap drift.
 ---
 
 ## Version History (Completed)
+
+### v0.6.6 - Archive Lock-Scope and Concurrency Hardening (Jun 2026)
+- ✅ ChainState write lock no longer held during archive disk I/O
+- ✅ Archive file I/O moved off Tokio worker threads via spawn_blocking
+- ✅ Duplicate concurrent archive task guard (in-memory HashSet)
+- ✅ Archive work fully decoupled from block production/receipt critical path
+- ✅ 11 new archive unit tests — checksum, version, block-count, round-trip coverage
+- ✅ Prune range fixed deterministically at trigger time
 
 ### v0.6.5 - RPC Error Handling Hardening (Jun 2026)
 - ✅ /submit returns real success/failure instead of always reporting success
