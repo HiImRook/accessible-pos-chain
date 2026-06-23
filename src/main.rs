@@ -1,6 +1,8 @@
 use pos_chain::{types::*, consensus::Consensus, network, config::Config, peer_manager::PeerManager, metrics::Metrics, tpi::TpiHashMessage};
 use pos_chain::tpi_production::produce_block_with_tpi;
-use pos_chain::archive::{build_archive_segment, write_archive_segment, load_verified_archive_segment, segment_archive_path, blocks_per_segment};
+use pos_chain::archive::{build_archive_segment, write_archive_segment, load_verified_archive_segment, segment_archive_path, blocks_per_segment, ArchiveSegment};
+use pos_chain::publication::{build_publication_manifest, write_publication_manifest, read_publication_manifest, write_publication_receipt, read_publication_receipt, PublicationStatus, PUBLISH_QUEUE_DIR, PUBLISH_RECEIPTS_DIR};
+use pos_chain::arweave::ArweaveClient;
 use pos_chain::snapshot::compute_genesis_hash;
 use tokio::sync::mpsc;
 use tokio::time::{interval, Duration};
@@ -46,7 +48,7 @@ fn archive_segment_to_disk(
     archive_start: u64,
     seg: u64,
     path: String,
-) -> Result<(), String> {
+) -> Result<ArchiveSegment, String> {
     let previous_segment_checksum = if archive_start > 1 {
         let prev_end = archive_start - 1;
         let prev_start = prev_end - seg + 1;
@@ -71,7 +73,7 @@ fn archive_segment_to_disk(
             format!("verify failed: {}", e)
         })?;
 
-    Ok(())
+    Ok(segment)
 }
 
 async fn maybe_archive_and_prune(
@@ -123,10 +125,24 @@ async fn maybe_archive_and_prune(
     }).await;
 
     match result {
-        Ok(Ok(())) => {
-            let mut s = state.write().await;
-            for slot in archive_start..=archive_end {
-                s.blocks.remove(&slot);
+        Ok(Ok(segment)) => {
+            let now = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs();
+            let manifest = build_publication_manifest(
+                path.clone(),
+                segment.metadata,
+                "arweave".to_string(),
+                now,
+            );
+            match write_publication_manifest(&manifest) {
+                Ok(_) => println!("[PUBLISH] Manifest queued for segment {}-{}", archive_start, archive_end),
+                Err(e) => println!("[PUBLISH] Manifest write failed for segment {}-{}: {}", archive_start, archive_end, e),
+            }
+
+            {
+                let mut s = state.write().await;
+                for slot in archive_start..=archive_end {
+                    s.blocks.remove(&slot);
+                }
             }
             println!("[ARCHIVE] Segment {}-{} written, verified, and pruned",
                 archive_start, archive_end);
@@ -142,6 +158,82 @@ async fn maybe_archive_and_prune(
 
     let mut in_progress = archiving_in_progress.lock().await;
     in_progress.remove(&path);
+}
+
+async fn run_publisher_loop() {
+    let mut tick = interval(Duration::from_secs(300));
+    loop {
+        tick.tick().await;
+
+        let client = match ArweaveClient::from_env() {
+            Ok(c) => c,
+            Err(e) => {
+                println!("[PUBLISH] Arweave client unavailable — skipping: {}", e);
+                continue;
+            }
+        };
+
+        let entries = match std::fs::read_dir(PUBLISH_QUEUE_DIR) {
+            Ok(e) => e,
+            Err(_) => continue,
+        };
+
+        for entry in entries.flatten() {
+            let path = entry.path();
+            let filename = match path.file_name().and_then(|n| n.to_str()) {
+                Some(f) => f.to_string(),
+                None => continue,
+            };
+
+            if !filename.ends_with(".manifest.json") {
+                continue;
+            }
+
+            let stem = filename.trim_end_matches(".manifest.json");
+            let parts: Vec<&str> = stem.split('_').collect();
+            if parts.len() != 3 || parts[0] != "segment" {
+                continue;
+            }
+
+            let segment_start: u64 = match parts[1].parse() {
+                Ok(v) => v,
+                Err(_) => continue,
+            };
+            let segment_end: u64 = match parts[2].parse() {
+                Ok(v) => v,
+                Err(_) => continue,
+            };
+
+            let receipt_path = format!("{}/segment_{}_{}.receipt.json", PUBLISH_RECEIPTS_DIR, segment_start, segment_end);
+            if std::path::Path::new(&receipt_path).exists() {
+                match read_publication_receipt(segment_start, segment_end) {
+                    Ok(receipt) => match receipt.status {
+                        PublicationStatus::Submitted | PublicationStatus::DeferredChunkingRequired => continue,
+                        _ => {}
+                    },
+                    Err(e) => {
+                        println!("[PUBLISH] Failed to read receipt for segment {}-{}: {} — retrying",
+                            segment_start, segment_end, e);
+                    }
+                }
+            }
+
+            let manifest = match read_publication_manifest(segment_start, segment_end) {
+                Ok(m) => m,
+                Err(e) => {
+                    println!("[PUBLISH] Failed to read manifest {}: {}", filename, e);
+                    continue;
+                }
+            };
+
+            println!("[PUBLISH] Processing manifest for segment {}-{}", segment_start, segment_end);
+            let receipt = client.upload_manifest(&manifest).await;
+
+            if let Err(e) = write_publication_receipt(&receipt) {
+                println!("[PUBLISH] Failed to write receipt for segment {}-{}: {}", segment_start, segment_end, e);
+            }
+        }
+    }
 }
 
 fn normalize_rpc_addr(rpc_addr: &str, peer_transport_addr: &str) -> String {
@@ -392,6 +484,10 @@ async fn main() {
     let metrics_rpc = Arc::clone(&metrics);
     tokio::spawn(async move {
         pos_chain::rpc::start_rpc_server(&rpc_addr, state_rpc, mempool_rpc, metrics_rpc).await;
+    });
+
+    tokio::spawn(async move {
+        run_publisher_loop().await;
     });
 
     if !solo_node {
