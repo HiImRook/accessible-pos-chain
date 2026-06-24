@@ -4,7 +4,7 @@ A lightweight proof-of-stake blockchain focused on accessibility, decentralizati
 
 ---
 
-> ⚠️ **Network Identity Notice — v0.6.6**
+> ⚠️ **Network Identity Notice — v0.6.7**
 >
 > Validator identity is carried in the direct peer handshake as a transitional bootstrap mechanism. Validator IDs are visible to directly connected peers. **Public or adversarial validator testnets are not recommended until v0.7.0 network identity hardening lands.** Forks should keep validator testnets private until then. See [NETWORKING.md](NETWORKING.md) for full details. Contact me directly for questions or guidance regarding this matter.
 
@@ -26,13 +26,14 @@ A lightweight proof-of-stake blockchain focused on accessibility, decentralizati
 
 **Infrastructure:**
 - 6-hour archive segments for durable chain persistence
+- Archive segments published to Arweave as permanent off-chain record
 - Archive/prune operations decoupled from chain lock and async runtime threads
 - Peer-based live sync catch-up on startup
 - WebSocket real-time updates
 - Built-in metrics dashboard
 - Vendored dependencies for supply-chain security
 
-## Current Status: v0.6.6
+## Current Status: v0.6.7
 
 **Completed:**
 * ✅ TPI consensus with merit-based selection
@@ -70,9 +71,15 @@ A lightweight proof-of-stake blockchain focused on accessibility, decentralizati
 * ✅ Archive/prune no longer holds the ChainState write lock during disk I/O
 * ✅ Archive file I/O moved off Tokio worker threads via spawn_blocking
 * ✅ Duplicate concurrent archive task guard prevents racing on the same segment
+* ✅ Backend-neutral archive publication contract (manifest/receipt/status)
+* ✅ Arweave uploader — JWK wallet loading, deep hash, RSA-PSS signing, inline upload
+* ✅ Background publisher loop — 5-minute scan, retry on failure, skip terminal statuses
+* ✅ Oversize guard — segments over 8MB deferred, configurable via ARWEAVE_INLINE_MAX_BYTES
+* ✅ Chain-native tag schema embedded in every Arweave archive upload
+* ✅ Prune correctness never gated on remote upload success
 
 **In Development:**
-* 📋 v0.6.7 Arweave upload wiring for archive segments
+* 📋 Arweave Merkle data_root validation — requires real network submission with funded wallet
 * 📋 v0.7.0 network identity hardening — ephemeral network identity, validator proof/binding
 * 📋 Layer 2 networks (VNS, VIPFS, KEVIN)
 
@@ -99,13 +106,14 @@ A lightweight proof-of-stake blockchain focused on accessibility, decentralizati
 - ✅ Fees 100% to block producer
 - ✅ Ed25519 signature verification on block acceptance
 - ✅ Transaction nonce enforcement (replay protection)
-- ✅ Comprehensive test suite (46 tests, ~57% coverage)
+- ✅ Comprehensive test suite (57 tests)
   - Mempool tests (6)
   - Minting tests (7)
   - Tokenomics tests (8 external + 6 inline)
   - TPI consensus tests (6)
   - Crypto unit tests (8)
   - ChainState validation tests (5)
+  - Archive tests (11)
 
 ### Phase 4: State Management ✅ (Complete - v0.6.x)
 - ✅ Snapshot primitives and deterministic checksums
@@ -120,6 +128,7 @@ A lightweight proof-of-stake blockchain focused on accessibility, decentralizati
 - ✅ RPC error handling hardening (precise rejection reasons, proper HTTP status codes)
 - ✅ Archive/prune lock-scope and concurrency hardening (v0.6.6)
 - ✅ 11 new archive unit tests — checksum, version, block-count, round-trip coverage
+- ✅ Arweave archive publication sidecar (v0.6.7)
 
 ### Phase 5: Network Security & SPO 📋 (Planned - v0.7.0)
 - Ephemeral network identity — validator proof/binding without direct identity disclosure
@@ -130,7 +139,7 @@ A lightweight proof-of-stake blockchain focused on accessibility, decentralizati
 
 ### Phase 6: Layer 2 Networks 📋 (Future - v0.8.0+)
 - VNS (Valid Name Service - domain registry)
-- VIPFS (Valid IPFS - content distribution)
+- VIPFS (Valid IPFS - eventual replacement for Arweave publication backend)
 - KEVIN (Distributed AI inference)
 - L2 validator rewards
 
@@ -215,6 +224,9 @@ Complete state management using HashMaps. No external database dependencies ensu
 
 **6-Hour Archive Segments:**
 Every 2,160 blocks, the retiring block range is written as a durable archive segment. This is the chain's long-term memory, not a restore checkpoint, but a permanent historical record. Peers handle live catch-up sync.
+
+**Arweave Publication Sidecar:**
+After each verified local archive segment, a publication manifest is queued. A background task processes the queue every 5 minutes, uploading segments to Arweave as permanent off-chain storage. Prune correctness never depends on upload success — local durability always gates prune. When VIPFS is ready, it replaces Arweave as the publication backend without touching validator logic.
 
 **Lock-Scoped Archive Generation:**
 Archive segment building, writing, and verification run without holding the chain state lock and without blocking the async runtime. File I/O is isolated via spawn_blocking, and the chain lock is only briefly acquired to clone the block range and, after success, to prune it. Duplicate concurrent archive attempts for the same segment are prevented by an in-memory guard.
