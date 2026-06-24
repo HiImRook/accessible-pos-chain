@@ -1,7 +1,7 @@
 # Valid Blockchain - Development Roadmap
 
-**Current Version:** v0.6.6
-**Status:** v0.6.6 released (Testnet development)
+**Current Version:** v0.6.7
+**Status:** v0.6.7 released (Testnet development)
 
 ---
 
@@ -17,6 +17,17 @@ Features are documented **after** implementation to prevent roadmap drift.
 ---
 
 ## Version History (Completed)
+
+### v0.6.7 - Arweave Archive Publication Sidecar (Jun 2026)
+- ✅ Backend-neutral publication contract (manifest/receipt/status)
+- ✅ Arweave uploader — JWK wallet loading, deep hash, RSA-PSS signing, inline upload
+- ✅ Background publisher loop — 5-minute scan, retry on failure, skip terminal statuses
+- ✅ Oversize guard — segments > 8MB deferred, configurable via ARWEAVE_INLINE_MAX_BYTES
+- ✅ Tag schema — chain-native metadata embedded in every archive upload
+- ✅ Prune correctness never gated on remote upload success
+- ✅ Audit config — inapplicable advisories documented and ignored
+- ⚠️ Merkle data_root requires ractual network validation with funded wallet
+- ⚠️ Chunked upload deferred to future release
 
 ### v0.6.6 - Archive Lock-Scope and Concurrency Hardening (Jun 2026)
 - ✅ ChainState write lock no longer held during archive disk I/O
@@ -95,12 +106,7 @@ Features are documented **after** implementation to prevent roadmap drift.
 
 ### v0.5.1 - ChainState Validation Testing (Mar 2026)
 - ✅ ChainState validation tests (5 tests)
-  - Duplicate block rejection
-  - Insufficient balance validation
-  - Invalid nonce detection
-  - Balance update correctness
-  - Nonce increment validation
-- ✅ Test coverage increased to ~57% (46 tests total)
+- ✅ Test coverage increased to ~57% (51 tests total after v0.6.6)
 
 ### v0.5.0-final - Tokenomics & Testing (Mar 2026)
 - ✅ Block reward minting (0.0808 VLid/block, Epoch 0)
@@ -110,34 +116,21 @@ Features are documented **after** implementation to prevent roadmap drift.
 - ✅ Fees 100% to block producer
 - ✅ Transaction nonce enforcement (replay protection)
 - ✅ Ed25519 signature verification on block acceptance
-- ✅ Comprehensive test suite (41 tests, ~52% coverage)
-  - Mempool tests (6)
-  - Minting tests (7)
-  - Tokenomics tests (8 external + 6 inline)
-  - TPI consensus tests (6)
-  - Crypto unit tests (8)
 
 ### v0.4.8 - Security Hardening (Feb 2026)
-- ✅ Block hash includes transaction nonce and fee (security fix)
+- ✅ Block hash includes transaction nonce and fee
 - ✅ Mempool size limit enforced (10,000 transactions max)
 
-### v0.4.6 - Documentation Clarity (Feb 2026)
-- ✅ Clarified v0.4.0 deferred features
-- ✅ Added placeholder TODOs for future work
-- ✅ Created ROADMAP.md
-
 ### v0.4.5 - Token Foundation Prep (Feb 2026)
-- ✅ Transaction nonce field (replay protection)
-- ✅ Transaction fee field (validator income infrastructure)
-- ✅ Signature verification includes all transaction fields
-- ✅ Total supply tracking (foundation for v0.5.0)
-- ✅ Delegations HashMap (foundation for v0.6.0)
+- ✅ Transaction nonce field
+- ✅ Transaction fee field
+- ✅ Total supply tracking
+- ✅ Delegations HashMap
 
 ### v0.4.3 - TPI Consensus Hardening (Jan 2026)
 - ✅ Enhanced TPI logging and metrics
 - ✅ Supply-chain security (vendored dependencies)
 - ✅ Unified block hashing
-- ✅ Transaction verification improvements
 
 ### v0.4.0 - TPI Consensus Foundation (Dec 2025)
 - ✅ Three-Person Integrity (TPI) consensus mechanism
@@ -152,40 +145,20 @@ Features are documented **after** implementation to prevent roadmap drift.
 
 ---
 
-## Current Priorities
-
-### v0.6.0 - State Management (In Progress)
-
-**Scope:** Durable chain persistence via 6-hour archive segments and peer-based sync
-
-#### Completed in alpha series:
-- ✅ Snapshot primitives and checksum utilities
-- ✅ Recovery RPC endpoints
-- ✅ Archive segment module (local build, verify, write)
-
-#### Remaining:
-- Wire archive segment generation into main.rs (triggered every 2,160 blocks)
-- Peer-based live sync as primary catch-up path
-- production_ready gate on peer connection
-- Memory pruning (retire blocks after archive segment written)
-- Error handling refactor (`.unwrap()` → `Result<T, E>`)
-
----
-
 ## Upcoming Releases
 
-### v0.7.0 - Validator Economics & Network Security (Target: Q4 2026)
+### v0.6.8 - Arweave Publication Validation (Target: Q3 2026)
+- Real wallet submission test against Arweave mainnet
+- Merkle data_root correctness confirmation or fix
+- Chunked upload path if segments exceed inline limit in practice
 
-**Scope:** Stake Pool Operator (SPO) model with production network security
-
-#### Features:
-- SPO delegation system
-- Fee distribution logic
-- Merit system refinement
-- Validator slashing
+### v0.7.0 - Network Identity Hardening (Target: Q4 2026)
+- Ephemeral network identity — validator proof/binding without direct identity disclosure
+- Stake Pool Operator (SPO) delegation
 - TLS encryption for P2P connections
-- Per-peer rate limiting
+- Per-peer rate limiting and authentication
 - Type safety improvements
+- Validator IP hashing with epoch-based salt
 
 ---
 
@@ -202,18 +175,17 @@ Features are documented **after** implementation to prevent roadmap drift.
 
 ### Layer 2 Infrastructure
 - VNS (Valid Name Service)
-- VIPFS (Valid IPFS)
+- VIPFS (Valid IPFS — eventual replacement for Arweave publication)
 - KEVIN (Distributed AI inference)
 
 ---
 
-## Known Limitations (v0.6.0-alpha.3)
+## Known Limitations
 
-⚠️ **No pruning:** All blocks stored in RAM indefinitely
-⚠️ **No state persistence:** Node restart = chain loss
-⚠️ **Archive segments not wired:** Generation not yet triggered in node
-⚠️ **Placeholder SPO logic:** Fee distribution incomplete
-⚠️ **No TLS:** P2P connections unencrypted
+⚠️ **Arweave Merkle data_root unvalidated** - requires ntwork submission with funded wallet
+⚠️ **Chunked upload not implemented** — segments over 8MB deferred
+⚠️ **Validator identity transitional** — direct peer handshake carries validator ID until v0.7.0
+⚠️ **No TLS** — P2P connections unencrypted until v0.7.0
 
 **These are intentional staging decisions, not bugs, oversights, or knowledge gaps.**
 
@@ -221,7 +193,7 @@ Features are documented **after** implementation to prevent roadmap drift.
 
 ## Contributing
 
-Valid Blockchain is currently in solo development by @HiImRook.
+Valid Blockchain is currently in solo development by Rook.
 
 For questions or feedback:
 - Join the Discord: https://discord.gg/2SP383cJs9
@@ -234,4 +206,4 @@ MIT License - See LICENSE file for details
 
 ---
 
-**Last Updated:** May 31, 2026
+**Last Updated:** Jun 24, 2026
