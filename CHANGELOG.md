@@ -5,6 +5,30 @@ All notable changes to Valid Blockchain will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.7] - 2026-06-23
+
+### Added
+- src/arweave.rs — Arweave upload module: JWK wallet loading, deep hash signing, Merkle data root, transaction construction, inline upload, tag schema, oversize guard
+- src/publication.rs — backend-neutral archive publication contract: ArchiveArtifact, PublicationManifest, PublicationReceipt, PublicationStatus
+- run_publisher_loop() — background task scanning publish_queue/ every 5 minutes, retrying Failed receipts, skipping Submitted and DeferredChunkingRequired
+- archive_size_estimator — dev tool binary for measuring archive segment sizes at varying tx/block counts
+- arweave_smoke_test — dev tool binary for validating JWK load and RSA key path
+
+### Changed
+- archive_segment_to_disk() now returns ArchiveSegment on success (metadata reused for manifest without extra disk read)
+- maybe_archive_and_prune() now emits a publication manifest after verified local archive write, before prune
+- New dependencies: rsa = "0.9", data-encoding = "2", jsonwebkey = "0.3"
+
+### Notes
+- Arweave inline upload capped at 8 MB by default (configurable via ARWEAVE_INLINE_MAX_BYTES env var)
+- Segments exceeding inline cap receive DeferredChunkingRequired status — chunked upload deferred to future release
+- Merkle data_root implementation follows Arweave spec; correctness requires network validation with a real funded wallet
+- Signing field order verified against official Arweave HTTP API docs
+- PSS with SHA-256 confirmed correct per Arweave docs
+- Arweave wallet loaded from ARWEAVE_JWK_JSON env var; node runs normally if var is absent
+- .cargo/audit.toml added to document inapplicable advisories: RUSTSEC-2023-0071 (rsa Marvin Attack — local signing only, no network timing exposure), RUSTSEC-2026-0097 (rand::rng() — we use thread_rng()), RUSTSEC-2025-0134 (rustls-pemfile unmaintained — transitive via reqwest)
+- Publication is sidecar-only: prune correctness never depends on remote upload success
+
 ## [0.6.6] - 2026-06-20
 
 ### Fixed
