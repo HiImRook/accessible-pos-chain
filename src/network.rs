@@ -126,7 +126,6 @@ pub async fn connect_and_handle_peer(
     tpi_tx: mpsc::Sender<TpiHashMessage>,
     peer_manager: Arc<Mutex<PeerManager>>,
     genesis_timestamp: u64,
-    validator_id: Option<String>,
     my_rpc_addr: Option<String>,
 ) {
     match TcpStream::connect(&addr).await {
@@ -142,7 +141,6 @@ pub async fn connect_and_handle_peer(
                 peer_addr: my_addr.clone(),
                 known_peers,
                 genesis_timestamp,
-                validator_id,
                 rpc_addr: my_rpc_addr,
             };
 
