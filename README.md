@@ -1,26 +1,42 @@
-# Accessible PoS Chain — Main Branch
+# Accessible TPI Chain — Main Branch
 
-A lightweight proof-of-stake blockchain focused on accessibility, decentralization, and merit-based participation. Designed to run efficiently on modest hardware in developing regions while supporting advanced Layer 2 networks.
+A lightweight **TPI (Three-Party Integrity)** blockchain focused on accessibility, decentralization, and merit-based participation. Designed to run efficiently on modest hardware in developing regions while supporting advanced Layer 2 networks.
 
 ---
 
-> ⚠️ **Network Identity Notice — v0.6.7**
+> ⚠️ **Network Identity Notice — v0.7.0**
 >
-> Validator identity is carried in the direct peer handshake as a transitional bootstrap mechanism. Validator IDs are visible to directly connected peers. **Public or adversarial validator testnets are not recommended until v0.7.0 network identity hardening lands.** Forks should keep validator testnets private until then. See [NETWORKING.md](NETWORKING.md) for full details. Contact me directly for questions or guidance regarding this matter.
+> Validator identity is no longer carried in the peer handshake as of this release. Peer connections are identity-free at the transport layer. Bootstrap remains a private ceremony between trusted partners. TLS and validator IP hashing are planned for v0.7.1. See [NETWORKING.md](NETWORKING.md) for full details.
+
+---
+
+## This is a TPI Chain
+
+Valid Blockchain uses **Three-Party Integrity (TPI)** — an original consensus mechanism, not a variant of Proof of Stake, Proof of Work, or Delegated PoS.
+
+**How TPI works:**
+- Exactly 3 validators are randomly selected from a pool of participants per block slot
+- Each computes a candidate block hash independently
+- The highest-merit validator among those in agreement produces the block
+- The other two verify — finality requires 2/3 agreement
+- Bad behavior loses standing, not tokens
+- No capital at stake and no computational race. Merit is gained through participation.
+
+TPI is not borrowed from anywhere. I happily spent the past several years developing this as a counter-reaction to unnecessarily heavy blockchain consensus and finality.
 
 ---
 
 ## Core Features
 
 **Consensus:**
-- TPI (Three-Party Integrity) consensus with 3 validators per block
-- Merit-based validator selection
+- TPI (Three-Party Integrity) — original consensus mechanism
+- Merit-based validator selection — no capital required and no SPOs needed
 - Racer backup system for network resilience
 - 10-second block times with sub-second finality
 
 **Token Economics:**
-- 33 million VLid supply over 21 years
-- Proof-of-work minting (tokens mint when work is proven)
+- 33 million VLid supply emitted over 21 years
+- Tokens mint only when work is proven
 - Nonce-based replay protection
 - Low flat transaction fees
 
@@ -33,10 +49,14 @@ A lightweight proof-of-stake blockchain focused on accessibility, decentralizati
 - Built-in metrics dashboard
 - Vendored dependencies for supply-chain security
 
-## Current Status: v0.6.7
+## Current Status: v0.7.0
 
 **Completed:**
-* ✅ TPI consensus with merit-based selection
+* ✅ TPI consensus — original mechanism, merit-based, no capital stake
+* ✅ validator_id removed from peer handshake entirely
+* ✅ Peer connections are identity-free at the transport layer
+* ✅ SPO delegation dropped — this is a TPI chain, not PoS
+* ✅ Startup quorum gating replaced by sync-complete readiness
 * ✅ Transaction nonces and fee structure
 * ✅ Racer backup system
 * ✅ RPC server with WebSocket support
@@ -48,17 +68,14 @@ A lightweight proof-of-stake blockchain focused on accessibility, decentralizati
 * ✅ Supply cap enforcement (33M VLid hard limit)
 * ✅ Fee priority ordering (high-fee transactions first)
 * ✅ Ed25519 signature verification on block acceptance
-* ✅ Comprehensive test suite (57 tests)
+* ✅ Comprehensive test suite (51 tests)
 * ✅ Snapshot primitives with deterministic checksums and atomic writes
 * ✅ Recovery RPC endpoints (GET /head, GET /block/:slot)
 * ✅ Archive segment module — 6-hour durable chain persistence unit
 * ✅ Archive segment generation wired into node — triggers every 2,160 blocks
 * ✅ Genesis identity fixed at startup — peer adoption removed
 * ✅ Genesis mismatch logging on handshake
-* ✅ Validator-aware peer handshake — validator ID binding and quorum gate
-* ✅ production_ready gate — blocks production until validator quorum confirmed
 * ✅ Canonical peer address normalization
-* ✅ 120 second startup timeout with clean exit
 * ✅ RPC address advertised in handshake — explicit peer sync endpoint discovery
 * ✅ Peer-based live sync — one-time catch-up on startup via /head and /block/:slot
 * ✅ Sync failure exits cleanly — no partial-state production
@@ -79,8 +96,8 @@ A lightweight proof-of-stake blockchain focused on accessibility, decentralizati
 * ✅ Prune correctness never gated on remote upload success
 
 **In Development:**
-* 📋 Arweave Merkle data_root validation — requires real network submission with funded wallet
-* 📋 v0.7.0 network identity hardening — ephemeral network identity, validator proof/binding
+* 📋 Arweave Merkle data_root validation — requires active testnet network submission with funded wallet(deferred from v0.6.x)
+* 📋 v0.7.1 network hardening — validator IP hashing, TLS for P2P
 * 📋 Layer 2 networks (VNS, VIPFS, KEVIN)
 
 ## Development Phases
@@ -103,10 +120,10 @@ A lightweight proof-of-stake blockchain focused on accessibility, decentralizati
 - ✅ Supply cap enforcement (33M VLid)
 - ✅ Epoch-based reward decay (60%/30%/10% over 21 years)
 - ✅ Fee priority ordering (high-fee transactions first)
-- ✅ Fees 100% to block producer
+- ✅ Fees 100% to block producer (temporary — future governance decision)
 - ✅ Ed25519 signature verification on block acceptance
 - ✅ Transaction nonce enforcement (replay protection)
-- ✅ Comprehensive test suite (57 tests)
+- ✅ Comprehensive test suite (51 tests)
   - Mempool tests (6)
   - Minting tests (7)
   - Tokenomics tests (8 external + 6 inline)
@@ -122,7 +139,6 @@ A lightweight proof-of-stake blockchain focused on accessibility, decentralizati
 - ✅ Archive segment module with deterministic checksums and atomic writes
 - ✅ Archive generation wired into node (every 2,160 blocks)
 - ✅ Genesis identity hardened — fixed at startup
-- ✅ Validator-aware handshake and production readiness gate
 - ✅ RPC address in handshake and peer-based live sync catch-up
 - ✅ Auth binding and wallet nonce correctness fixes
 - ✅ RPC error handling hardening (precise rejection reasons, proper HTTP status codes)
@@ -130,20 +146,25 @@ A lightweight proof-of-stake blockchain focused on accessibility, decentralizati
 - ✅ 11 new archive unit tests — checksum, version, block-count, round-trip coverage
 - ✅ Arweave archive publication sidecar (v0.6.7)
 
-### Phase 5: Network Security & SPO 📋 (Planned - v0.7.0)
-- Ephemeral network identity — validator proof/binding without direct identity disclosure
-- Stake Pool Operator (SPO) delegation
-- TLS encryption for P2P
-- Authentication and rate limiting
-- Type safety improvements
+### Phase 5: TPI Identity and Network Cleanup ✅ (Complete - v0.7.0)
+- ✅ validator_id removed from peer handshake
+- ✅ Peer connections are identity-free at the transport layer
+- ✅ SPO delegation dropped — TPI chain, not PoS
+- ✅ Quorum gating replaced by sync-complete readiness
+- ✅ Bootstrap is a private ceremony between trusted partners
 
-### Phase 6: Layer 2 Networks 📋 (Future - v0.8.0+)
+### Phase 6: Network Hardening 📋 (Planned - v0.7.1)
+- Validator IP hashing with epoch-based salt
+- TLS encryption for P2P transport
+- Rate limiting and operational hardening
+
+### Phase 7: Layer 2 Networks 📋 (Future - v0.8.0+)
 - VNS (Valid Name Service - domain registry)
 - VIPFS (Valid IPFS - eventual replacement for Arweave publication backend)
 - KEVIN (Distributed AI inference)
 - L2 validator rewards
 
-### Phase 7: Community Governance 📋 (Future)
+### Phase 8: Community Governance 📋 (Future)
 - Merit-based voting (XP + wallet age, not token balance)
 - Development grants (mint-on-milestone)
 - Protocol parameter voting
@@ -216,23 +237,26 @@ cargo build --release
 
 ## Architecture Highlights
 
+**TPI Consensus:**
+Three-Party Integrity is an original consensus mechanism. Three validators are selected per slot from a pool of participants, each independently computes a candidate block hash, compares for authenticity, and the highest-merit validator among those in agreement produces. No capital at stake. No computational race. Validator legitimacy is proven through block production, not handshake declarations.
+
 **Zero-Comment Code:**
-Self-documenting variable names eliminate need for comments. Complexity that requires explanation is unnecessary and just an extra layer of work.
+Self-documenting variable names eliminate need for comments. Complexity that requires explanation is unnecessary and just an extra layer of work. 
 
 **In-Memory State:**
 Complete state management using HashMaps. No external database dependencies ensures sovereignty and auditability.
 
 **6-Hour Archive Segments:**
-Every 2,160 blocks, the retiring block range is written as a durable archive segment. This is the chain's long-term memory, not a restore checkpoint, but a permanent historical record. Peers handle live catch-up sync.
+Every 2,160 blocks, the retiring block range is written as a durable archive segment. This is the chain's long-term memory, not a restore checkpoint, but a permanent historical record. Peers handle live catch-up sync. This method replaces the planned "memory pruning" update.
 
 **Arweave Publication Sidecar:**
-After each verified local archive segment, a publication manifest is queued. A background task processes the queue every 5 minutes, uploading segments to Arweave as permanent off-chain storage. Prune correctness never depends on upload success — local durability always gates prune. When VIPFS is ready, it replaces Arweave as the publication backend without touching validator logic.
+After each verified local archive segment, a publication manifest is queued. A background task processes the queue every 5 minutes, uploading segments to Arweave as permanent off-chain storage. Prune correctness never depends on upload success as local durability always gates prune. When VIPFS is ready, it replaces Arweave as the publication backend without touching validator logic.
 
 **Lock-Scoped Archive Generation:**
 Archive segment building, writing, and verification run without holding the chain state lock and without blocking the async runtime. File I/O is isolated via spawn_blocking, and the chain lock is only briefly acquired to clone the block range and, after success, to prune it. Duplicate concurrent archive attempts for the same segment are prevented by an in-memory guard.
 
 **Peer-Based Live Sync:**
-On startup, after validator quorum is confirmed, the node queries peers for their current head and fetches any missing blocks sequentially. Production only begins after successful catch-up. Partial sync failure exits cleanly rather than allowing stale-state production.
+On startup, the node queries peers for their current head and fetches any missing blocks sequentially. Production only begins after successful catch-up. Partial sync failure exits cleanly rather than allowing stale-state production.
 
 **Precise RPC Error Handling:**
 Malformed requests and mempool rejections return proper HTTP status codes with clear reasons rather than silently defaulting or always reporting success. /submit distinguishes accepted, duplicate, and full-mempool outcomes.
@@ -241,7 +265,7 @@ Malformed requests and mempool rejections return proper HTTP status codes with c
 All dependencies vendored for supply-chain security.
 
 **One Validator Per IP:**
-Anti-Sybil protection at network level. This provides decentralization through geographic distribution.
+Anti-Sybil protection at network level. Decentralization through geographic distribution.
 
 ## Related Projects
 
