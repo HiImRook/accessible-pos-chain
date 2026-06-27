@@ -432,17 +432,13 @@ async fn main() {
         &config.validators,
     );
 
-    let validator_set: HashMap<String, u64> = config.validators.clone();
-    let validator_count = validator_set.len();
     let solo_node = config.bootstrap_nodes.is_empty();
-
     let production_ready = Arc::new(AtomicBool::new(solo_node));
-    let sync_triggered = Arc::new(AtomicBool::new(solo_node));
 
     if solo_node {
         println!("[STARTUP] Solo node — production enabled immediately");
     } else {
-        println!("[STARTUP] Waiting for validator quorum ({} validators required)", validator_count);
+        println!("[STARTUP] Connecting to peers, syncing before production");
     }
 
     let genesis_timestamp = Arc::new(Mutex::new(my_genesis));
@@ -491,13 +487,12 @@ async fn main() {
     });
 
     if !solo_node {
-        let production_ready_timeout = Arc::clone(&production_ready);
+        let production_ready_sync = Arc::clone(&production_ready);
+        let state_sync = Arc::clone(&state);
+        let peer_manager_sync = Arc::clone(&peer_manager);
         tokio::spawn(async move {
-            tokio::time::sleep(Duration::from_secs(120)).await;
-            if !production_ready_timeout.load(Ordering::SeqCst) {
-                eprintln!("[STARTUP] Validator quorum not reached after 120 seconds. Exiting.");
-                std::process::exit(1);
-            }
+            tokio::time::sleep(Duration::from_secs(15)).await;
+            perform_startup_sync(state_sync, peer_manager_sync, production_ready_sync).await;
         });
     }
 
@@ -506,7 +501,6 @@ async fn main() {
     let tx_clone = tx.clone();
     let tpi_tx_clone = tpi_tx.clone();
     let genesis_timestamp_connect = Arc::clone(&genesis_timestamp);
-    let my_validator_id_connect = my_validator_id.clone();
     let my_rpc_addr_connect = my_rpc_addr.clone();
     tokio::spawn(async move {
         let mut connect_interval = interval(Duration::from_secs(30));
@@ -528,10 +522,9 @@ async fn main() {
                     let tx = tx_clone.clone();
                     let tpi_tx = tpi_tx_clone.clone();
                     let node = node.clone();
-                    let my_id = my_validator_id_connect.clone();
                     let my_rpc = Some(my_rpc_addr_connect.clone());
                     tokio::spawn(async move {
-                        network::connect_and_handle_peer(node, addr, tx, tpi_tx, pm, genesis_ts, Some(my_id), my_rpc).await;
+                        network::connect_and_handle_peer(node, addr, tx, tpi_tx, pm, genesis_ts, my_rpc).await;
                     });
                 }
             }
@@ -547,10 +540,9 @@ async fn main() {
                     let addr = my_addr_clone.clone();
                     let tx = tx_clone.clone();
                     let tpi_tx = tpi_tx_clone.clone();
-                    let my_id = my_validator_id_connect.clone();
                     let my_rpc = Some(my_rpc_addr_connect.clone());
                     tokio::spawn(async move {
-                        network::connect_and_handle_peer(peer, addr, tx, tpi_tx, pm, genesis_ts, Some(my_id), my_rpc).await;
+                        network::connect_and_handle_peer(peer, addr, tx, tpi_tx, pm, genesis_ts, my_rpc).await;
                     });
                 }
             }
@@ -579,7 +571,7 @@ async fn main() {
         tokio::select! {
             Some((msg, peer_addr)) = rx.recv() => {
                 match msg {
-                    NetworkMessage::Handshake { peer_addr: their_addr, known_peers, genesis_timestamp: their_genesis, validator_id, rpc_addr: their_rpc_addr } => {
+                    NetworkMessage::Handshake { peer_addr: their_addr, known_peers, genesis_timestamp: their_genesis, rpc_addr: their_rpc_addr } => {
                         let peer_id = generate_peer_id(&peer_addr);
                         let peer_id_short = if peer_id.len() > 12 { &peer_id[..12] } else { &peer_id };
                         println!("[{}] Handshake from {} ({} peers, genesis: {})",
@@ -609,25 +601,6 @@ async fn main() {
                             if let Some(ref rpc) = their_rpc_addr {
                                 let normalized = normalize_rpc_addr(rpc, &peer_addr);
                                 pm.bind_rpc_addr(&canonical_addr, normalized);
-                            }
-
-                            if let Some(vid) = &validator_id {
-                                pm.bind_validator(&canonical_addr, vid.clone());
-                                let connected_count = pm.connected_validator_count(&validator_set);
-                                let self_count = if validator_set.contains_key(&my_validator_id) { 1 } else { 0 };
-                                if connected_count + self_count >= validator_count
-                                    && !sync_triggered.load(Ordering::SeqCst)
-                                {
-                                    sync_triggered.store(true, Ordering::SeqCst);
-                                    println!("[{}] Validator quorum reached ({}/{}), starting catch-up sync",
-                                        timestamp(), connected_count + self_count, validator_count);
-                                    let production_ready_sync = Arc::clone(&production_ready);
-                                    let state_sync = Arc::clone(&state_clone);
-                                    let peer_manager_sync = Arc::clone(&peer_manager);
-                                    tokio::spawn(async move {
-                                        perform_startup_sync(state_sync, peer_manager_sync, production_ready_sync).await;
-                                    });
-                                }
                             }
 
                             for peer in known_peers {

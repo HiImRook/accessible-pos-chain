@@ -20,7 +20,6 @@ pub struct SnapshotPayload {
     pub nonces: HashMap<String, u64>,
     pub total_supply: u64,
     pub latest_slot: u64,
-    pub delegations: HashMap<String, String>,
     pub recent_block_tips: Vec<RecentBlockRef>,
 }
 
@@ -89,13 +88,6 @@ pub fn compute_payload_checksum(payload: &SnapshotPayload) -> String {
     hasher.update(payload.total_supply.to_le_bytes());
     hasher.update(payload.latest_slot.to_le_bytes());
 
-    let mut sorted_delegations: Vec<(&String, &String)> = payload.delegations.iter().collect();
-    sorted_delegations.sort_by_key(|(delegator, _)| delegator.as_str());
-    for (delegator, validator) in sorted_delegations {
-        hasher.update(delegator.as_bytes());
-        hasher.update(validator.as_bytes());
-    }
-
     let mut sorted_tips = payload.recent_block_tips.clone();
     sorted_tips.sort_by_key(|tip| tip.slot);
     for tip in sorted_tips {
@@ -147,7 +139,6 @@ pub fn build_snapshot(state: &ChainState, genesis_hash: &str) -> Snapshot {
         nonces: state.nonces.clone(),
         total_supply: state.total_supply,
         latest_slot: state.latest_slot,
-        delegations: state.delegations.clone(),
         recent_block_tips: collect_recent_block_tips(state),
     };
 
@@ -212,7 +203,6 @@ pub fn restore_state(state: &mut ChainState, snapshot: &Snapshot) {
     state.nonces = snapshot.payload.nonces.clone();
     state.total_supply = snapshot.payload.total_supply;
     state.latest_slot = snapshot.payload.latest_slot;
-    state.delegations = snapshot.payload.delegations.clone();
 }
 
 pub fn restored_tip_matches(snapshot: &Snapshot, latest_slot: u64, latest_block_hash: &str) -> bool {

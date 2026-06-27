@@ -32,7 +32,6 @@ pub enum NetworkMessage {
         peer_addr: String,
         known_peers: Vec<String>,
         genesis_timestamp: u64,
-        validator_id: Option<String>,
         rpc_addr: Option<String>,
     },
     NewBlock(Block),
@@ -50,7 +49,6 @@ pub struct PeerInfo {
     pub address: String,
     pub last_seen: u64,
     pub connected: bool,
-    pub validator_id: Option<String>,
     pub rpc_addr: Option<String>,
 }
 
@@ -58,7 +56,6 @@ pub struct ChainState {
     pub accounts: HashMap<String, u64>,
     pub total_supply: u64,
     pub nonces: HashMap<String, u64>,
-    pub delegations: HashMap<String, String>,
     pub blocks: HashMap<u64, Block>,
     pub latest_slot: u64,
 }
@@ -69,7 +66,6 @@ impl ChainState {
             accounts: HashMap::new(),
             total_supply: 0,
             nonces: HashMap::new(),
-            delegations: HashMap::new(),
             blocks: HashMap::new(),
             latest_slot: 0,
         }
