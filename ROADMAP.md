@@ -1,7 +1,7 @@
 # Valid Blockchain - Development Roadmap
 
-**Current Version:** v0.6.7
-**Status:** v0.6.7 released (Testnet development)
+**Current Version:** v0.7.0
+**Status:** v0.7.0 released (Testnet development)
 
 ---
 
@@ -17,6 +17,15 @@ Features are documented **after** implementation to prevent roadmap drift.
 ---
 
 ## Version History (Completed)
+
+### v0.7.0 - Handshake Cleanup and TPI Identity Release (Jun 2026)
+- ✅ validator_id removed from peer handshake entirely
+- ✅ Peer connections are identity-free at the transport layer
+- ✅ SPO delegation dropped — Valid Blockchain is a TPI chain, not PoS
+- ✅ Quorum gating replaced by sync-complete readiness
+- ✅ delegations removed from ChainState and snapshot
+- ✅ TPI proves validator legitimacy through block production, not handshake declarations
+- ✅ Bootstrap nodes remain temporary scaffolding, removed once gossip is self-sustaining
 
 ### v0.6.7 - Arweave Archive Publication Sidecar (Jun 2026)
 - ✅ Backend-neutral publication contract (manifest/receipt/status)
