@@ -10,7 +10,7 @@ The `main` branch holds the forkable protocol base.
 
 ---
 
-> ⚠️ **Network Identity Notice — v0.6.6**
+> ⚠️ **Network Identity Notice — v0.6.7**
 >
 > Validator identity is carried in the direct peer handshake as a transitional bootstrap mechanism. Validator IDs are visible to directly connected peers. Public or adversarial validator testnets are not recommended until v0.7.0 network identity hardening lands. Forks should keep validator testnets private until then. See [NETWORKING.md](https://github.com/HiImRook/accessible-pos-chain/blob/main/NETWORKING.md) for full details. Contact me directly for questions or guidance regarding this matter.
 
@@ -44,7 +44,7 @@ The `main` branch holds the forkable protocol base.
 
 Future governance will be merit-based (participation + wallet age).
 
-## Current Status: v0.6.6
+## Current Status: v0.6.7
 
 **Completed**
 - Full TPI consensus (random trio + merit producer + 2/3 finality)
@@ -79,9 +79,15 @@ Future governance will be merit-based (participation + wallet age).
 - Archive/prune no longer holds the ChainState write lock during disk I/O
 - Archive file I/O moved off Tokio worker threads via spawn_blocking
 - Duplicate concurrent archive task guard prevents racing on the same segment
+- Backend-neutral archive publication contract (manifest/receipt/status)
+- Arweave uploader — JWK wallet loading, deep hash, RSA-PSS signing, inline upload
+- Background publisher loop — 5-minute scan, retry on failure, skip terminal statuses
+- Oversize guard — segments over 8MB deferred, configurable via ARWEAVE_INLINE_MAX_BYTES
+- Chain-native tag schema embedded in every Arweave archive upload
+- Prune correctness never gated on remote upload success
 
 **Next**
-- v0.6.7 Arweave upload wiring for archive segments
+- Arweave Merkle data_root validation — requires real network submission with funded wallet
 - v0.7.0 network identity hardening — ephemeral network identity, validator proof/binding
 
 ## Hardware Requirements
@@ -116,7 +122,8 @@ Bootstrap peers and testnet details are announced on Discord before each launch.
 
 - Pure in-memory state using HashMaps. No database or disk writes during operation
 - 6-hour archive segments for durable chain persistence and historical record
-- Archive generation runs without holding the chain lock or blocking the async runtime. File I/O isolated via spawn_blocking, duplicate concurrent archive attempts prevented
+- Archive generation runs without holding the chain lock or blocking the async runtime — file I/O isolated via spawn_blocking, duplicate concurrent archive attempts prevented
+- Arweave publication sidecar — verified archive segments queued and uploaded to Arweave as permanent off-chain record; prune never depends on upload success; VIPFS replaces Arweave as the backend when ready
 - Peer-based live sync — one-time startup catch-up via peer RPC endpoints
 - Precise RPC error handling — malformed requests and mempool rejections return proper HTTP status codes instead of silent defaults
 - Custom P2P and racer system built from scratch
