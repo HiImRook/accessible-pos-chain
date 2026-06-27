@@ -1,18 +1,18 @@
 # Valid Blockchain
 
-Live `valid-blockchain` branch of the Accessible PoS Chain.
+Live `valid-blockchain` branch of the Accessible TPI Chain.
 
-A sovereign proof-of-stake blockchain written from scratch in Rust. No frameworks, pallets, or inherited consensus primitives.
+A sovereign **TPI (Three-Party Integrity)** blockchain written from scratch in Rust. No frameworks, pallets, or inherited consensus primitives.
 
-Designed as a reaction to the "heavy" blockchain consensus and PC requirements.
+Designed as a reaction to unnecessarily heavy blockchain consensus and PC requirements.
 
 The `main` branch holds the forkable protocol base.
 
 ---
 
-> ⚠️ **Network Identity Notice — v0.6.7**
+> ⚠️ **Network Identity Notice — v0.7.0**
 >
-> Validator identity is carried in the direct peer handshake as a transitional bootstrap mechanism. Validator IDs are visible to directly connected peers. Public or adversarial validator testnets are not recommended until v0.7.0 network identity hardening lands. Forks should keep validator testnets private until then. See [NETWORKING.md](https://github.com/HiImRook/accessible-pos-chain/blob/main/NETWORKING.md) for full details. Contact me directly for questions or guidance regarding this matter.
+> Validator identity is no longer carried in the peer handshake as of this release. Peer connections are identity-free at the transport layer. Bootstrap remains a private ceremony between trusted partners. TLS and validator IP hashing are planned for v0.7.1. See [NETWORKING.md](https://github.com/HiImRook/accessible-pos-chain/blob/main/NETWORKING.md) for full details.
 
 ---
 
@@ -22,32 +22,40 @@ The `main` branch holds the forkable protocol base.
 - Under 2,000 lines of code total
 - Entire chain state lives in in-memory HashMaps. Future developers take note.
 - All dependencies vendored
-- Merit valued over capital: no token-weighted mechanics, period
+- Merit valued over capital: no token-weighted mechanics, no SPOs, period
 
 ## Consensus: TPI (Three-Party Integrity)
 
-- Exactly 3 validators are randomly selected from the eligible pool for each block slot.
-- The highest-merit validator among the three becomes the producer. The other two act as verifiers.
-- The producer builds the block. The two verifiers independently re-execute and check the work.
-- Finality requires 2/3 agreement (sub-second finality on 10-second blocks).
-- Merit penalizes bad behavior. Mismatches trigger quarantine, which strengthens the validator set over time.
-- Racer backup system provides automatic failover if any selected validator fails to participate.
+TPI is an original consensus mechanism. It is not a variant of Proof of Stake, Proof of Work, or Delegated PoS. It was designed here as a counter-reaction to unnecessarily heavy blockchain consensus.
+
+- Exactly 3 validators are randomly selected from the eligible pool for each block slot
+- Each independently computes a candidate block hash and compares for authenticity
+- The highest-merit validator among those in agreement becomes the producer
+- The other two act as verifiers. Finality requires 2/3 agreement (sub-second finality on 10-second blocks)
+- No capital at stake. No computational race. Merit is gained through participation
+- Merit penalizes bad behavior. Mismatches trigger quarantine, which strengthens the validator set over time
+- Racer backup system provides automatic failover if any selected validator fails to participate
+- Validator legitimacy is proven through block production, not handshake declarations
 
 ## Token Economics (VLid)
 
-- Hard cap: 33 million VLid over exactly 21 years (3 epochs of 7 years each).
-- Tokens mint only when validated work is proven (when a block is produced).
+- Hard cap: 33 million VLid over exactly 21 years (3 epochs of 7 years each)
+- Tokens mint only when validated work is proven (when a block is produced)
 - No VC allocations, no traditional treasury. Completely non-custodial.
-- Epoch 0 block reward: 0.0808 VLid.
-- Fees: 100% to block producer (temporary).
-- Genesis bootstrap: 33,000 VLid (0.1%).
+- Epoch 0 block reward: 0.0808 VLid
+- Fees: 100% to block producer (temporary — will go to maintenance, legal, and ecosystem grants decided by community governance)
+- Genesis bootstrap: 33,000 VLid (0.1%)
 
 Future governance will be merit-based (participation + wallet age).
 
-## Current Status: v0.6.7
+## Current Status: v0.7.0
 
 **Completed**
-- Full TPI consensus (random trio + merit producer + 2/3 finality)
+- Full TPI consensus (random trio + merit producer + 2/3 finality) — original mechanism
+- validator_id removed from peer handshake entirely
+- Peer connections are identity-free at the transport layer
+- SPO delegation dropped — TPI chain, not PoS
+- Startup quorum gating replaced by sync-complete readiness
 - Merit scoring, penalization, and quarantine logic
 - Racer backup system
 - In-memory ChainState using HashMaps
@@ -56,17 +64,14 @@ Future governance will be merit-based (participation + wallet age).
 - Ed25519 signature verification
 - Wallet CLI
 - WebSocket RPC and metrics dashboard
-- 57 tests covering TPI, mempool, minting, tokenomics, ChainState, and archive segments
+- 51 tests covering TPI, mempool, minting, tokenomics, ChainState, and archive segments
 - Snapshot primitives with deterministic checksums and atomic writes
 - Recovery RPC endpoints (GET /head, GET /block/:slot)
 - Archive segment module — 6-hour durable chain persistence unit
 - Archive segment generation wired into node — triggers every 2,160 blocks
 - Genesis identity fixed at startup — peer adoption removed
 - Genesis mismatch logging on handshake
-- Validator-aware peer handshake — validator ID binding and quorum gate
-- production_ready gate — blocks production until validator quorum confirmed
 - Canonical peer address normalization
-- 120 second startup timeout with clean exit
 - RPC address advertised in handshake — explicit peer sync endpoint discovery
 - Peer-based live sync — one-time catch-up on startup via /head and /block/:slot
 - Sync failure exits cleanly — no partial-state production
@@ -87,8 +92,8 @@ Future governance will be merit-based (participation + wallet age).
 - Prune correctness never gated on remote upload success
 
 **Next**
-- Arweave Merkle data_root validation — requires real network submission with funded wallet
-- v0.7.0 network identity hardening — ephemeral network identity, validator proof/binding
+- Arweave Merkle data_root validation — requires active testnet network submission with funded wallet (deferred from v0.6.x)
+- v0.7.1 network hardening — validator IP hashing, TLS for P2P
 
 ## Hardware Requirements
 
@@ -121,9 +126,9 @@ Bootstrap peers and testnet details are announced on Discord before each launch.
 ## Architecture Highlights
 
 - Pure in-memory state using HashMaps. No database or disk writes during operation
-- 6-hour archive segments for durable chain persistence and historical record
+- 6-hour archive segments for durable chain persistence and historical record. This method replaces the planned "memory pruning" update.
 - Archive generation runs without holding the chain lock or blocking the async runtime — file I/O isolated via spawn_blocking, duplicate concurrent archive attempts prevented
-- Arweave publication sidecar — verified archive segments queued and uploaded to Arweave as permanent off-chain record; prune never depends on upload success; VIPFS replaces Arweave as the backend when ready
+- Arweave publication sidecar — verified archive segments queued and uploaded to Arweave as permanent off-chain record; prune never depends on upload success as local durability always gates prune; VIPFS replaces Arweave as the backend when ready
 - Peer-based live sync — one-time startup catch-up via peer RPC endpoints
 - Precise RPC error handling — malformed requests and mempool rejections return proper HTTP status codes instead of silent defaults
 - Custom P2P and racer system built from scratch
