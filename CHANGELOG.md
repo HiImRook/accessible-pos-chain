@@ -5,6 +5,31 @@ All notable changes to Valid Blockchain will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.0] - 2026-06-27
+
+### Changed
+- validator_id removed from NetworkMessage::Handshake entirely
+- validator_id removed from PeerInfo
+- delegations removed from ChainState and SnapshotPayload
+- Startup quorum gating removed — production readiness now determined by sync completion
+- 120-second validator quorum timeout removed
+- sync_triggered AtomicBool removed
+- Peer connections are now identity-free at the transport layer
+- TPI block production proves validator legitimacy through chain behavior, not handshake declarations
+- Valid Blockchain reframed from PoS to TPI — Three-Party Integrity is the consensus mechanism
+
+### Removed
+- bind_validator() from PeerManager
+- connected_validator_count() from PeerManager
+- SPO (Stake Pool Operator) delegation — dropped from scope entirely
+- validator_id parameter from connect_and_handle_peer() and all call sites
+
+### Notes
+- All 51 tests pass unchanged
+- Solo node behavior unchanged — production enabled immediately
+- Bootstrap nodes remain temporary scaffolding; network sustains through peer gossip once live
+- validator_id still used internally in TPI message flow — consensus layer unaffected
+
 ## [0.6.7] - 2026-06-23
 
 ### Added
