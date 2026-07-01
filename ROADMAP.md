@@ -1,7 +1,7 @@
 # Valid Blockchain - Development Roadmap
 
-**Current Version:** v0.7.0
-**Status:** v0.7.0 released (Testnet development)
+**Current Version:** v0.7.1
+**Status:** v0.7.1 released (Testnet development)
 
 ---
 
@@ -17,6 +17,18 @@ Features are documented **after** implementation to prevent roadmap drift.
 ---
 
 ## Version History (Completed)
+
+### v0.7.1 - Validator IP Hashing and Peer Identity/Transport Separation (Jul 2026)
+- ✅ Epoch-salted peer address hashing — raw IPs never stored as peer identity
+- ✅ PeerManager identity/transport split — peers HashMap keyed by hash, dial_targets HashMap for raw addresses
+- ✅ Inbound peer registration deferred until handshake — no ephemeral source port hashing
+- ✅ Inbound identity from advertised peer_addr — stable across reconnects
+- ✅ Outbound provisional identity from dial target — reconciled via handshake normalization
+- ✅ Broadcast dials raw transport targets — logs hashes only
+- ✅ Gossip stays dialable — known_peers returns raw addresses
+- ✅ PeerInfo.address renamed to PeerInfo.peer_hash — semantic alignment
+- ⚠️ resolve_dial_addr() handles 0.0.0.0:port only — hostname/IPv6 deferred
+- ⚠️ Wildcard RPC normalization uses advertised address — resolved dial target deferred
 
 ### v0.7.0 - Handshake Cleanup and TPI Identity Release (Jun 2026)
 - ✅ validator_id removed from peer handshake entirely
