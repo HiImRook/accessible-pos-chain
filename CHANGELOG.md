@@ -5,6 +5,37 @@ All notable changes to Valid Blockchain will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.1] - 2026-07-01
+
+### Added
+- src/crypto.rs — peer_addr_hash(addr, genesis_hash) — epoch-salted peer address hashing using 24-hour rotation window derived from genesis hash
+
+### Changed
+- PeerInfo.address renamed to PeerInfo.peer_hash — semantic alignment with identity model
+- generate_peer_id(addr) parameter renamed to generate_peer_id(peer_identifier) — reflects that input is now a hash, not a raw address
+- PeerManager gains dial_targets: HashMap<String, String> — separates peer identity (hash) from transport (raw dial address)
+- PeerManager.add_peer() now takes (peer_hash, dial_addr) — identity and transport stored separately
+- PeerManager.get_connected_peers() returns hashes — identity layer only
+- PeerManager.get_connected_peer_dial_targets() returns Vec<(hash, raw_addr)> — transport layer for broadcast/reconnect
+- PeerManager.get_all_known_peers() returns raw dial addresses — gossip stays dialable
+- PeerManager.get_peers_to_connect() returns raw dial addresses — connect loop dials raw targets
+- PeerManager.cleanup_stale_peers() removes from both peers and dial_targets
+- network.rs start_listener() takes genesis_hash — no longer registers inbound peers from accepted socket endpoint
+- Inbound peers registered only after handshake is read — identity derived from advertised peer_addr, not ephemeral source port
+- Inbound dial target resolved via resolve_dial_addr() — handles 0.0.0.0:port wildcard bind addresses
+- connect_and_handle_peer() takes genesis_hash — outbound peers registered under hash of dial target
+- broadcast_message() dials raw transport targets from get_connected_peer_dial_targets()
+- main.rs handshake processing computes declared_hash = peer_addr_hash(their_addr) and compares hash-to-hash before normalizing
+- normalize_rpc_addr() now called with their_addr instead of peer_addr — uses raw address space not hash space
+
+### Notes
+- Outbound identity is provisional (hash of dial target) until handshake normalization reconciles with inbound declared identity
+- Raw IPs never stored as peer identity, never logged as peer identity, never persisted beyond connection mechanics
+- Zero Footprint: raw transport addresses exist only as long as mechanically necessary for TCP operations
+- Known limitation: resolve_dial_addr() handles 0.0.0.0:port only — hostname and IPv6 normalization deferred
+- Known limitation: wildcard RPC normalization uses advertised address rather than resolved dial target — deferred
+- All 51 tests pass unchanged
+
 ## [0.7.0] - 2026-06-27
 
 ### Changed
