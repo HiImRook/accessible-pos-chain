@@ -4,9 +4,9 @@ A lightweight **TPI (Three-Party Integrity)** blockchain focused on accessibilit
 
 ---
 
-> ⚠️ **Network Identity Notice — v0.7.0**
+> ✅ **Network Identity Notice — v0.7.1**
 >
-> Validator identity is no longer carried in the peer handshake as of this release. Peer connections are identity-free at the transport layer. Bootstrap remains a private ceremony between trusted partners. TLS and validator IP hashing are planned for v0.7.1. See [NETWORKING.md](NETWORKING.md) for full details.
+> Raw IP addresses are no longer stored as peer identity. Peer identity is epoch-salted and hashed. Transport addresses exist only as long as mechanically necessary for TCP operations and are never persisted as identity artifacts. Bootstrap remains a private ceremony between trusted partners. See [NETWORKING.md](NETWORKING.md) for full details.
 
 ---
 
@@ -49,7 +49,7 @@ TPI is not borrowed from anywhere. I happily spent the past several years develo
 - Built-in metrics dashboard
 - Vendored dependencies for supply-chain security
 
-## Current Status: v0.7.0
+## Current Status: v0.7.1
 
 **Completed:**
 * ✅ TPI consensus — original mechanism, merit-based, no capital stake
@@ -57,6 +57,14 @@ TPI is not borrowed from anywhere. I happily spent the past several years develo
 * ✅ Peer connections are identity-free at the transport layer
 * ✅ SPO delegation dropped — this is a TPI chain, not PoS
 * ✅ Startup quorum gating replaced by sync-complete readiness
+* ✅ Raw IP addresses never stored as peer identity
+* ✅ Epoch-salted peer address hashing — 24-hour rotation window derived from genesis hash
+* ✅ Peer identity/transport separated — hashed identity layer, raw address transport layer
+* ✅ Inbound peers registered only after handshake — no ephemeral source port hashing
+* ✅ Inbound identity from advertised peer_addr — stable across reconnects
+* ✅ Outbound provisional identity reconciled via handshake normalization
+* ✅ Broadcast dials raw transport targets — logs hashes only
+* ✅ Gossip stays dialable — known peers distributed as raw addresses
 * ✅ Transaction nonces and fee structure
 * ✅ Racer backup system
 * ✅ RPC server with WebSocket support
@@ -96,8 +104,8 @@ TPI is not borrowed from anywhere. I happily spent the past several years develo
 * ✅ Prune correctness never gated on remote upload success
 
 **In Development:**
-* 📋 Arweave Merkle data_root validation — requires active testnet network submission with funded wallet(deferred from v0.6.x)
-* 📋 v0.7.1 network hardening — validator IP hashing, TLS for P2P
+* 📋 Arweave Merkle data_root validation — requires active testnet network submission with funded wallet (deferred from v0.6.x)
+* 📋 v0.7.2 transport hardening — TLS for P2P, rate limiting
 * 📋 Layer 2 networks (VNS, VIPFS, KEVIN)
 
 ## Development Phases
@@ -153,10 +161,11 @@ TPI is not borrowed from anywhere. I happily spent the past several years develo
 - ✅ Quorum gating replaced by sync-complete readiness
 - ✅ Bootstrap is a private ceremony between trusted partners
 
-### Phase 6: Network Hardening 📋 (Planned - v0.7.1)
-- Validator IP hashing with epoch-based salt
-- TLS encryption for P2P transport
-- Rate limiting and operational hardening
+### Phase 6: Network Hardening ✅ (Partial - v0.7.1) / 📋 (Continuing - v0.7.2)
+- ✅ Validator IP hashing with epoch-based salt
+- ✅ Peer identity/transport separation — Zero Footprint applied to network layer
+- 📋 TLS encryption for P2P transport
+- 📋 Rate limiting and operational hardening
 
 ### Phase 7: Layer 2 Networks 📋 (Future - v0.8.0+)
 - VNS (Valid Name Service - domain registry)
@@ -240,8 +249,11 @@ cargo build --release
 **TPI Consensus:**
 Three-Party Integrity is an original consensus mechanism. Three validators are selected per slot from a pool of participants, each independently computes a candidate block hash, compares for authenticity, and the highest-merit validator among those in agreement produces. No capital at stake. No computational race. Validator legitimacy is proven through block production, not handshake declarations.
 
+**Zero Footprint Network Layer:**
+Raw IP addresses never exist as peer identity artifacts. Peer identity is epoch-salted and hashed at the point of first contact. Transport addresses live only in a separate mechanical-necessity layer, used only to open sockets and never exposed as identity. You cannot leak what you never kept.
+
 **Zero-Comment Code:**
-Self-documenting variable names eliminate need for comments. Complexity that requires explanation is unnecessary and just an extra layer of work. 
+Self-documenting variable names eliminate need for comments. Complexity that requires explanation is unnecessary and just an extra layer of work.
 
 **In-Memory State:**
 Complete state management using HashMaps. No external database dependencies ensures sovereignty and auditability.
