@@ -3,277 +3,1076 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Valid Blockchain - Accessible Proof-of-Stake</title>
+    <title>Valid Blockchain — TPI Consensus</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
+        :root {
+            --bg:        #0C0C0F;
+            --surface:   #131316;
+            --surface2:  #1A1A1F;
+            --border:    #242428;
+            --accent:    #00D4AA;
+            --accent-dim:#00957A;
+            --text:      #C8C4B8;
+            --text-dim:  #6B6862;
+            --text-head: #EDEAE4;
+            --mono: 'SF Mono', 'Consolas', 'Cascadia Code', 'Menlo', 'Liberation Mono', monospace;
+            --sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
         }
+
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+        html { scroll-behavior: smooth; }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: #0a0a0a;
-            color: #e0e0e0;
-            line-height: 1.6;
+            font-family: var(--sans);
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.65;
+            font-size: 16px;
         }
 
-        .hero {
-            background: #1a1a1a;
-            padding: 100px 20px;
-            text-align: center;
-            border-bottom: 2px solid #00d4aa;
-        }
-
-        .hero h1 {
-            font-size: 3.5rem;
-            margin-bottom: 20px;
-            font-weight: 700;
-            color: #00d4aa;
-        }
-
-        .hero .tagline {
-            font-size: 1.5rem;
-            color: #888;
-            margin-bottom: 30px;
-        }
-
-        .hero .description {
-            max-width: 700px;
-            margin: 0 auto 40px;
-            font-size: 1.1rem;
-            line-height: 1.8;
-        }
-
-        .cta-container {
+        /* ── NAV ── */
+        nav {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background: rgba(12,12,15,0.92);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--border);
+            padding: 0 24px;
             display: flex;
-            gap: 15px;
-            justify-content: center;
+            align-items: center;
+            justify-content: space-between;
+            height: 52px;
+        }
+        .nav-logo {
+            font-family: var(--mono);
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--accent);
+            letter-spacing: 0.05em;
+            text-decoration: none;
+        }
+        .nav-links {
+            display: flex;
+            gap: 28px;
+            list-style: none;
+        }
+        .nav-links a {
+            font-family: var(--mono);
+            font-size: 0.75rem;
+            font-weight: 500;
+            color: var(--text-dim);
+            text-decoration: none;
+            letter-spacing: 0.04em;
+            transition: color 0.15s;
+        }
+        .nav-links a:hover { color: var(--text); }
+
+        /* ── HERO ── */
+        .hero {
+            padding: 100px 24px 80px;
+            max-width: 860px;
+            margin: 0 auto;
+        }
+        .hero-eyebrow {
+            font-family: var(--mono);
+            font-size: 0.72rem;
+            font-weight: 500;
+            color: var(--accent);
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            margin-bottom: 24px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .hero-eyebrow::before {
+            content: '';
+            display: block;
+            width: 28px;
+            height: 1px;
+            background: var(--accent);
+        }
+        .hero h1 {
+            font-family: var(--mono);
+            font-size: clamp(2.4rem, 6vw, 4rem);
+            font-weight: 700;
+            color: var(--text-head);
+            line-height: 1.1;
+            letter-spacing: -0.02em;
+            margin-bottom: 20px;
+        }
+        .hero h1 span { color: var(--accent); }
+        .hero-sub {
+            font-size: 1.1rem;
+            color: var(--text);
+            max-width: 580px;
+            line-height: 1.75;
+            margin-bottom: 16px;
+        }
+        .hero-note {
+            font-family: var(--mono);
+            font-size: 0.78rem;
+            color: var(--text-dim);
+            margin-bottom: 40px;
+            border-left: 2px solid var(--border);
+            padding-left: 12px;
+        }
+        .hero-note strong { color: var(--text); }
+
+        /* TPI diagram */
+        .tpi-diagram {
+            margin: 48px 0;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+        }
+        .diagram-label {
+            font-family: var(--mono);
+            font-size: 0.68rem;
+            color: var(--text-dim);
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            margin-bottom: 20px;
+        }
+        .diagram-svg-wrap {
+            width: 100%;
+            max-width: 520px;
+        }
+
+        .hero-ctas {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        .btn {
+            font-family: var(--mono);
+            font-size: 0.8rem;
+            font-weight: 600;
+            letter-spacing: 0.05em;
+            padding: 11px 24px;
+            border-radius: 4px;
+            text-decoration: none;
+            transition: all 0.15s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .btn-primary {
+            background: var(--accent);
+            color: #000;
+        }
+        .btn-primary:hover { background: #00BBAA; }
+        .btn-secondary {
+            background: transparent;
+            color: var(--text);
+            border: 1px solid var(--border);
+        }
+        .btn-secondary:hover { border-color: var(--text-dim); color: var(--text-head); }
+        .btn-ghost {
+            background: transparent;
+            color: var(--accent);
+            padding-left: 0;
+            padding-right: 0;
+        }
+        .btn-ghost:hover { color: #00BBAA; }
+
+        /* ── LAYOUT ── */
+        .container {
+            max-width: 1080px;
+            margin: 0 auto;
+            padding: 0 24px;
+        }
+        section {
+            padding: 80px 0;
+            border-top: 1px solid var(--border);
+        }
+        .section-label {
+            font-family: var(--mono);
+            font-size: 0.7rem;
+            font-weight: 500;
+            color: var(--text-dim);
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
+            margin-bottom: 12px;
+        }
+        .section-title {
+            font-family: var(--mono);
+            font-size: clamp(1.6rem, 3.5vw, 2.2rem);
+            font-weight: 700;
+            color: var(--text-head);
+            line-height: 1.15;
+            letter-spacing: -0.015em;
+            margin-bottom: 16px;
+        }
+        .section-desc {
+            font-size: 1rem;
+            color: var(--text);
+            max-width: 600px;
+            line-height: 1.7;
+            margin-bottom: 48px;
+        }
+
+        /* ── STATUS BANNER ── */
+        .status-banner {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-left: 3px solid var(--accent);
+            border-radius: 4px;
+            padding: 14px 20px;
+            font-family: var(--mono);
+            font-size: 0.8rem;
+            color: var(--text);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 56px;
             flex-wrap: wrap;
         }
-
-        .cta-btn {
-            display: inline-block;
-            background: #00d4aa;
-            color: #000;
-            padding: 15px 35px;
-            text-decoration: none;
-            border-radius: 6px;
+        .status-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: var(--accent);
+            animation: pulse 2s infinite;
+            flex-shrink: 0;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.4; }
+        }
+        .status-tag {
+            font-size: 0.68rem;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: var(--accent);
             font-weight: 600;
-            font-size: 1rem;
-            transition: all 0.2s;
         }
+        .status-sep { color: var(--border); }
 
-        .cta-btn:hover {
-            background: #00b894;
-            transform: translateY(-2px);
+        /* ── STATS ROW ── */
+        .stats-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 1px;
+            background: var(--border);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            overflow: hidden;
+            margin-bottom: 64px;
         }
-
-        .cta-btn.secondary {
-            background: #333;
-            color: #e0e0e0;
+        .stat-cell {
+            background: var(--surface);
+            padding: 24px 20px;
         }
-
-        .cta-btn.secondary:hover {
-            background: #444;
-        }
-
-        .container {
-            max-width: 1100px;
-            margin: 0 auto;
-            padding: 60px 20px;
-        }
-
-        h2 {
-            font-size: 2.5rem;
-            margin-bottom: 30px;
+        .stat-val {
+            font-family: var(--mono);
+            font-size: 1.9rem;
             font-weight: 700;
-            color: #00d4aa;
-            text-align: center;
+            color: var(--text-head);
+            letter-spacing: -0.02em;
+            line-height: 1;
+            margin-bottom: 8px;
+        }
+        .stat-val span { color: var(--accent); }
+        .stat-key {
+            font-family: var(--mono);
+            font-size: 0.68rem;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: var(--text-dim);
         }
 
+        /* ── FEATURE CARDS ── */
         .feature-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: 25px;
-            margin: 40px 0;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 1px;
+            background: var(--border);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            overflow: hidden;
         }
-
         .feature-card {
-            background: #1a1a1a;
-            padding: 30px;
-            border-radius: 8px;
-            border: 1px solid #333;
-            transition: all 0.3s;
+            background: var(--surface);
+            padding: 28px 24px;
+            transition: background 0.15s;
         }
-
-        .feature-card:hover {
-            transform: translateY(-5px);
-            border-color: #00d4aa;
+        .feature-card:hover { background: var(--surface2); }
+        .feature-icon-wrap {
+            width: 36px;
+            height: 36px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 18px;
+            color: var(--accent);
         }
-
-        .feature-icon {
-            font-size: 3rem;
-            margin-bottom: 20px;
-        }
-
         .feature-card h3 {
-            font-size: 1.5rem;
-            margin-bottom: 15px;
-            color: #e0e0e0;
+            font-family: var(--mono);
+            font-size: 0.88rem;
+            font-weight: 600;
+            color: var(--text-head);
+            margin-bottom: 10px;
+            letter-spacing: -0.01em;
+        }
+        .feature-card p {
+            font-size: 0.88rem;
+            color: var(--text);
+            line-height: 1.65;
         }
 
-        .stats-grid {
+        /* ── PHASES ── */
+        .phase-list { display: flex; flex-direction: column; gap: 0; }
+        .phase-item {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 20px;
-            margin: 40px 0 60px;
+            grid-template-columns: 180px 1fr;
+            gap: 24px;
+            padding: 24px 0;
+            border-bottom: 1px solid var(--border);
+            align-items: start;
         }
-
-        .stat-card {
-            background: #1a1a1a;
-            padding: 25px;
-            border-radius: 8px;
-            text-align: center;
-            border: 1px solid #333;
-        }
-
-        .stat-value {
-            font-size: 2.5rem;
-            font-weight: 700;
-            margin-bottom: 5px;
-            color: #00d4aa;
-        }
-
-        .stat-label {
-            font-size: 0.9rem;
-            color: #888;
+        .phase-item:last-child { border-bottom: none; }
+        .phase-meta { padding-top: 2px; }
+        .phase-num {
+            font-family: var(--mono);
+            font-size: 0.68rem;
+            color: var(--text-dim);
+            letter-spacing: 0.1em;
             text-transform: uppercase;
-            letter-spacing: 1px;
+            margin-bottom: 6px;
         }
-
-        pre {
-            background: #1a1a1a;
-            padding: 25px;
-            border-radius: 8px;
-            overflow-x: auto;
-            border-left: 4px solid #00d4aa;
-            border: 1px solid #333;
-            margin: 40px 0;
+        .phase-status {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-family: var(--mono);
+            font-size: 0.72rem;
+            font-weight: 600;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
         }
-
-        code {
-            font-family: 'Courier New', monospace;
+        .phase-status.done { color: var(--accent); }
+        .phase-status.active { color: #F0A500; }
+        .phase-status.planned { color: var(--text-dim); }
+        .phase-status::before {
+            content: '';
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: currentColor;
+        }
+        .phase-body h3 {
+            font-family: var(--mono);
             font-size: 0.95rem;
-            color: #e0e0e0;
+            font-weight: 600;
+            color: var(--text-head);
+            margin-bottom: 6px;
+        }
+        .phase-body p {
+            font-size: 0.88rem;
+            color: var(--text);
+            line-height: 1.65;
+            max-width: 560px;
         }
 
-        footer {
-            background: #1a1a1a;
-            padding: 40px 20px;
-            text-align: center;
-            border-top: 2px solid #00d4aa;
-            margin-top: 80px;
+        /* ── CODE BLOCK ── */
+        .code-block {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            overflow: hidden;
+            margin-bottom: 32px;
+        }
+        .code-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 16px;
+            border-bottom: 1px solid var(--border);
+        }
+        .code-title {
+            font-family: var(--mono);
+            font-size: 0.72rem;
+            color: var(--text-dim);
+            letter-spacing: 0.06em;
+        }
+        .code-dots { display: flex; gap: 6px; }
+        .code-dots span {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: var(--border);
+        }
+        pre {
+            padding: 20px 20px;
+            overflow-x: auto;
+        }
+        code {
+            font-family: var(--mono);
+            font-size: 0.83rem;
+            color: var(--text);
+            line-height: 1.8;
+        }
+        code .c { color: var(--text-dim); }
+        code .kw { color: var(--accent); }
+
+        /* ── HARDWARE TABLE ── */
+        .hw-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.88rem;
+        }
+        .hw-table th {
+            font-family: var(--mono);
+            font-size: 0.68rem;
+            font-weight: 600;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: var(--text-dim);
+            text-align: left;
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--border);
+        }
+        .hw-table td {
+            padding: 14px 16px;
+            border-bottom: 1px solid var(--border);
+            color: var(--text);
+            vertical-align: top;
+        }
+        .hw-table tr:last-child td { border-bottom: none; }
+        .hw-table tr:hover td { background: var(--surface2); }
+        .hw-table td:first-child {
+            font-family: var(--mono);
+            font-size: 0.8rem;
+            color: var(--text-head);
+            white-space: nowrap;
+        }
+        .hw-badge {
+            display: inline-block;
+            font-family: var(--mono);
+            font-size: 0.65rem;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            padding: 2px 7px;
+            border-radius: 3px;
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            color: var(--text-dim);
+            margin-bottom: 4px;
+        }
+        .hw-badge.recommended {
+            border-color: var(--accent-dim);
+            color: var(--accent);
+            background: rgba(0,212,170,0.06);
         }
 
-        footer a {
-            color: #00d4aa;
+        /* ── TOKENOMICS ── */
+        .token-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 32px;
+            margin-bottom: 48px;
+        }
+        @media (max-width: 640px) { .token-grid { grid-template-columns: 1fr; } }
+        .token-section h3 {
+            font-family: var(--mono);
+            font-size: 0.72rem;
+            font-weight: 600;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: var(--text-dim);
+            margin-bottom: 16px;
+        }
+        .token-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            padding: 10px 0;
+            border-bottom: 1px solid var(--border);
+            font-size: 0.88rem;
+        }
+        .token-row:last-child { border-bottom: none; }
+        .token-row-label { color: var(--text); }
+        .token-row-val {
+            font-family: var(--mono);
+            font-size: 0.83rem;
+            color: var(--text-head);
+            font-weight: 600;
+        }
+        .epoch-bar-wrap { margin: 8px 0 4px; }
+        .epoch-label {
+            font-family: var(--mono);
+            font-size: 0.72rem;
+            color: var(--text-dim);
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 6px;
+        }
+        .epoch-bar {
+            height: 6px;
+            border-radius: 3px;
+            background: var(--border);
+            overflow: hidden;
+            margin-bottom: 12px;
+        }
+        .epoch-fill {
+            height: 100%;
+            border-radius: 3px;
+            background: var(--accent);
+        }
+
+        /* ── RELATED PROJECTS ── */
+        .project-list { display: flex; flex-direction: column; gap: 0; }
+        .project-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 18px 0;
+            border-bottom: 1px solid var(--border);
+            gap: 16px;
+        }
+        .project-item:last-child { border-bottom: none; }
+        .project-name {
+            font-family: var(--mono);
+            font-size: 0.88rem;
+            font-weight: 600;
+            color: var(--text-head);
+            margin-bottom: 4px;
+        }
+        .project-desc { font-size: 0.83rem; color: var(--text); }
+        .project-link {
+            font-family: var(--mono);
+            font-size: 0.72rem;
+            color: var(--accent);
             text-decoration: none;
-            margin: 0 15px;
-            transition: color 0.2s;
+            white-space: nowrap;
+            letter-spacing: 0.04em;
         }
+        .project-link:hover { color: #00BBAA; }
 
-        footer a:hover {
-            color: #00b894;
+        /* ── FOOTER ── */
+        footer {
+            border-top: 1px solid var(--border);
+            padding: 48px 24px;
+            max-width: 1080px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            gap: 32px;
         }
-
+        .footer-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            flex-wrap: wrap;
+            gap: 24px;
+        }
+        .footer-brand {
+            font-family: var(--mono);
+            font-size: 0.88rem;
+            font-weight: 600;
+            color: var(--text-head);
+            margin-bottom: 8px;
+        }
         .footer-tagline {
-            margin-top: 30px;
-            font-size: 0.9rem;
-            color: #888;
+            font-family: var(--mono);
+            font-size: 0.75rem;
+            color: var(--text-dim);
+            max-width: 380px;
+            line-height: 1.6;
+        }
+        .footer-links {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            list-style: none;
+        }
+        .footer-links a {
+            font-family: var(--mono);
+            font-size: 0.75rem;
+            color: var(--text-dim);
+            text-decoration: none;
+            letter-spacing: 0.04em;
+            transition: color 0.15s;
+        }
+        .footer-links a:hover { color: var(--text); }
+        .footer-bottom {
+            font-family: var(--mono);
+            font-size: 0.68rem;
+            color: var(--text-dim);
+            display: flex;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 8px;
+            padding-top: 24px;
+            border-top: 1px solid var(--border);
+        }
+
+        /* ── RESPONSIVE ── */
+        @media (max-width: 700px) {
+            .phase-item { grid-template-columns: 1fr; gap: 8px; }
+            .hero { padding: 64px 20px 56px; }
+            section { padding: 56px 0; }
+            .nav-links { display: none; }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .status-dot { animation: none; }
+            * { transition: none !important; }
         }
     </style>
 </head>
 <body>
-    <div class="hero">
-        <h1>Valid Blockchain</h1>
-        <p class="tagline">Accessible Proof-of-Stake for Everyone</p>
-        <p class="description">
-            A lightweight blockchain designed to run on modest hardware. 
-            No wealth requirement. Merit-based participation. Built for global accessibility.
-        </p>
-        <div class="cta-container">
-            <a href="https://github.com/HiImRook/accessible-pos-chain" class="cta-btn">View on GitHub</a>
-            <a href="https://github.com/HiImRook/accessible-pos-chain/releases" class="cta-btn secondary">Download v0.5.0-rc1</a>
+
+<nav>
+    <a href="#" class="nav-logo">VALID//</a>
+    <ul class="nav-links">
+        <li><a href="#consensus">Consensus</a></li>
+        <li><a href="#status">Status</a></li>
+        <li><a href="#tokenomics">Tokenomics</a></li>
+        <li><a href="#hardware">Hardware</a></li>
+        <li><a href="#quickstart">Quick Start</a></li>
+    </ul>
+</nav>
+
+<div class="hero">
+    <div class="hero-eyebrow">Valid Blockchain — v0.7.0</div>
+    <h1>Introducing<br><span>Three-Party Integrity.</span></h1>
+    <p class="hero-sub">
+        The Valid Blockchain uses TPI, an original, lightweight consensus mechanism where three validators selected from an available pool verify each block by merit, not capital, stake, or tokens. Designed to run on modest hardware.
+    </p>
+    <p class="hero-note">
+        <strong>TPI is not a variant of PoS, PoW, or DPoS.</strong> Validator legitimacy is proven through participation, not wealth or compute.
+    </p>
+
+    <div class="tpi-diagram">
+        <div class="diagram-label">TPI consensus — single block slot</div>
+        <div class="diagram-svg-wrap">
+            <svg viewBox="0 0 520 140" xmlns="http://www.w3.org/2000/svg" aria-label="Three validators selected per slot. Two of three must agree to finalize a block.">
+                <!-- lines -->
+                <line x1="96" y1="70" x2="200" y2="70" stroke="#242428" stroke-width="1.5" stroke-dasharray="4 3"/>
+                <line x1="320" y1="70" x2="424" y2="70" stroke="#242428" stroke-width="1.5" stroke-dasharray="4 3"/>
+                <line x1="96" y1="70" x2="260" y2="30" stroke="#00D4AA" stroke-width="1" opacity="0.3"/>
+                <line x1="424" y1="70" x2="260" y2="30" stroke="#00D4AA" stroke-width="1" opacity="0.3"/>
+
+                <!-- validator nodes -->
+                <rect x="24" y="46" width="72" height="48" rx="4" fill="#131316" stroke="#242428" stroke-width="1"/>
+                <text x="60" y="66" text-anchor="middle" font-family="SF Mono, Consolas, Cascadia Code, Menlo, Liberation Mono, monospace" font-size="9" fill="#6B6862" letter-spacing="1">VALIDATOR</text>
+                <text x="60" y="82" text-anchor="middle" font-family="SF Mono, Consolas, Cascadia Code, Menlo, Liberation Mono, monospace" font-size="11" fill="#00D4AA" font-weight="600">V1</text>
+
+                <!-- block slot center -->
+                <rect x="200" y="40" width="120" height="60" rx="4" fill="#161619" stroke="#00D4AA" stroke-width="1"/>
+                <text x="260" y="64" text-anchor="middle" font-family="SF Mono, Consolas, Cascadia Code, Menlo, Liberation Mono, monospace" font-size="8" fill="#6B6862" letter-spacing="1">SLOT</text>
+                <text x="260" y="80" text-anchor="middle" font-family="SF Mono, Consolas, Cascadia Code, Menlo, Liberation Mono, monospace" font-size="10" fill="#EDEAE4" font-weight="700">HIGHEST MERIT</text>
+                <text x="260" y="92" text-anchor="middle" font-family="SF Mono, Consolas, Cascadia Code, Menlo, Liberation Mono, monospace" font-size="9" fill="#6B6862">PRODUCES</text>
+
+                <rect x="424" y="46" width="72" height="48" rx="4" fill="#131316" stroke="#242428" stroke-width="1"/>
+                <text x="460" y="66" text-anchor="middle" font-family="SF Mono, Consolas, Cascadia Code, Menlo, Liberation Mono, monospace" font-size="9" fill="#6B6862" letter-spacing="1">VALIDATOR</text>
+                <text x="460" y="82" text-anchor="middle" font-family="SF Mono, Consolas, Cascadia Code, Menlo, Liberation Mono, monospace" font-size="11" fill="#00D4AA" font-weight="600">V2</text>
+
+                <!-- V3 above -->
+                <rect x="224" y="4" width="72" height="36" rx="4" fill="#131316" stroke="#242428" stroke-width="1"/>
+                <text x="260" y="19" text-anchor="middle" font-family="SF Mono, Consolas, Cascadia Code, Menlo, Liberation Mono, monospace" font-size="9" fill="#6B6862" letter-spacing="1">VALIDATOR</text>
+                <text x="260" y="33" text-anchor="middle" font-family="SF Mono, Consolas, Cascadia Code, Menlo, Liberation Mono, monospace" font-size="11" fill="#00D4AA" font-weight="600">V3</text>
+
+                <!-- labels -->
+                <text x="152" y="63" text-anchor="middle" font-family="SF Mono, Consolas, Cascadia Code, Menlo, Liberation Mono, monospace" font-size="8" fill="#6B6862">compute</text>
+                <text x="368" y="63" text-anchor="middle" font-family="SF Mono, Consolas, Cascadia Code, Menlo, Liberation Mono, monospace" font-size="8" fill="#6B6862">verify</text>
+                <text x="260" y="128" text-anchor="middle" font-family="SF Mono, Consolas, Cascadia Code, Menlo, Liberation Mono, monospace" font-size="8" fill="#6B6862">2/3 agreement required — finality in &lt;1s</text>
+            </svg>
         </div>
     </div>
 
+    <div class="hero-ctas">
+        <a href="https://github.com/HiImRook/accessible-pos-chain" class="btn btn-primary">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"/></svg>
+            View on GitHub
+        </a>
+        <a href="https://discord.gg/2SP383cJs9" class="btn btn-secondary">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+            Join Discord
+        </a>
+        <a href="https://github.com/HiImRook/accessible-pos-chain/blob/main/CHANGELOG.md" class="btn btn-ghost">
+            Changelog
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+        </a>
+    </div>
+</div>
+
+<!-- ── CONSENSUS ── -->
+<section id="consensus">
     <div class="container">
-        <h2>Core Features</h2>
+        <div class="section-label">Mechanism</div>
+        <h2 class="section-title">How TPI Works</h2>
+        <p class="section-desc">Three-Party Integrity is an original consensus mechanism, developed from scratch as a counter-reaction to unnecessarily heavy blockchain finality models. It does not borrow from PoS, PoW, or DPoS.</p>
+
         <div class="feature-grid">
             <div class="feature-card">
-                <div class="feature-icon">🏆</div>
-                <h3>TPI Consensus</h3>
-                <p>Three validators verify each block. Merit-based selection. No stake required.</p>
+                <div class="feature-icon-wrap">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/></svg>
+                </div>
+                <h3>Random Selection</h3>
+                <p>Three validators are randomly selected from the pool per block slot. No rotation schedule or delegation. Selection is unpredictable.</p>
             </div>
             <div class="feature-card">
-                <div class="feature-icon">💰</div>
-                <h3>Fair Tokenomics</h3>
-                <p>33M VLid over 21 years. Block rewards mint as work is proven. No pre-mine.</p>
+                <div class="feature-icon-wrap">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+                </div>
+                <h3>Merit-Based Production</h3>
+                <p>Each selected validator independently computes a candidate block hash. The highest-merit validator among those in agreement produces the block.</p>
             </div>
             <div class="feature-card">
-                <div class="feature-icon">🌍</div>
-                <h3>Accessible</h3>
-                <p>Runs on Raspberry Pi. 2GB RAM minimum. Designed for developing regions.</p>
+                <div class="feature-icon-wrap">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                </div>
+                <h3>2/3 Finality</h3>
+                <p>The other two validators verify. Finality requires 2 of 3 in agreement, or 66%. Bad behavior is quarantined and loses standing. No capital is ever at risk as there is no stake.</p>
             </div>
             <div class="feature-card">
-                <div class="feature-icon">⚡</div>
-                <h3>Fast Finality</h3>
-                <p>10-second blocks. Sub-second finality. Instant confirmation.</p>
+                <div class="feature-icon-wrap">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+                </div>
+                <h3>Racer Backup</h3>
+                <p>A racer backup system provides network resilience when selected validators fail to respond. Production continues without stalling the slot and always keeps perfect time.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon-wrap">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+                </div>
+                <h3>Identity-Free Transport</h3>
+                <p>As of v0.7.0, validator identity is no longer carried in the peer handshake. Peer connections are identity-free at the transport layer.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon-wrap">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                </div>
+                <h3>Arweave Archival</h3>
+                <p>Every 2,160 blocks, a 6-hour archive segment is written and published to Arweave as permanent off-chain record. This is a response to the problem of ever-growing chain states.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ── STATUS ── -->
+<section id="status">
+    <div class="container">
+        <div class="section-label">Current Status</div>
+        <h2 class="section-title">v0.7.0 — Phase 5 Complete</h2>
+        <p class="section-desc">TPI identity and network cleanup is done. Phase 6 (network hardening) is next.</p>
+
+        <div class="status-banner">
+            <div class="status-dot"></div>
+            <span class="status-tag">Active Development</span>
+            <span class="status-sep">·</span>
+            <span>v0.7.0 released — validator_id removed from peer handshake, SPO delegation dropped, sync-complete readiness in production</span>
+        </div>
+
+        <div class="stats-row">
+            <div class="stat-cell">
+                <div class="stat-val">v<span>0.7.0</span></div>
+                <div class="stat-key">Current Version</div>
+            </div>
+            <div class="stat-cell">
+                <div class="stat-val"><span>51</span></div>
+                <div class="stat-key">Tests Passing</div>
+            </div>
+            <div class="stat-cell">
+                <div class="stat-val"><span>5</span> / 8</div>
+                <div class="stat-key">Phases Complete</div>
+            </div>
+            <div class="stat-cell">
+                <div class="stat-val"><span>Pre</span>-net</div>
+                <div class="stat-key">Network State</div>
             </div>
         </div>
 
-        <h2>Current Status</h2>
-        <div class="stats-grid">
-            <div class="stat-card">
-                <div class="stat-value">v0.5.0-rc1</div>
-                <div class="stat-label">Version</div>
+        <div class="phase-list">
+            <div class="phase-item">
+                <div class="phase-meta">
+                    <div class="phase-num">Phase 1</div>
+                    <div class="phase-status done">Complete</div>
+                </div>
+                <div class="phase-body">
+                    <h3>Foundation</h3>
+                    <p>Core blockchain infrastructure, TPI consensus, P2P networking with discovery, basic transaction system.</p>
+                </div>
             </div>
-            <div class="stat-card">
-                <div class="stat-value">33</div>
-                <div class="stat-label">Tests Passing</div>
+            <div class="phase-item">
+                <div class="phase-meta">
+                    <div class="phase-num">Phase 2</div>
+                    <div class="phase-status done">Complete</div>
+                </div>
+                <div class="phase-body">
+                    <h3>Validator Economy</h3>
+                    <p>Merit-based validator selection, racer backup system, snapshot system, mempool security hardening.</p>
+                </div>
             </div>
-            <div class="stat-card">
-                <div class="stat-value">42%</div>
-                <div class="stat-label">Test Coverage</div>
+            <div class="phase-item">
+                <div class="phase-meta">
+                    <div class="phase-num">Phase 3</div>
+                    <div class="phase-status done">Complete — v0.5.1</div>
+                </div>
+                <div class="phase-body">
+                    <h3>Tokenomics & Testing</h3>
+                    <p>Block reward minting (0.0808 VLid/block), supply cap enforcement, epoch-based reward decay, Ed25519 signature verification, 51-test suite.</p>
+                </div>
             </div>
-            <div class="stat-card">
-                <div class="stat-value">Testnet</div>
-                <div class="stat-label">Ready</div>
+            <div class="phase-item">
+                <div class="phase-meta">
+                    <div class="phase-num">Phase 4</div>
+                    <div class="phase-status done">Complete — v0.6.x</div>
+                </div>
+                <div class="phase-body">
+                    <h3>State Management</h3>
+                    <p>Snapshot primitives, atomic writes, recovery RPC endpoints, 6-hour archive segments, Arweave publication sidecar, peer-based live sync, lock-scoped archive generation.</p>
+                </div>
+            </div>
+            <div class="phase-item">
+                <div class="phase-meta">
+                    <div class="phase-num">Phase 5</div>
+                    <div class="phase-status done">Complete — v0.7.0</div>
+                </div>
+                <div class="phase-body">
+                    <h3>TPI Identity & Network Cleanup</h3>
+                    <p>validator_id removed from peer handshake. Peer connections are identity-free at the transport layer. SPO delegation dropped, effectively making this the first TPI chain, not PoS or PoW. Bootstrap is a private ceremony between trusted partners.</p>
+                </div>
+            </div>
+            <div class="phase-item">
+                <div class="phase-meta">
+                    <div class="phase-num">Phase 6</div>
+                    <div class="phase-status active">Planned — v0.7.1</div>
+                </div>
+                <div class="phase-body">
+                    <h3>Network Hardening</h3>
+                    <p>Validator IP hashing with epoch-based salt, TLS encryption for P2P transport, rate limiting and operational hardening.</p>
+                </div>
+            </div>
+            <div class="phase-item">
+                <div class="phase-meta">
+                    <div class="phase-num">Phase 7</div>
+                    <div class="phase-status planned">Future — v0.8.0+</div>
+                </div>
+                <div class="phase-body">
+                    <h3>Layer 2 Networks</h3>
+                    <p>VNS (Valid Name Service), VIPFS (replaces Arweave as publication backend), K.E.V.I.N. (distributed AI inference), L2 validator rewards.</p>
+                </div>
+            </div>
+            <div class="phase-item">
+                <div class="phase-meta">
+                    <div class="phase-num">Phase 8</div>
+                    <div class="phase-status planned">Future</div>
+                </div>
+                <div class="phase-body">
+                    <h3>Community Governance</h3>
+                    <p>Merit-based voting weighted by XP and wallet age, not token balance. No representative voting — if you have high merit, you have demonstrated best practices using the network, and that merit carries confidence in your vote. Ecosystem development grants minted on milestone completion. No treasury or foundations needed.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ── TOKENOMICS ── -->
+<section id="tokenomics">
+    <div class="container">
+        <div class="section-label">Token Economics</div>
+        <h2 class="section-title">VLid — 33M Over 21 Years</h2>
+        <p class="section-desc">Tokens mint <strong>only</strong> when work is proven. No pre-mine, VC allocation, treasury, or foundation. Forget the reliance on everything you knew.</p>
+
+        <div class="token-grid">
+            <div class="token-section">
+                <h3>Supply Model</h3>
+                <div class="token-row">
+                    <span class="token-row-label">Total Cap</span>
+                    <span class="token-row-val">33,000,000 VLid</span>
+                </div>
+                <div class="token-row">
+                    <span class="token-row-label">Emission Timeline</span>
+                    <span class="token-row-val">21 years (3 epochs)</span>
+                </div>
+                <div class="token-row">
+                    <span class="token-row-label">Decimals</span>
+                    <span class="token-row-val">9 (nanoVLid)</span>
+                </div>
+                <div class="token-row">
+                    <span class="token-row-label">Genesis Allocation</span>
+                    <span class="token-row-val">33,000 VLid (0.1%)</span>
+                </div>
+                <div class="token-row">
+                    <span class="token-row-label">Block Reward (Epoch 0)</span>
+                    <span class="token-row-val">0.0808 VLid</span>
+                </div>
+            </div>
+            <div class="token-section">
+                <h3>Distribution</h3>
+                <div class="token-row">
+                    <span class="token-row-label">P2P Hosters</span>
+                    <span class="token-row-val">40%</span>
+                </div>
+                <div class="token-row">
+                    <span class="token-row-label">Development Grants</span>
+                    <span class="token-row-val">25%</span>
+                </div>
+                <div class="token-row">
+                    <span class="token-row-label">L2 Validators</span>
+                    <span class="token-row-val">20%</span>
+                </div>
+                <div class="token-row">
+                    <span class="token-row-label">L1 Validators</span>
+                    <span class="token-row-val">15%</span>
+                </div>
             </div>
         </div>
 
-        <h2>Quick Start</h2>
-        <pre><code># Install Rust
-curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+        <div class="token-section">
+            <h3>Emission Schedule</h3>
+            <div class="epoch-bar-wrap">
+                <div class="epoch-label"><span>Year 0–7</span><span>60% of supply</span></div>
+                <div class="epoch-bar"><div class="epoch-fill" style="width:60%"></div></div>
+                <div class="epoch-label"><span>Year 7–14</span><span>30% of supply</span></div>
+                <div class="epoch-bar"><div class="epoch-fill" style="width:30%"></div></div>
+                <div class="epoch-label"><span>Year 14–21</span><span>10% of supply</span></div>
+                <div class="epoch-bar"><div class="epoch-fill" style="width:10%"></div></div>
+            </div>
+        </div>
+    </div>
+</section>
 
-# Clone and build
+<!-- ── HARDWARE ── -->
+<section id="hardware">
+    <div class="container">
+        <div class="section-label">Requirements</div>
+        <h2 class="section-title">Built for Modest Hardware</h2>
+        <p class="section-desc">A validator node uses under 4 GB/month of bandwidth and runs comfortably on a Raspberry Pi. Not only designed for developing regions, designed for everyone.</p>
+
+        <div class="code-block">
+            <table class="hw-table" style="border:none; background: transparent;">
+                <thead>
+                    <tr>
+                        <th>Tier</th>
+                        <th>RAM</th>
+                        <th>Disk</th>
+                        <th>Bandwidth</th>
+                        <th>Connection</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><span class="hw-badge">Minimum</span><br>Developing regions</td>
+                        <td>2 GB</td>
+                        <td>500 MB free</td>
+                        <td>~3.7 GB/mo</td>
+                        <td>10 / 5 Mbps</td>
+                    </tr>
+                    <tr>
+                        <td><span class="hw-badge recommended">Recommended</span><br>Raspberry Pi</td>
+                        <td>4 GB</td>
+                        <td>1 GB free</td>
+                        <td>&lt;4 GB/mo</td>
+                        <td>50 / 10 Mbps</td>
+                    </tr>
+                    <tr>
+                        <td><span class="hw-badge">Modern</span><br>Most PCs/laptops</td>
+                        <td>8 GB</td>
+                        <td>5 GB free</td>
+                        <td>Negligible</td>
+                        <td>100 / 100 Mbps</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</section>
+
+<!-- ── QUICK START ── -->
+<section id="quickstart">
+    <div class="container">
+        <div class="section-label">Getting Started</div>
+        <h2 class="section-title">Run a Validator</h2>
+        <p class="section-desc">Requires Rust 1.70+. Install via <a href="https://rustup.rs" style="color:var(--accent);text-decoration:none">rustup.rs</a>.</p>
+
+        <div class="code-block">
+            <div class="code-header">
+                <span class="code-title">bash</span>
+                <div class="code-dots"><span></span><span></span><span></span></div>
+            </div>
+            <pre><code><span class="c"># Clone and build</span>
 git clone https://github.com/HiImRook/accessible-pos-chain.git
 cd accessible-pos-chain
 cargo build --release
 
-# Run validator
+<span class="c"># Run a validator node</span>
 ./target/release/pos-chain</code></pre>
-    </div>
-
-    <footer>
-        <p>Built with ❤️ by the Valid Blockchain community</p>
-        <div style="margin: 20px 0;">
-            <a href="https://github.com/HiImRook/accessible-pos-chain">GitHub</a>
-            <a href="https://github.com/HiImRook/accessible-pos-chain/blob/main/CHANGELOG.md">Changelog</a>
-            <a href="https://github.com/HiImRook/accessible-pos-chain/blob/main/ROADMAP.md">Roadmap</a>
         </div>
-        <p class="footer-tagline">No venture capital. No pre-mine. No foundation. Just code.</p>
-    </footer>
+
+        <p style="font-size:0.88rem;color:var(--text-dim);font-family:var(--mono);">
+            See <a href="https://github.com/HiImRook/accessible-pos-chain/blob/main/SETUP_GUIDE.md" style="color:var(--accent);text-decoration:none">SETUP_GUIDE.md</a> for full configuration and <a href="https://github.com/HiImRook/accessible-pos-chain/blob/main/NETWORKING.md" style="color:var(--accent);text-decoration:none">NETWORKING.md</a> for peer and bootstrap details.
+        </p>
+    </div>
+</section>
+
+<!-- ── RELATED ── -->
+<section id="related">
+    <div class="container">
+        <div class="section-label">Ecosystem</div>
+        <h2 class="section-title">Related Projects</h2>
+
+        <div class="project-list">
+            <div class="project-item">
+                <div>
+                    <div class="project-name">Valid Blockchain Wallet</div>
+                    <div class="project-desc">CLI wallet for signing and submitting transactions to the Valid network.</div>
+                </div>
+                <a href="https://github.com/HiImRook/Valid-Blockchain-Wallet" class="project-link">GitHub →</a>
+            </div>
+            <div class="project-item">
+                <div>
+                    <div class="project-name">K.E.V.I.N.</div>
+                    <div class="project-desc">Distributed AI inference agent — planned L2 network on Valid Blockchain.</div>
+                </div>
+                <a href="https://github.com/HiImRook/K.E.V.I.N." class="project-link">GitHub →</a>
+            </div>
+            <div class="project-item">
+                <div>
+                    <div class="project-name">NFT Assembler</div>
+                    <div class="project-desc">Asset assembly tool in the Valid ecosystem.</div>
+                </div>
+                <a href="https://github.com/HiImRook/nft-assembler" class="project-link">GitHub →</a>
+            </div>
+            <div class="project-item">
+                <div>
+                    <div class="project-name">Valid Browser</div>
+                    <div class="project-desc">Brave fork — in development.</div>
+                </div>
+                <span style="font-family:var(--mono);font-size:0.72rem;color:var(--text-dim)">In development</span>
+            </div>
+        </div>
+    </div>
+</section>
+
+<footer>
+    <div class="footer-top">
+        <div>
+            <div class="footer-brand">Valid Blockchain</div>
+            <div class="footer-tagline">"Valid, empowering Communities with Sovereign, Decentralized, and Accessible In-Memory Tools. Fostering Freedom and Transparency Through Open-Source Self-Reliance."</div>
+        </div>
+        <ul class="footer-links">
+            <li><a href="https://github.com/HiImRook/accessible-pos-chain">GitHub</a></li>
+            <li><a href="https://discord.gg/2SP383cJs9">Discord</a></li>
+            <li><a href="https://github.com/HiImRook/accessible-pos-chain/blob/main/CHANGELOG.md">Changelog</a></li>
+            <li><a href="https://github.com/HiImRook/accessible-pos-chain/blob/main/ROADMAP.md">Roadmap</a></li>
+            <li><a href="https://github.com/HiImRook/accessible-pos-chain/blob/main/SECURITY.md">Security</a></li>
+        </ul>
+    </div>
+    <div class="footer-bottom">
+        <span>MIT License — Copyright © 2024–2026 Rook</span>
+        <span>No venture capital, no pre-mine, and no foundations. Just freedom.</span>
+    </div>
+</footer>
+
 </body>
 </html>
