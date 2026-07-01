@@ -4,6 +4,7 @@ use pos_chain::archive::{build_archive_segment, write_archive_segment, load_veri
 use pos_chain::publication::{build_publication_manifest, write_publication_manifest, read_publication_manifest, write_publication_receipt, read_publication_receipt, PublicationStatus, PUBLISH_QUEUE_DIR, PUBLISH_RECEIPTS_DIR};
 use pos_chain::arweave::ArweaveClient;
 use pos_chain::snapshot::compute_genesis_hash;
+use pos_chain::crypto::peer_addr_hash;
 use tokio::sync::mpsc;
 use tokio::time::{interval, Duration};
 use std::sync::Arc;
@@ -471,8 +472,9 @@ async fn main() {
     let peer_manager_clone = Arc::clone(&peer_manager);
     let tx_listener = tx.clone();
     let tpi_tx_listener = tpi_tx.clone();
+    let genesis_hash_listener = genesis_hash.clone();
     tokio::spawn(async move {
-        network::start_listener(&listen_addr, tx_listener, tpi_tx_listener, peer_manager_clone).await;
+        network::start_listener(&listen_addr, tx_listener, tpi_tx_listener, peer_manager_clone, genesis_hash_listener).await;
     });
 
     let state_rpc = Arc::clone(&state);
@@ -502,6 +504,7 @@ async fn main() {
     let tpi_tx_clone = tpi_tx.clone();
     let genesis_timestamp_connect = Arc::clone(&genesis_timestamp);
     let my_rpc_addr_connect = my_rpc_addr.clone();
+    let genesis_hash_connect = genesis_hash.clone();
     tokio::spawn(async move {
         let mut connect_interval = interval(Duration::from_secs(30));
 
@@ -523,8 +526,9 @@ async fn main() {
                     let tpi_tx = tpi_tx_clone.clone();
                     let node = node.clone();
                     let my_rpc = Some(my_rpc_addr_connect.clone());
+                    let genesis_hash = genesis_hash_connect.clone();
                     tokio::spawn(async move {
-                        network::connect_and_handle_peer(node, addr, tx, tpi_tx, pm, genesis_ts, my_rpc).await;
+                        network::connect_and_handle_peer(node, addr, tx, tpi_tx, pm, genesis_ts, my_rpc, genesis_hash).await;
                     });
                 }
             }
@@ -541,8 +545,9 @@ async fn main() {
                     let tx = tx_clone.clone();
                     let tpi_tx = tpi_tx_clone.clone();
                     let my_rpc = Some(my_rpc_addr_connect.clone());
+                    let genesis_hash = genesis_hash_connect.clone();
                     tokio::spawn(async move {
-                        network::connect_and_handle_peer(peer, addr, tx, tpi_tx, pm, genesis_ts, my_rpc).await;
+                        network::connect_and_handle_peer(peer, addr, tx, tpi_tx, pm, genesis_ts, my_rpc, genesis_hash).await;
                     });
                 }
             }
@@ -577,11 +582,6 @@ async fn main() {
                         println!("[{}] Handshake from {} ({} peers, genesis: {})",
                             timestamp(), peer_id_short, known_peers.len(), their_genesis);
 
-                        if !their_addr.is_empty() && their_addr != peer_addr {
-                            println!("[{}] Address note: transport={}, declared={}",
-                                timestamp(), peer_addr, their_addr);
-                        }
-
                         let our_genesis = *genesis_timestamp.lock().await;
                         if their_genesis > 0 && their_genesis != our_genesis {
                             println!("[{}] Genesis mismatch from {}: theirs={}, ours={}",
@@ -591,21 +591,25 @@ async fn main() {
                         {
                             let mut pm = peer_manager.lock().await;
 
-                            let canonical_addr = if !their_addr.is_empty() && their_addr != peer_addr {
-                                pm.normalize_peer_address(&peer_addr, &their_addr);
-                                their_addr.clone()
+                            let declared_hash = if !their_addr.is_empty() {
+                                peer_addr_hash(&their_addr, &genesis_hash)
                             } else {
                                 peer_addr.clone()
                             };
 
+                            if declared_hash != peer_addr {
+                                pm.normalize_peer_address(&peer_addr, &declared_hash);
+                            }
+
                             if let Some(ref rpc) = their_rpc_addr {
-                                let normalized = normalize_rpc_addr(rpc, &peer_addr);
-                                pm.bind_rpc_addr(&canonical_addr, normalized);
+                                let normalized = normalize_rpc_addr(rpc, &their_addr);
+                                pm.bind_rpc_addr(&declared_hash, normalized);
                             }
 
                             for peer in known_peers {
                                 if peer != my_addr {
-                                    pm.add_peer(peer);
+                                    let peer_hash = peer_addr_hash(&peer, &genesis_hash);
+                                    pm.add_peer(peer_hash, peer);
                                 }
                             }
                         }
