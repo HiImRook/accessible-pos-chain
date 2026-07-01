@@ -4,6 +4,7 @@ use tokio::sync::mpsc;
 use tokio::time::Duration;
 use crate::types::NetworkMessage;
 use crate::tpi::TpiHashMessage;
+use crate::crypto::peer_addr_hash;
 use std::sync::Arc;
 use tokio::sync::Mutex;
 use crate::peer_manager::PeerManager;
@@ -52,46 +53,82 @@ async fn read_framed_message(stream: &mut TcpStream) -> Result<NetworkMessage, s
         .map_err(|e| std::io::Error::new(std::io::ErrorKind::InvalidData, e))
 }
 
+fn resolve_dial_addr(advertised: &str, transport_ip: &str) -> String {
+    if advertised.starts_with("0.0.0.0:") {
+        let port = advertised.split(':').last().unwrap_or("8080");
+        format!("{}:{}", transport_ip, port)
+    } else {
+        advertised.to_string()
+    }
+}
+
 pub async fn start_listener(
     addr: &str,
     tx: mpsc::Sender<(NetworkMessage, String)>,
     tpi_tx: mpsc::Sender<TpiHashMessage>,
-    peer_manager: Arc<Mutex<PeerManager>>
+    peer_manager: Arc<Mutex<PeerManager>>,
+    genesis_hash: String,
 ) {
     let listener = TcpListener::bind(addr).await.unwrap();
     println!("Listening on {}", addr);
 
     loop {
         let (socket, peer_addr) = listener.accept().await.unwrap();
-        let peer_str = format!("{}:{}", peer_addr.ip(), peer_addr.port());
-        println!("Accepted connection from {}", peer_str);
-
-        {
-            let mut pm = peer_manager.lock().await;
-            pm.add_peer(peer_str.clone());
-            pm.mark_connected(&peer_str);
-        }
-
+        let transport_ip = peer_addr.ip().to_string();
         let tx = tx.clone();
         let tpi_tx = tpi_tx.clone();
         let peer_manager = Arc::clone(&peer_manager);
-        tokio::spawn(handle_peer(socket, peer_str, tx, tpi_tx, peer_manager));
+        let genesis_hash = genesis_hash.clone();
+
+        tokio::spawn(async move {
+            handle_inbound_peer(socket, transport_ip, tx, tpi_tx, peer_manager, genesis_hash).await;
+        });
     }
 }
 
-async fn handle_peer(
+async fn handle_inbound_peer(
     mut socket: TcpStream,
-    peer_addr: String,
+    transport_ip: String,
     tx: mpsc::Sender<(NetworkMessage, String)>,
     tpi_tx: mpsc::Sender<TpiHashMessage>,
-    peer_manager: Arc<Mutex<PeerManager>>
+    peer_manager: Arc<Mutex<PeerManager>>,
+    genesis_hash: String,
 ) {
+    let first_msg = match read_framed_message(&mut socket).await {
+        Ok(msg) => msg,
+        Err(e) => {
+            println!("Failed to read handshake from inbound peer: {}", e);
+            return;
+        }
+    };
+
+    let (peer_hash, dial_addr) = match &first_msg {
+        NetworkMessage::Handshake { peer_addr, .. } if !peer_addr.is_empty() => {
+            let identity_hash = peer_addr_hash(peer_addr, &genesis_hash);
+            let dial_addr = resolve_dial_addr(peer_addr, &transport_ip);
+            (identity_hash, dial_addr)
+        }
+        _ => {
+            println!("Inbound peer sent non-handshake first message — dropping");
+            return;
+        }
+    };
+
+    {
+        let mut pm = peer_manager.lock().await;
+        pm.add_peer(peer_hash.clone(), dial_addr);
+        pm.mark_connected(&peer_hash);
+    }
+
+    println!("Inbound peer registered: {}", peer_hash);
+    let _ = tx.send((first_msg, peer_hash.clone())).await;
+
     loop {
         match read_framed_message(&mut socket).await {
             Ok(msg) => {
                 {
                     let mut pm = peer_manager.lock().await;
-                    pm.update_seen(&peer_addr);
+                    pm.update_seen(&peer_hash);
                 }
 
                 match &msg {
@@ -105,14 +142,14 @@ async fn handle_peer(
                         let _ = tpi_tx.send(tpi_msg).await;
                     }
                     _ => {
-                        let _ = tx.send((msg, peer_addr.clone())).await;
+                        let _ = tx.send((msg, peer_hash.clone())).await;
                     }
                 }
             }
             Err(e) => {
-                println!("Error reading from {}: {}", peer_addr, e);
+                println!("Error reading from {}: {}", peer_hash, e);
                 let mut pm = peer_manager.lock().await;
-                pm.mark_disconnected(&peer_addr);
+                pm.mark_disconnected(&peer_hash);
                 break;
             }
         }
@@ -127,10 +164,11 @@ pub async fn connect_and_handle_peer(
     peer_manager: Arc<Mutex<PeerManager>>,
     genesis_timestamp: u64,
     my_rpc_addr: Option<String>,
+    genesis_hash: String,
 ) {
     match TcpStream::connect(&addr).await {
         Ok(mut stream) => {
-            println!("Connected to peer {}", addr);
+            let peer_hash = peer_addr_hash(&addr, &genesis_hash);
 
             let known_peers = {
                 let pm = peer_manager.lock().await;
@@ -145,17 +183,49 @@ pub async fn connect_and_handle_peer(
             };
 
             if let Err(e) = send_framed_message(&mut stream, &handshake).await {
-                println!("Failed to send handshake to {}: {}", addr, e);
+                println!("Failed to send handshake to {}: {}", peer_hash, e);
                 return;
             }
 
             {
                 let mut pm = peer_manager.lock().await;
-                pm.add_peer(addr.clone());
-                pm.mark_connected(&addr);
+                pm.add_peer(peer_hash.clone(), addr.clone());
+                pm.mark_connected(&peer_hash);
             }
 
-            handle_peer(stream, addr, tx, tpi_tx, peer_manager).await;
+            println!("Connected to peer {}", peer_hash);
+
+            loop {
+                match read_framed_message(&mut stream).await {
+                    Ok(msg) => {
+                        {
+                            let mut pm = peer_manager.lock().await;
+                            pm.update_seen(&peer_hash);
+                        }
+
+                        match &msg {
+                            NetworkMessage::TpiHash { slot, validator_id, block_hash, signature } => {
+                                let tpi_msg = TpiHashMessage {
+                                    slot: *slot,
+                                    validator_id: validator_id.clone(),
+                                    block_hash: block_hash.clone(),
+                                    signature: signature.as_bytes().to_vec(),
+                                };
+                                let _ = tpi_tx.send(tpi_msg).await;
+                            }
+                            _ => {
+                                let _ = tx.send((msg, peer_hash.clone())).await;
+                            }
+                        }
+                    }
+                    Err(e) => {
+                        println!("Error reading from {}: {}", peer_hash, e);
+                        let mut pm = peer_manager.lock().await;
+                        pm.mark_disconnected(&peer_hash);
+                        break;
+                    }
+                }
+            }
         }
         Err(e) => {
             println!("Failed to connect to {}: {}", addr, e);
@@ -164,20 +234,20 @@ pub async fn connect_and_handle_peer(
 }
 
 pub async fn broadcast_message(msg: NetworkMessage, peer_manager: Arc<Mutex<PeerManager>>) {
-    let peers = {
+    let targets = {
         let pm = peer_manager.lock().await;
-        pm.get_connected_peers()
+        pm.get_connected_peer_dial_targets()
     };
 
-    for peer in peers {
-        match TcpStream::connect(&peer).await {
+    for (peer_hash, dial_addr) in targets {
+        match TcpStream::connect(&dial_addr).await {
             Ok(mut stream) => {
                 if let Err(e) = send_framed_message(&mut stream, &msg).await {
-                    println!("Failed to broadcast to {}: {}", peer, e);
+                    println!("Failed to broadcast to {}: {}", peer_hash, e);
                 }
             }
             Err(e) => {
-                println!("Failed to connect for broadcast to {}: {}", peer, e);
+                println!("Failed to connect for broadcast to {}: {}", peer_hash, e);
             }
         }
     }

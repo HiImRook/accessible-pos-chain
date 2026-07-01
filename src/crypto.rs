@@ -1,6 +1,10 @@
 use ed25519_dalek::{SigningKey, VerifyingKey, Signature, Signer, Verifier, SECRET_KEY_LENGTH};
 use rand::rngs::OsRng;
 use rand::RngCore;
+use sha2::{Digest, Sha256};
+use std::time::{SystemTime, UNIX_EPOCH};
+
+const IP_HASH_EPOCH_SECONDS: u64 = 86_400;
 
 pub struct KeyPair {
     pub signing_key: SigningKey,
@@ -77,4 +81,21 @@ pub fn pubkey_hex_to_address(public_key_hex: &str) -> Option<String> {
     let arr: [u8; 32] = bytes.try_into().ok()?;
     let vk = VerifyingKey::from_bytes(&arr).ok()?;
     Some(verifying_key_to_address(&vk))
+}
+
+pub fn peer_addr_hash(raw_addr: &str, genesis_hash: &str) -> String {
+    let epoch = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap()
+        .as_secs() / IP_HASH_EPOCH_SECONDS;
+
+    let mut salt_hasher = Sha256::new();
+    salt_hasher.update(genesis_hash.as_bytes());
+    salt_hasher.update(epoch.to_le_bytes());
+    let salt = salt_hasher.finalize();
+
+    let mut hasher = Sha256::new();
+    hasher.update(raw_addr.as_bytes());
+    hasher.update(&salt);
+    format!("peer-{:x}", hasher.finalize())
 }

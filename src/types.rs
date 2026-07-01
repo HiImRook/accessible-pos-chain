@@ -46,7 +46,7 @@ pub enum NetworkMessage {
 
 #[derive(Clone, Debug)]
 pub struct PeerInfo {
-    pub address: String,
+    pub peer_hash: String,
     pub last_seen: u64,
     pub connected: bool,
     pub rpc_addr: Option<String>,
@@ -221,9 +221,9 @@ fn compute_tx_hash(tx: &Transaction) -> String {
     format!("{:x}", hasher.finalize())
 }
 
-pub fn generate_peer_id(addr: &str) -> String {
+pub fn generate_peer_id(peer_identifier: &str) -> String {
     let mut hasher = Sha256::new();
-    hasher.update(addr.as_bytes());
+    hasher.update(peer_identifier.as_bytes());
     let result = hasher.finalize();
     format!("peer-{:x}", &result[..4].iter().fold(0u32, |acc, &b| (acc << 8) | b as u32))
 }
