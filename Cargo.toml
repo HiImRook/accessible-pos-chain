@@ -20,3 +20,6 @@ futures = "0.3"
 rsa = { version = "0.9", features = ["sha2"] }
 data-encoding = "2"
 jsonwebkey = { version = "0.3", features = ["pkcs-convert"] }
+tokio-rustls = "0.26"
+rustls = "0.23"
+rcgen = "0.13"

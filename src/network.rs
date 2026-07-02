@@ -1,5 +1,5 @@
 use tokio::net::{TcpListener, TcpStream};
-use tokio::io::{AsyncReadExt, AsyncWriteExt};
+use tokio::io::{AsyncRead, AsyncWrite, AsyncReadExt, AsyncWriteExt};
 use tokio::sync::mpsc;
 use tokio::time::Duration;
 use crate::types::NetworkMessage;
@@ -7,11 +7,19 @@ use crate::tpi::TpiHashMessage;
 use crate::crypto::peer_addr_hash;
 use std::sync::Arc;
 use tokio::sync::Mutex;
+use tokio_rustls::TlsAcceptor;
+use tokio_rustls::TlsConnector;
+use rustls::pki_types::ServerName;
+use rustls::ServerConfig;
+use rustls::ClientConfig;
 use crate::peer_manager::PeerManager;
 
 const MAX_MESSAGE_SIZE: usize = 256 * 1024;
 
-async fn send_framed_message(stream: &mut TcpStream, msg: &NetworkMessage) -> Result<(), std::io::Error> {
+async fn send_framed_message<S>(stream: &mut S, msg: &NetworkMessage) -> Result<(), std::io::Error>
+where
+    S: AsyncRead + AsyncWrite + Unpin,
+{
     let data = serde_json::to_vec(msg)?;
     let len = data.len() as u32;
 
@@ -27,7 +35,10 @@ async fn send_framed_message(stream: &mut TcpStream, msg: &NetworkMessage) -> Re
     Ok(())
 }
 
-async fn read_framed_message(stream: &mut TcpStream) -> Result<NetworkMessage, std::io::Error> {
+async fn read_framed_message<S>(stream: &mut S) -> Result<NetworkMessage, std::io::Error>
+where
+    S: AsyncRead + AsyncWrite + Unpin,
+{
     let mut len_buf = [0u8; 4];
     tokio::time::timeout(
         Duration::from_secs(30),
@@ -68,7 +79,9 @@ pub async fn start_listener(
     tpi_tx: mpsc::Sender<TpiHashMessage>,
     peer_manager: Arc<Mutex<PeerManager>>,
     genesis_hash: String,
+    tls_config: Arc<ServerConfig>,
 ) {
+    let acceptor = TlsAcceptor::from(tls_config);
     let listener = TcpListener::bind(addr).await.unwrap();
     println!("Listening on {}", addr);
 
@@ -79,21 +92,31 @@ pub async fn start_listener(
         let tpi_tx = tpi_tx.clone();
         let peer_manager = Arc::clone(&peer_manager);
         let genesis_hash = genesis_hash.clone();
+        let acceptor = acceptor.clone();
 
         tokio::spawn(async move {
-            handle_inbound_peer(socket, transport_ip, tx, tpi_tx, peer_manager, genesis_hash).await;
+            let tls_stream = match acceptor.accept(socket).await {
+                Ok(s) => s,
+                Err(e) => {
+                    println!("[TLS] Inbound handshake failed from {}: {}", transport_ip, e);
+                    return;
+                }
+            };
+            handle_inbound_peer(tls_stream, transport_ip, tx, tpi_tx, peer_manager, genesis_hash).await;
         });
     }
 }
 
-async fn handle_inbound_peer(
-    mut socket: TcpStream,
+async fn handle_inbound_peer<S>(
+    mut socket: S,
     transport_ip: String,
     tx: mpsc::Sender<(NetworkMessage, String)>,
     tpi_tx: mpsc::Sender<TpiHashMessage>,
     peer_manager: Arc<Mutex<PeerManager>>,
     genesis_hash: String,
-) {
+) where
+    S: AsyncRead + AsyncWrite + Unpin,
+{
     let first_msg = match read_framed_message(&mut socket).await {
         Ok(msg) => msg,
         Err(e) => {
@@ -165,9 +188,21 @@ pub async fn connect_and_handle_peer(
     genesis_timestamp: u64,
     my_rpc_addr: Option<String>,
     genesis_hash: String,
+    client_tls_config: Arc<ClientConfig>,
 ) {
     match TcpStream::connect(&addr).await {
-        Ok(mut stream) => {
+        Ok(tcp_stream) => {
+            let connector = TlsConnector::from(client_tls_config);
+            let server_name = ServerName::try_from("valid-blockchain").unwrap().to_owned();
+
+            let mut stream = match connector.connect(server_name, tcp_stream).await {
+                Ok(s) => s,
+                Err(e) => {
+                    println!("[TLS] Outbound handshake failed to {}: {}", addr, e);
+                    return;
+                }
+            };
+
             let peer_hash = peer_addr_hash(&addr, &genesis_hash);
 
             let known_peers = {
@@ -233,7 +268,11 @@ pub async fn connect_and_handle_peer(
     }
 }
 
-pub async fn broadcast_message(msg: NetworkMessage, peer_manager: Arc<Mutex<PeerManager>>) {
+pub async fn broadcast_message(
+    msg: NetworkMessage,
+    peer_manager: Arc<Mutex<PeerManager>>,
+    client_tls_config: Arc<ClientConfig>,
+) {
     let targets = {
         let pm = peer_manager.lock().await;
         pm.get_connected_peer_dial_targets()
@@ -241,9 +280,19 @@ pub async fn broadcast_message(msg: NetworkMessage, peer_manager: Arc<Mutex<Peer
 
     for (peer_hash, dial_addr) in targets {
         match TcpStream::connect(&dial_addr).await {
-            Ok(mut stream) => {
-                if let Err(e) = send_framed_message(&mut stream, &msg).await {
-                    println!("Failed to broadcast to {}: {}", peer_hash, e);
+            Ok(tcp_stream) => {
+                let connector = TlsConnector::from(Arc::clone(&client_tls_config));
+                let server_name = ServerName::try_from("valid-blockchain").unwrap().to_owned();
+
+                match connector.connect(server_name, tcp_stream).await {
+                    Ok(mut stream) => {
+                        if let Err(e) = send_framed_message(&mut stream, &msg).await {
+                            println!("Failed to broadcast to {}: {}", peer_hash, e);
+                        }
+                    }
+                    Err(e) => {
+                        println!("[TLS] Broadcast handshake failed to {}: {}", peer_hash, e);
+                    }
                 }
             }
             Err(e) => {
