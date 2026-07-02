@@ -15,3 +15,4 @@ pub mod tokenomics;
 pub mod archive;
 pub mod publication;
 pub mod arweave;
+pub mod tls;

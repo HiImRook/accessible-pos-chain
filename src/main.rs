@@ -5,6 +5,7 @@ use pos_chain::publication::{build_publication_manifest, write_publication_manif
 use pos_chain::arweave::ArweaveClient;
 use pos_chain::snapshot::compute_genesis_hash;
 use pos_chain::crypto::peer_addr_hash;
+use pos_chain::tls::{generate_tls_config, generate_client_tls_config};
 use tokio::sync::mpsc;
 use tokio::time::{interval, Duration};
 use std::sync::Arc;
@@ -433,6 +434,9 @@ async fn main() {
         &config.validators,
     );
 
+    let server_tls_config = generate_tls_config();
+    let client_tls_config = generate_client_tls_config();
+
     let solo_node = config.bootstrap_nodes.is_empty();
     let production_ready = Arc::new(AtomicBool::new(solo_node));
 
@@ -473,8 +477,16 @@ async fn main() {
     let tx_listener = tx.clone();
     let tpi_tx_listener = tpi_tx.clone();
     let genesis_hash_listener = genesis_hash.clone();
+    let server_tls_config_listener = Arc::clone(&server_tls_config);
     tokio::spawn(async move {
-        network::start_listener(&listen_addr, tx_listener, tpi_tx_listener, peer_manager_clone, genesis_hash_listener).await;
+        network::start_listener(
+            &listen_addr,
+            tx_listener,
+            tpi_tx_listener,
+            peer_manager_clone,
+            genesis_hash_listener,
+            server_tls_config_listener,
+        ).await;
     });
 
     let state_rpc = Arc::clone(&state);
@@ -505,6 +517,7 @@ async fn main() {
     let genesis_timestamp_connect = Arc::clone(&genesis_timestamp);
     let my_rpc_addr_connect = my_rpc_addr.clone();
     let genesis_hash_connect = genesis_hash.clone();
+    let client_tls_config_connect = Arc::clone(&client_tls_config);
     tokio::spawn(async move {
         let mut connect_interval = interval(Duration::from_secs(30));
 
@@ -527,8 +540,9 @@ async fn main() {
                     let node = node.clone();
                     let my_rpc = Some(my_rpc_addr_connect.clone());
                     let genesis_hash = genesis_hash_connect.clone();
+                    let client_tls = Arc::clone(&client_tls_config_connect);
                     tokio::spawn(async move {
-                        network::connect_and_handle_peer(node, addr, tx, tpi_tx, pm, genesis_ts, my_rpc, genesis_hash).await;
+                        network::connect_and_handle_peer(node, addr, tx, tpi_tx, pm, genesis_ts, my_rpc, genesis_hash, client_tls).await;
                     });
                 }
             }
@@ -546,8 +560,9 @@ async fn main() {
                     let tpi_tx = tpi_tx_clone.clone();
                     let my_rpc = Some(my_rpc_addr_connect.clone());
                     let genesis_hash = genesis_hash_connect.clone();
+                    let client_tls = Arc::clone(&client_tls_config_connect);
                     tokio::spawn(async move {
-                        network::connect_and_handle_peer(peer, addr, tx, tpi_tx, pm, genesis_ts, my_rpc, genesis_hash).await;
+                        network::connect_and_handle_peer(peer, addr, tx, tpi_tx, pm, genesis_ts, my_rpc, genesis_hash, client_tls).await;
                     });
                 }
             }
@@ -568,6 +583,7 @@ async fn main() {
     let tpi_tx_block = tpi_tx.clone();
     let validator_id_for_block = my_validator_id.clone();
     let production_ready_block = Arc::clone(&production_ready);
+    let client_tls_config_broadcast = Arc::clone(&client_tls_config);
 
     let mut current_slot = 0u64;
     let mut slot_deadline = tokio::time::Instant::now();
@@ -659,8 +675,9 @@ async fn main() {
 
                             let msg = NetworkMessage::NewBlock(block);
                             let pm = Arc::clone(&peer_manager);
+                            let client_tls = Arc::clone(&client_tls_config_broadcast);
                             tokio::spawn(async move {
-                                network::broadcast_message(msg, pm).await;
+                                network::broadcast_message(msg, pm, client_tls).await;
                             });
                         }
                     }
@@ -700,6 +717,7 @@ async fn main() {
                 let my_id = validator_id_for_block.clone();
                 let genesis_hash_spawn = genesis_hash.clone();
                 let archive_guard_spawn = Arc::clone(&archiving_in_progress);
+                let client_tls_spawn = Arc::clone(&client_tls_config_broadcast);
 
                 tokio::spawn(async move {
                     if let Some(block) = produce_block_with_tpi(
@@ -758,7 +776,7 @@ async fn main() {
 
                             let msg = NetworkMessage::NewBlock(block);
                             tokio::spawn(async move {
-                                network::broadcast_message(msg, peer_manager_clone_spawn).await;
+                                network::broadcast_message(msg, peer_manager_clone_spawn, client_tls_spawn).await;
                             });
                         }
                     }
