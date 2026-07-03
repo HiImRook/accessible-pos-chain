@@ -10,9 +10,9 @@ The `main` branch holds the forkable protocol base.
 
 ---
 
-> ✅ **Network Identity Notice — v0.7.1**
+> ✅ **Network Identity Notice — v0.7.2**
 >
-> Raw IP addresses are no longer stored as peer identity. Peer identity is epoch-salted and hashed. Transport addresses exist only as long as mechanically necessary for TCP operations and are never persisted as identity artifacts. Bootstrap remains a private ceremony between trusted partners. See [NETWORKING.md](https://github.com/HiImRook/accessible-pos-chain/blob/main/NETWORKING.md) for full details.
+> Raw IP addresses are no longer stored as peer identity. Peer identity is epoch-salted and hashed. All P2P connections are encrypted with TLS 1.3. Certificates are ephemeral — generated in memory at startup and never persisted as identity artifacts. Bootstrap remains a private ceremony between trusted partners. See [NETWORKING.md](https://github.com/HiImRook/accessible-pos-chain/blob/main/NETWORKING.md) for full details.
 
 ---
 
@@ -48,7 +48,7 @@ TPI is an original consensus mechanism. It is not a variant of Proof of Stake, P
 
 Future governance will be merit-based (participation + wallet age).
 
-## Current Status: v0.7.1
+## Current Status: v0.7.2
 
 **Completed**
 - Full TPI consensus (random trio + merit producer + 2/3 finality) — original mechanism
@@ -64,6 +64,10 @@ Future governance will be merit-based (participation + wallet age).
 - Outbound provisional identity reconciled via handshake normalization
 - Broadcast dials raw transport targets — logs hashes only
 - Gossip stays dialable — known peers distributed as raw addresses
+- TLS 1.3 on all P2P connections — inbound and outbound
+- Ephemeral self-signed certificates generated in memory at startup — never persisted
+- Peer certificate fingerprints logged for observability
+- Shared TLS configs via Arc — generated once at startup, not per connection
 - Merit scoring, penalization, and quarantine logic
 - Racer backup system
 - In-memory ChainState using HashMaps
@@ -101,7 +105,9 @@ Future governance will be merit-based (participation + wallet age).
 
 **Next**
 - Arweave Merkle data_root validation — requires active testnet network submission with funded wallet (deferred from v0.6.x)
-- v0.7.2 transport hardening — TLS for P2P, rate limiting
+- v0.7.3 network hardening — rate limiting, peer identity canonicalization, hostname/IPv6 normalization, TLS trust anchoring
+- RPC sync transport hardening
+- Testnet stability and adversarial-network validation
 
 ## Hardware Requirements
 
@@ -138,6 +144,7 @@ Bootstrap peers and testnet details are announced on Discord before each launch.
 - Archive generation runs without holding the chain lock or blocking the async runtime — file I/O isolated via spawn_blocking, duplicate concurrent archive attempts prevented
 - Arweave publication sidecar — verified archive segments queued and uploaded to Arweave as permanent off-chain record; prune never depends on upload success as local durability always gates prune; VIPFS replaces Arweave as the backend when ready
 - Zero Footprint network layer — raw IPs never stored as peer identity; epoch-salted hashed identity separated from raw transport addresses; you cannot leak what you never kept
+- TLS 1.3 P2P transport — all peer connections encrypted with ephemeral in-memory self-signed certificates; fingerprints logged for observability; trust anchoring deferred to future hardening
 - Peer-based live sync — one-time startup catch-up via peer RPC endpoints
 - Precise RPC error handling — malformed requests and mempool rejections return proper HTTP status codes instead of silent defaults
 - Custom P2P and racer system built from scratch
