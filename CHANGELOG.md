@@ -5,6 +5,35 @@ All notable changes to Valid Blockchain will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.2] - 2026-07-03
+
+### Added
+- src/tls.rs — TLS 1.3 transport encryption module
+  - generate_tls_config() — ephemeral self-signed server certificate generated in memory at startup and never persisted
+  - generate_client_tls_config() — client TLS config using FingerprintVerifier
+  - cert_fingerprint() — SHA-256 certificate fingerprint extraction for observability
+  - TLS 1.3 only — no legacy protocol fallback
+  - Local certificate fingerprint logged at startup; peer certificate fingerprints logged on connection
+- rust-toolchain.toml bumped to 1.88.0 — required by the time crate pulled in by rcgen
+
+### Changed
+- network.rs — send_framed_message and read_framed_message are now generic over AsyncRead + AsyncWrite + Unpin
+- network.rs — start_listener wraps accepted TCP streams with TlsAcceptor
+- network.rs — connect_and_handle_peer wraps outbound TCP streams with TlsConnector
+- network.rs — broadcast_message wraps broadcast connections with TlsConnector
+- network.rs — TLS configs are passed in as shared Arc<ServerConfig> and Arc<ClientConfig>
+- main.rs — server and client TLS configs are generated once at startup and shared across network paths
+- lib.rs — tls module registered
+
+### Notes
+- P2P transport now uses TLS 1.3 with ephemeral in-memory self-signed certificates
+- Certificates are used as transport artifacts only and are not part of the peer identity model
+- Peer identity behavior above the transport layer remains unchanged from v0.7.1
+- Certificate fingerprints are logged for observability during connection establishment
+- RPC sync remains plain HTTP — RPC TLS is deferred to later hardening work
+- Certificate trust anchoring and fingerprint pinning are deferred to future network hardening
+- All 51 tests pass
+
 ## [0.7.1] - 2026-07-01
 
 ### Added
