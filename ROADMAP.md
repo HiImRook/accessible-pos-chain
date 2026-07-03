@@ -1,7 +1,7 @@
 # Valid Blockchain - Development Roadmap
 
-**Current Version:** v0.7.1
-**Status:** v0.7.1 released (Testnet development)
+**Current Version:** v0.7.2
+**Status:** v0.7.2 released (Testnet development)
 
 ---
 
@@ -17,6 +17,17 @@ Features are documented **after** implementation to prevent roadmap drift.
 ---
 
 ## Version History (Completed)
+
+### v0.7.2 - TLS 1.3 P2P Transport Encryption (Jul 2026)
+- ✅ TLS 1.3 on all P2P connections — inbound and outbound
+- ✅ Ephemeral self-signed certificates generated in memory at startup — never persisted
+- ✅ FingerprintVerifier — peer certificate fingerprints logged for observability
+- ✅ Shared TLS configs via Arc — generated once at startup, not per connection
+- ✅ Framed message protocol generalized over AsyncRead + AsyncWrite + Unpin
+- ✅ Peer identity model preserved above transport layer
+- ✅ rust-toolchain.toml bumped to 1.88.0
+- ⚠️ P2P TLS trust anchoring and fingerprint pinning deferred
+- ⚠️ RPC sync transport hardening deferred
 
 ### v0.7.1 - Validator IP Hashing and Peer Identity/Transport Separation (Jul 2026)
 - ✅ Epoch-salted peer address hashing — raw IPs never stored as peer identity
@@ -47,7 +58,7 @@ Features are documented **after** implementation to prevent roadmap drift.
 - ✅ Tag schema — chain-native metadata embedded in every archive upload
 - ✅ Prune correctness never gated on remote upload success
 - ✅ Audit config — inapplicable advisories documented and ignored
-- ⚠️ Merkle data_root requires ractual network validation with funded wallet
+- ⚠️ Arweave Merkle data_root pending live-network validation — requires funded wallet submission
 - ⚠️ Chunked upload deferred to future release
 
 ### v0.6.6 - Archive Lock-Scope and Concurrency Hardening (Jun 2026)
@@ -87,7 +98,6 @@ Features are documented **after** implementation to prevent roadmap drift.
 - ✅ production_ready gate — blocks production until quorum confirmed
 - ✅ Solo node exception — immediate production when no bootstrap nodes
 - ✅ 120 second startup timeout with clean exit
-- ⚠️ Transitional bootstrap mechanism — planned replacement in v0.7.0
 
 ### v0.6.1 - Archive Segment Integration (Jun 2026)
 - ✅ Archive segment generation wired into main.rs
@@ -127,7 +137,7 @@ Features are documented **after** implementation to prevent roadmap drift.
 
 ### v0.5.1 - ChainState Validation Testing (Mar 2026)
 - ✅ ChainState validation tests (5 tests)
-- ✅ Test coverage increased to ~57% (51 tests total after v0.6.6)
+- ✅ Test coverage increased to 51 tests total
 
 ### v0.5.0-final - Tokenomics & Testing (Mar 2026)
 - ✅ Block reward minting (0.0808 VLid/block, Epoch 0)
@@ -154,7 +164,7 @@ Features are documented **after** implementation to prevent roadmap drift.
 - ✅ Unified block hashing
 
 ### v0.4.0 - TPI Consensus Foundation (Dec 2025)
-- ✅ Three-Person Integrity (TPI) consensus mechanism
+- ✅ Three-Party Integrity (TPI) consensus mechanism
 - ✅ Merit-based broadcaster selection
 - ✅ Racer backup validator system
 - ✅ 10-second block finality
@@ -168,45 +178,84 @@ Features are documented **after** implementation to prevent roadmap drift.
 
 ## Upcoming Releases
 
-### v0.6.8 - Arweave Publication Validation (Target: Q3 2026)
+### v0.7.3 - Network Hardening (Target: Q3 2026)
+- Connection-level rate limiting
+- Message-level rate limiting
+- Further peer identity/canonicalization hardening
+- Hostname and IPv6 normalization in resolve_dial_addr()
+- RPC normalization against resolved dial target
+- P2P TLS trust anchoring and fingerprint pinning
+
+### v0.7.4 - Arweave Publication Validation (Target: Q3 2026)
 - Real wallet submission test against Arweave mainnet
 - Merkle data_root correctness confirmation or fix
 - Chunked upload path if segments exceed inline limit in practice
-
-### v0.7.0 - Network Identity Hardening (Target: Q4 2026)
-- Ephemeral network identity — validator proof/binding without direct identity disclosure
-- Stake Pool Operator (SPO) delegation
-- TLS encryption for P2P connections
-- Per-peer rate limiting and authentication
-- Type safety improvements
-- Validator IP hashing with epoch-based salt
 
 ---
 
 ## Future Considerations (v0.8.0+)
 
+### Anti-Frontrunning
+- Parent block hash as deterministic transaction ordering seed
+- Eliminate MEV extraction without requiring a private mempool
+- Preserve transparency while making ordering less predictable before inclusion
+
 ### Performance & Scaling
-- Replace XOR-based selection with VRF
+- Replace XOR-based producer selection with VRF
 - Bandwidth reduction and message batching
+- Load testing and throughput characterization
+- Continued network and transport hardening
 
 ### Developer Experience
 - Integration tests for TPI consensus
-- Load testing (100 TPS target)
-- Replace `println!` with `tracing` crate
+- Replace println! with tracing crate
+- Stronger test coverage for networking, sync, and archival flows
 
-### Layer 2 Infrastructure
-- VNS (Valid Name Service)
-- VIPFS (Valid IPFS — eventual replacement for Arweave publication)
-- KEVIN (Distributed AI inference)
+### Layer 2: VNS (Valid Name Service)
+- Domain registry built in the same minimal architectural style as L1
+- L2 witnesses L1 payments via light-client style verification — no bridge
+- Own-forever naming model rather than recurring renewal
+- Premium-name policy and anti-spam economics to be defined during implementation
+- Blacklist/governance enforcement, if any, to be narrowly scoped and explicitly documented
+- VLid-native economic model — no separate token
+
+### Layer 2: VIPFS (Valid IPFS)
+- Distributed content seeding and retrieval layer
+- Validators and users contribute availability based on storage and access patterns
+- Content moderation and illegal-content handling model to be explicitly defined before implementation
+- Can eventually replace Arweave as archive publication backend
+- Publication sidecar already designed to allow backend replacement
+
+### Layer 2: KEVIN (Distributed AI Inference)
+- Distributed inference marketplace aligned with the broader Valid stack
+- Likely multi-tier execution model spanning local, peer, and specialized validator compute
+- Hardware requirements, pricing, and validator reward model deferred until architecture is defined
+- VLid-native settlement model preferred over introducing a separate token
+- Meet Kevin now in Discord and help with live testing
+
+### Valid Browser
+- Browser client with Valid-native integrations
+- Built-in L1 wallet support as a first-class feature
+- Native resolution for Valid naming systems
+- Native access to Valid storage/publication layers
+- Direct L1 payment signing and application-layer interactions
+- Initial scope likely constrained to the Valid network first
+
+### Additional Future L2s
+- Media, social, compute, storage, and other specialized services
+- Each L2 should match hardware requirements to its actual workload
+- Settlement and economic coordination anchored to L1
+- Avoid unnecessary per-L2 token proliferation
 
 ---
 
 ## Known Limitations
 
-⚠️ **Arweave Merkle data_root unvalidated** - requires ntwork submission with funded wallet
+⚠️ **Arweave Merkle data_root pending live-network validation** — requires funded wallet submission
 ⚠️ **Chunked upload not implemented** — segments over 8MB deferred
-⚠️ **Validator identity transitional** — direct peer handshake carries validator ID until v0.7.0
-⚠️ **No TLS** — P2P connections unencrypted until v0.7.0
+⚠️ **P2P TLS trust anchoring and fingerprint pinning deferred**
+⚠️ **RPC sync transport hardening deferred**
+⚠️ **resolve_dial_addr() handles 0.0.0.0:port only** — hostname/IPv6 normalization deferred
 
 **These are intentional staging decisions, not bugs, oversights, or knowledge gaps.**
 
@@ -227,4 +276,4 @@ MIT License - See LICENSE file for details
 
 ---
 
-**Last Updated:** Jun 24, 2026
+**Last Updated:** Jul 3, 2026
