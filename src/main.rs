@@ -610,6 +610,8 @@ async fn main() {
                                 pm.normalize_peer_address(&peer_addr, &declared_hash);
                             }
 
+                            pm.bind_canonical_dial_target(&declared_hash, canonical_their_addr.clone());
+
                             if let Some(ref rpc) = their_rpc_addr {
                                 let normalized = canonicalize_rpc_addr(rpc, &canonical_their_addr);
                                 pm.bind_rpc_addr(&declared_hash, normalized);

@@ -31,6 +31,10 @@ impl PeerManager {
         }
     }
 
+    pub fn bind_canonical_dial_target(&mut self, peer_hash: &str, dial_addr: String) {
+        self.dial_targets.insert(peer_hash.to_string(), dial_addr);
+    }
+
     pub fn mark_connected(&mut self, peer_hash: &str) {
         if let Some(peer) = self.peers.get_mut(peer_hash) {
             peer.connected = true;
@@ -83,9 +87,7 @@ impl PeerManager {
         }
 
         if let Some(dial) = inherited_dial {
-            self.dial_targets
-                .entry(canonical_hash.to_string())
-                .or_insert(dial);
+            self.dial_targets.insert(canonical_hash.to_string(), dial);
         }
 
         self.peers.remove(transport_hash);
