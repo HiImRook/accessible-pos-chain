@@ -31,6 +31,10 @@ pub fn canonicalize_rpc_addr(advertised_rpc: &str, canonical_peer_addr: &str) ->
     }
 }
 
+pub fn is_valid_peer_addr(addr: &str) -> bool {
+    split_host_port(addr).is_some()
+}
+
 fn split_host_port(addr: &str) -> Option<(String, String)> {
     if addr.starts_with('[') {
         let bracket_end = addr.find(']')?;

@@ -5,7 +5,7 @@ use tokio::time::Duration;
 use crate::types::NetworkMessage;
 use crate::tpi::TpiHashMessage;
 use crate::crypto::peer_addr_hash;
-use crate::address::canonicalize_peer_addr;
+use crate::address::{canonicalize_peer_addr, is_valid_peer_addr};
 use std::sync::Arc;
 use tokio::sync::Mutex;
 use tokio_rustls::TlsAcceptor;
@@ -120,11 +120,15 @@ async fn handle_inbound_peer<S>(
     let (peer_hash, dial_addr) = match &first_msg {
         NetworkMessage::Handshake { peer_addr, .. } if !peer_addr.is_empty() => {
             let canonical = canonicalize_peer_addr(peer_addr, &transport_ip);
+            if !is_valid_peer_addr(&canonical) {
+                println!("Inbound peer sent invalid or malformed handshake address — dropping");
+                return;
+            }
             let hash = peer_addr_hash(&canonical, &genesis_hash);
             (hash, canonical)
         }
         _ => {
-            println!("Inbound peer sent non-handshake first message — dropping");
+            println!("Inbound peer sent invalid or malformed handshake address — dropping");
             return;
         }
     };
