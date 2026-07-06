@@ -105,9 +105,7 @@ Future governance will be merit-based (participation + wallet age).
 
 **Next**
 - Arweave Merkle data_root validation — requires active testnet network submission with funded wallet (deferred from v0.6.x)
-- v0.7.3 network hardening — rate limiting, peer identity canonicalization, hostname/IPv6 normalization, TLS trust anchoring
-- RPC sync transport hardening
-- Testnet stability and adversarial-network validation
+- v0.7.3 peer and address canonicalization hardening
 
 ## Hardware Requirements
 
@@ -143,8 +141,8 @@ Bootstrap peers and testnet details are announced on Discord before each launch.
 - 6-hour archive segments for durable chain persistence and historical record. This method replaces the planned "memory pruning" update.
 - Archive generation runs without holding the chain lock or blocking the async runtime — file I/O isolated via spawn_blocking, duplicate concurrent archive attempts prevented
 - Arweave publication sidecar — verified archive segments queued and uploaded to Arweave as permanent off-chain record; prune never depends on upload success as local durability always gates prune; VIPFS replaces Arweave as the backend when ready
+- TLS 1.3 encrypted P2P transport — ephemeral self-signed certificates generated at startup, never persisted, not part of peer identity model
 - Zero Footprint network layer — raw IPs never stored as peer identity; epoch-salted hashed identity separated from raw transport addresses; you cannot leak what you never kept
-- TLS 1.3 P2P transport — all peer connections encrypted with ephemeral in-memory self-signed certificates; fingerprints logged for observability; trust anchoring deferred to future hardening
 - Peer-based live sync — one-time startup catch-up via peer RPC endpoints
 - Precise RPC error handling — malformed requests and mempool rejections return proper HTTP status codes instead of silent defaults
 - Custom P2P and racer system built from scratch
