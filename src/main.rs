@@ -6,6 +6,7 @@ use pos_chain::arweave::ArweaveClient;
 use pos_chain::snapshot::compute_genesis_hash;
 use pos_chain::crypto::peer_addr_hash;
 use pos_chain::tls::{generate_tls_config, generate_client_tls_config};
+use pos_chain::address::canonicalize_rpc_addr;
 use tokio::sync::mpsc;
 use tokio::time::{interval, Duration};
 use std::sync::Arc;
@@ -235,16 +236,6 @@ async fn run_publisher_loop() {
                 println!("[PUBLISH] Failed to write receipt for segment {}-{}: {}", segment_start, segment_end, e);
             }
         }
-    }
-}
-
-fn normalize_rpc_addr(rpc_addr: &str, peer_transport_addr: &str) -> String {
-    if rpc_addr.starts_with("0.0.0.0:") {
-        let port = rpc_addr.split(':').last().unwrap_or("3000");
-        let peer_ip = peer_transport_addr.split(':').next().unwrap_or(peer_transport_addr);
-        format!("{}:{}", peer_ip, port)
-    } else {
-        rpc_addr.to_string()
     }
 }
 
@@ -607,18 +598,20 @@ async fn main() {
                         {
                             let mut pm = peer_manager.lock().await;
 
-                            let declared_hash = if !their_addr.is_empty() {
-                                peer_addr_hash(&their_addr, &genesis_hash)
+                            let canonical_their_addr = if !their_addr.is_empty() {
+                                their_addr.clone()
                             } else {
                                 peer_addr.clone()
                             };
+
+                            let declared_hash = peer_addr_hash(&canonical_their_addr, &genesis_hash);
 
                             if declared_hash != peer_addr {
                                 pm.normalize_peer_address(&peer_addr, &declared_hash);
                             }
 
                             if let Some(ref rpc) = their_rpc_addr {
-                                let normalized = normalize_rpc_addr(rpc, &their_addr);
+                                let normalized = canonicalize_rpc_addr(rpc, &canonical_their_addr);
                                 pm.bind_rpc_addr(&declared_hash, normalized);
                             }
 

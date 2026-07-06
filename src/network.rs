@@ -5,6 +5,7 @@ use tokio::time::Duration;
 use crate::types::NetworkMessage;
 use crate::tpi::TpiHashMessage;
 use crate::crypto::peer_addr_hash;
+use crate::address::canonicalize_peer_addr;
 use std::sync::Arc;
 use tokio::sync::Mutex;
 use tokio_rustls::TlsAcceptor;
@@ -64,15 +65,6 @@ where
         .map_err(|e| std::io::Error::new(std::io::ErrorKind::InvalidData, e))
 }
 
-fn resolve_dial_addr(advertised: &str, transport_ip: &str) -> String {
-    if advertised.starts_with("0.0.0.0:") {
-        let port = advertised.split(':').last().unwrap_or("8080");
-        format!("{}:{}", transport_ip, port)
-    } else {
-        advertised.to_string()
-    }
-}
-
 pub async fn start_listener(
     addr: &str,
     tx: mpsc::Sender<(NetworkMessage, String)>,
@@ -127,9 +119,9 @@ async fn handle_inbound_peer<S>(
 
     let (peer_hash, dial_addr) = match &first_msg {
         NetworkMessage::Handshake { peer_addr, .. } if !peer_addr.is_empty() => {
-            let identity_hash = peer_addr_hash(peer_addr, &genesis_hash);
-            let dial_addr = resolve_dial_addr(peer_addr, &transport_ip);
-            (identity_hash, dial_addr)
+            let canonical = canonicalize_peer_addr(peer_addr, &transport_ip);
+            let hash = peer_addr_hash(&canonical, &genesis_hash);
+            (hash, canonical)
         }
         _ => {
             println!("Inbound peer sent non-handshake first message — dropping");
