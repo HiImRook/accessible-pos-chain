@@ -1,6 +1,6 @@
 [package]
 name = "pos-chain"
-version = "0.7.2"
+version = "0.7.3"
 edition = "2021"
 [dependencies]
 tokio = { version = "1", features = ["full"] }
