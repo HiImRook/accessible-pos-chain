@@ -5,6 +5,31 @@ All notable changes to Valid Blockchain will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.3] - 2026-07-07
+
+### Added
+- Address canonicalization module (src/address.rs) for peer and RPC endpoints
+  - canonicalize_peer_addr() — wildcard, localhost, IPv6, and hostname normalization using actual transport IP
+  - canonicalize_rpc_addr() — normalizes RPC host against canonical peer address
+  - is_valid_peer_addr() — validates canonical address form before identity hashing
+- PeerManager::bind_canonical_dial_target() — explicit dial target upgrade path for handshake reconciliation
+- 18 address canonicalization tests (tests/address_tests.rs)
+- 8 peer manager reconciliation tests (tests/peer_manager_tests.rs)
+
+### Changed
+- Inbound peer registration now uses canonicalize_peer_addr() with actual transport IP before hashing
+- Inbound handshake drops connections with malformed canonical addresses — identity is never derived from a non-address string
+- Handshake path calls bind_canonical_dial_target() unconditionally after reconciliation — stale provisional dial targets are upgraded on every handshake
+- Handshake RPC normalization now uses canonicalize_rpc_addr() from address module
+- normalize_peer_address() overwrites inherited dial target on canonical migration
+
+### Notes
+- Inbound peer identity is derived from the canonicalized advertised peer_addr — stable across reconnects
+- Outbound provisional identity remains based on dial target and is reconciled via handshake normalization
+- Gossiped peer address validation deferred to future hardening
+- RPC address validation deferred to future hardening
+- All 77 tests pass (51 existing + 18 address + 8 peer_manager)
+
 ## [0.7.2] - 2026-07-03
 
 ### Added

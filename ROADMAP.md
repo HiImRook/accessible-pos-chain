@@ -18,6 +18,17 @@ Features are documented **after** implementation to prevent roadmap drift.
 
 ## Version History (Completed)
 
+### v0.7.3 - Peer and Address Canonicalization Hardening ✅ (Complete - Jul 2026)
+- ✅ address.rs canonicalization module — wildcard, localhost, IPv6, hostname normalization
+- ✅ is_valid_peer_addr() — malformed inbound handshake identities dropped before hashing
+- ✅ Inbound identity derived from canonicalized advertised peer_addr
+- ✅ bind_canonical_dial_target() — explicit dial target upgrade on handshake
+- ✅ normalize_peer_address() correctly migrates dial target to canonical hash
+- ✅ 18 address canonicalization tests
+- ✅ 8 peer manager reconciliation tests
+- ⚠️ Gossiped peer address validation deferred to v0.7.4
+- ⚠️ RPC address validation deferred to v0.7.4
+
 ### v0.7.2 - TLS 1.3 P2P Transport Encryption (Jul 2026)
 - ✅ TLS 1.3 on all P2P connections — inbound and outbound
 - ✅ Ephemeral self-signed certificates generated in memory at startup — never persisted
