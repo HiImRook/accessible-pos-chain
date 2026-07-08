@@ -4,9 +4,7 @@ use pos_chain::archive::{build_archive_segment, write_archive_segment, load_veri
 use pos_chain::publication::{build_publication_manifest, write_publication_manifest, read_publication_manifest, write_publication_receipt, read_publication_receipt, PublicationStatus, PUBLISH_QUEUE_DIR, PUBLISH_RECEIPTS_DIR};
 use pos_chain::arweave::ArweaveClient;
 use pos_chain::snapshot::compute_genesis_hash;
-use pos_chain::crypto::peer_addr_hash;
 use pos_chain::tls::{generate_tls_config, generate_client_tls_config};
-use pos_chain::address::canonicalize_rpc_addr;
 use tokio::sync::mpsc;
 use tokio::time::{interval, Duration};
 use std::sync::Arc;
@@ -597,31 +595,17 @@ async fn main() {
 
                         {
                             let mut pm = peer_manager.lock().await;
-
-                            let canonical_their_addr = if !their_addr.is_empty() {
-                                their_addr.clone()
-                            } else {
-                                peer_addr.clone()
-                            };
-
-                            let declared_hash = peer_addr_hash(&canonical_their_addr, &genesis_hash);
-
-                            if declared_hash != peer_addr {
-                                pm.normalize_peer_address(&peer_addr, &declared_hash);
-                            }
-
-                            pm.bind_canonical_dial_target(&declared_hash, canonical_their_addr.clone());
-
-                            if let Some(ref rpc) = their_rpc_addr {
-                                let normalized = canonicalize_rpc_addr(rpc, &canonical_their_addr);
-                                pm.bind_rpc_addr(&declared_hash, normalized);
-                            }
-
-                            for peer in known_peers {
-                                if peer != my_addr {
-                                    let peer_hash = peer_addr_hash(&peer, &genesis_hash);
-                                    pm.add_peer(peer_hash, peer);
-                                }
+                            let rpc_ref = their_rpc_addr.as_deref();
+                            if !pm.apply_handshake_metadata(
+                                &peer_addr,
+                                &their_addr,
+                                &known_peers,
+                                rpc_ref,
+                                &my_addr,
+                                &genesis_hash,
+                            ) {
+                                println!("[{}] Handshake from {} advertised invalid peer_addr — ignoring all handshake data",
+                                    timestamp(), peer_id_short);
                             }
                         }
                     }

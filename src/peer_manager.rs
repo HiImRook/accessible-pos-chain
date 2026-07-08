@@ -1,4 +1,6 @@
 use crate::types::PeerInfo;
+use crate::address::{canonicalize_rpc_addr, is_valid_peer_addr};
+use crate::crypto::peer_addr_hash;
 use std::collections::{HashMap, HashSet};
 use std::time::{SystemTime, UNIX_EPOCH};
 
@@ -92,6 +94,48 @@ impl PeerManager {
 
         self.peers.remove(transport_hash);
         self.dial_targets.remove(transport_hash);
+    }
+
+    pub fn apply_handshake_metadata(
+        &mut self,
+        peer_addr: &str,
+        their_addr: &str,
+        known_peers: &[String],
+        their_rpc_addr: Option<&str>,
+        my_addr: &str,
+        genesis_hash: &str,
+    ) -> bool {
+        if their_addr.is_empty() || !is_valid_peer_addr(their_addr) {
+            return false;
+        }
+
+        let declared_hash = peer_addr_hash(their_addr, genesis_hash);
+
+        if declared_hash != peer_addr {
+            self.normalize_peer_address(peer_addr, &declared_hash);
+        }
+
+        self.bind_canonical_dial_target(&declared_hash, their_addr.to_string());
+
+        if let Some(rpc) = their_rpc_addr {
+            let normalized = canonicalize_rpc_addr(rpc, their_addr);
+            if is_valid_peer_addr(&normalized) {
+                self.bind_rpc_addr(&declared_hash, normalized);
+            }
+        }
+
+        for peer in known_peers {
+            if peer == my_addr {
+                continue;
+            }
+            if !is_valid_peer_addr(peer) {
+                continue;
+            }
+            let peer_hash = peer_addr_hash(peer, genesis_hash);
+            self.add_peer(peer_hash, peer.clone());
+        }
+
+        true
     }
 
     pub fn get_connected_peer_rpc_addrs(&self) -> Vec<String> {

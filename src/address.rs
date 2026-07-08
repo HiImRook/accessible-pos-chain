@@ -41,7 +41,7 @@ fn split_host_port(addr: &str) -> Option<(String, String)> {
         let host = addr[1..bracket_end].to_string();
         let rest = &addr[bracket_end + 1..];
         let port = rest.strip_prefix(':')?.to_string();
-        if port.is_empty() {
+        if host.is_empty() || port.is_empty() {
             return None;
         }
         Some((host, port))
