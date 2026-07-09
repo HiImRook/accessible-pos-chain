@@ -5,11 +5,14 @@ use std::collections::{HashMap, HashSet};
 use std::time::{SystemTime, UNIX_EPOCH};
 
 const PEER_TIMEOUT_SECS: u64 = 120;
+const MAX_MESSAGES_PER_PEER_PER_WINDOW: usize = 100;
+const MESSAGE_RATE_WINDOW_SECS: u64 = 10;
 
 pub struct PeerManager {
     peers: HashMap<String, PeerInfo>,
     dial_targets: HashMap<String, String>,
     bootstrap_nodes: Vec<String>,
+    message_timestamps: HashMap<String, Vec<u64>>,
 }
 
 impl PeerManager {
@@ -18,6 +21,7 @@ impl PeerManager {
             peers: HashMap::new(),
             dial_targets: HashMap::new(),
             bootstrap_nodes,
+            message_timestamps: HashMap::new(),
         }
     }
 
@@ -62,6 +66,17 @@ impl PeerManager {
         }
     }
 
+    pub fn record_inbound_message(&mut self, peer_hash: &str) -> bool {
+        let now = current_timestamp();
+        let timestamps = self.message_timestamps.entry(peer_hash.to_string()).or_default();
+        timestamps.retain(|&t| now.saturating_sub(t) < MESSAGE_RATE_WINDOW_SECS);
+        if timestamps.len() >= MAX_MESSAGES_PER_PEER_PER_WINDOW {
+            return false;
+        }
+        timestamps.push(now);
+        true
+    }
+
     pub fn normalize_peer_address(&mut self, transport_hash: &str, canonical_hash: &str) {
         if transport_hash == canonical_hash {
             return;
@@ -72,6 +87,7 @@ impl PeerManager {
             .and_then(|p| p.rpc_addr.clone());
 
         let inherited_dial = self.dial_targets.get(transport_hash).cloned();
+        let inherited_timestamps = self.message_timestamps.remove(transport_hash);
 
         if let Some(existing) = self.peers.get_mut(canonical_hash) {
             existing.connected = true;
@@ -90,6 +106,13 @@ impl PeerManager {
 
         if let Some(dial) = inherited_dial {
             self.dial_targets.insert(canonical_hash.to_string(), dial);
+        }
+
+        if let Some(ts) = inherited_timestamps {
+            let now = current_timestamp();
+            let entry = self.message_timestamps.entry(canonical_hash.to_string()).or_default();
+            entry.extend(ts);
+            entry.retain(|&t| now.saturating_sub(t) < MESSAGE_RATE_WINDOW_SECS);
         }
 
         self.peers.remove(transport_hash);
@@ -200,6 +223,7 @@ impl PeerManager {
         for key in stale {
             self.peers.remove(&key);
             self.dial_targets.remove(&key);
+            self.message_timestamps.remove(&key);
         }
     }
 }
