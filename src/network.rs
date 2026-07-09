@@ -14,8 +14,30 @@ use rustls::pki_types::ServerName;
 use rustls::ServerConfig;
 use rustls::ClientConfig;
 use crate::peer_manager::PeerManager;
+use std::collections::HashMap;
+use std::time::{SystemTime, UNIX_EPOCH};
 
 const MAX_MESSAGE_SIZE: usize = 256 * 1024;
+const MAX_INBOUND_CONNECTIONS_PER_IP: usize = 5;
+const CONNECTION_RATE_WINDOW_SECS: u64 = 60;
+
+fn current_timestamp_secs() -> u64 {
+    SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs()
+}
+
+pub fn allow_inbound_connection(
+    rate_state: &mut HashMap<String, Vec<u64>>,
+    ip: &str,
+) -> bool {
+    let now = current_timestamp_secs();
+    let attempts = rate_state.entry(ip.to_string()).or_default();
+    attempts.retain(|&t| now.saturating_sub(t) < CONNECTION_RATE_WINDOW_SECS);
+    if attempts.len() >= MAX_INBOUND_CONNECTIONS_PER_IP {
+        return false;
+    }
+    attempts.push(now);
+    true
+}
 
 async fn send_framed_message<S>(stream: &mut S, msg: &NetworkMessage) -> Result<(), std::io::Error>
 where
@@ -72,6 +94,7 @@ pub async fn start_listener(
     peer_manager: Arc<Mutex<PeerManager>>,
     genesis_hash: String,
     tls_config: Arc<ServerConfig>,
+    connection_rate_state: Arc<Mutex<HashMap<String, Vec<u64>>>>,
 ) {
     let acceptor = TlsAcceptor::from(tls_config);
     let listener = TcpListener::bind(addr).await.unwrap();
@@ -80,6 +103,15 @@ pub async fn start_listener(
     loop {
         let (socket, peer_addr) = listener.accept().await.unwrap();
         let transport_ip = peer_addr.ip().to_string();
+
+        {
+            let mut rate_state = connection_rate_state.lock().await;
+            if !allow_inbound_connection(&mut rate_state, &transport_ip) {
+                println!("[RATE] Inbound connection limit exceeded for {} — dropping", transport_ip);
+                continue;
+            }
+        }
+
         let tx = tx.clone();
         let tpi_tx = tpi_tx.clone();
         let peer_manager = Arc::clone(&peer_manager);
@@ -137,6 +169,11 @@ async fn handle_inbound_peer<S>(
         let mut pm = peer_manager.lock().await;
         pm.add_peer(peer_hash.clone(), dial_addr);
         pm.mark_connected(&peer_hash);
+        if !pm.record_inbound_message(&peer_hash) {
+            println!("[RATE] Message rate exceeded during handshake for {} — disconnecting", peer_hash);
+            pm.mark_disconnected(&peer_hash);
+            return;
+        }
     }
 
     println!("Inbound peer registered: {}", peer_hash);
@@ -147,6 +184,11 @@ async fn handle_inbound_peer<S>(
             Ok(msg) => {
                 {
                     let mut pm = peer_manager.lock().await;
+                    if !pm.record_inbound_message(&peer_hash) {
+                        println!("[RATE] Message rate exceeded for {} — disconnecting", peer_hash);
+                        pm.mark_disconnected(&peer_hash);
+                        break;
+                    }
                     pm.update_seen(&peer_hash);
                 }
 

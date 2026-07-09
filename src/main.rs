@@ -444,6 +444,7 @@ async fn main() {
     let mempool = Arc::new(Mutex::new(Mempool::new()));
     let metrics = Metrics::new();
     let archiving_in_progress: Arc<Mutex<HashSet<String>>> = Arc::new(Mutex::new(HashSet::new()));
+    let connection_rate_state: Arc<Mutex<HashMap<String, Vec<u64>>>> = Arc::new(Mutex::new(HashMap::new()));
 
     {
         let mut s = state.write().await;
@@ -467,6 +468,7 @@ async fn main() {
     let tpi_tx_listener = tpi_tx.clone();
     let genesis_hash_listener = genesis_hash.clone();
     let server_tls_config_listener = Arc::clone(&server_tls_config);
+    let connection_rate_state_listener = Arc::clone(&connection_rate_state);
     tokio::spawn(async move {
         network::start_listener(
             &listen_addr,
@@ -475,6 +477,7 @@ async fn main() {
             peer_manager_clone,
             genesis_hash_listener,
             server_tls_config_listener,
+            connection_rate_state_listener,
         ).await;
     });
 
