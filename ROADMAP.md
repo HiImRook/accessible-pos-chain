@@ -1,7 +1,7 @@
 # Valid Blockchain - Development Roadmap
 
-**Current Version:** v0.7.2
-**Status:** v0.7.2 released (Testnet development)
+**Current Version:** v0.7.4
+**Status:** v0.7.4 released (Testnet development)
 
 ---
 
@@ -18,7 +18,22 @@ Features are documented **after** implementation to prevent roadmap drift.
 
 ## Version History (Completed)
 
-### v0.7.3 - Peer and Address Canonicalization Hardening ✅ (Complete - Jul 2026)
+### v0.7.4 - Network Abuse Hardening (Jul 2026)
+- ✅ Per-IP inbound connection rate limiting — 5 attempts per 60 seconds, keyed by source IP only
+- ✅ Per-peer inbound message rate limiting — 100 messages per 10 seconds per connected peer
+- ✅ Handshake counts against peer message budget — rate-limited peers disconnected immediately
+- ✅ Rate check runs before update_seen() — rate-limited messages do not mutate peer liveness
+- ✅ message_timestamps migrated during normalize_peer_address() with stale entry pruning
+- ✅ cleanup_stale_peers() removes message_timestamps alongside peer and dial entries
+- ✅ PeerManager::apply_handshake_metadata() — handshake policy extracted into testable helper
+- ✅ Gossiped peer addresses validated before entering PeerManager
+- ✅ RPC addresses validated after canonicalization — invalid normalized RPC not bound
+- ✅ Invalid their_addr rejects all handshake data including gossip and RPC
+- ✅ split_host_port() rejects empty bracketed hosts — []:8000 correctly rejected
+- ✅ 7 rate limiting tests
+- ✅ 23 handshake validation and address parser tests
+
+### v0.7.3 - Peer and Address Canonicalization Hardening (Jul 2026)
 - ✅ address.rs canonicalization module — wildcard, localhost, IPv6, hostname normalization
 - ✅ is_valid_peer_addr() — malformed inbound handshake identities dropped before hashing
 - ✅ Inbound identity derived from canonicalized advertised peer_addr
@@ -26,8 +41,8 @@ Features are documented **after** implementation to prevent roadmap drift.
 - ✅ normalize_peer_address() correctly migrates dial target to canonical hash
 - ✅ 18 address canonicalization tests
 - ✅ 8 peer manager reconciliation tests
-- ⚠️ Gossiped peer address validation deferred to v0.7.4
-- ⚠️ RPC address validation deferred to v0.7.4
+- ⚠️ Gossiped peer address validation completed in v0.7.4
+- ⚠️ RPC address validation completed in v0.7.4
 
 ### v0.7.2 - TLS 1.3 P2P Transport Encryption (Jul 2026)
 - ✅ TLS 1.3 on all P2P connections — inbound and outbound
@@ -189,15 +204,13 @@ Features are documented **after** implementation to prevent roadmap drift.
 
 ## Upcoming Releases
 
-### v0.7.3 - Network Hardening (Target: Q3 2026)
-- Connection-level rate limiting
-- Message-level rate limiting
-- Further peer identity/canonicalization hardening
-- Hostname and IPv6 normalization in resolve_dial_addr()
-- RPC normalization against resolved dial target
-- P2P TLS trust anchoring and fingerprint pinning
+### v0.7.5 - TLS Trust Hardening (Target: Q3 2026)
+- P2P TLS trust anchoring
+- Peer certificate fingerprint pinning
+- Trust policy hardening for ephemeral self-signed transport certificates
+- Further transport-layer trust refinement without promoting TLS artifacts into durable peer identity
 
-### v0.7.4 - Arweave Publication Validation (Target: Q3 2026)
+### v0.7.6 - Arweave Publication Validation (Target: Q4 2026)
 - Real wallet submission test against Arweave mainnet
 - Merkle data_root correctness confirmation or fix
 - Chunked upload path if segments exceed inline limit in practice
@@ -264,9 +277,9 @@ Features are documented **after** implementation to prevent roadmap drift.
 
 ⚠️ **Arweave Merkle data_root pending live-network validation** — requires funded wallet submission
 ⚠️ **Chunked upload not implemented** — segments over 8MB deferred
-⚠️ **P2P TLS trust anchoring and fingerprint pinning deferred**
+⚠️ **P2P TLS trust anchoring and fingerprint pinning deferred** — planned v0.7.5
 ⚠️ **RPC sync transport hardening deferred**
-⚠️ **resolve_dial_addr() handles 0.0.0.0:port only** — hostname/IPv6 normalization deferred
+⚠️ **Genesis mismatch policy** — currently logged but handshake metadata still applied; future hardening decision
 
 **These are intentional staging decisions, not bugs, oversights, or knowledge gaps.**
 
@@ -287,4 +300,4 @@ MIT License - See LICENSE file for details
 
 ---
 
-**Last Updated:** Jul 3, 2026
+**Last Updated:** Jul 9, 2026
