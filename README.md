@@ -4,9 +4,9 @@ A lightweight **TPI (Three-Party Integrity)** blockchain focused on accessibilit
 
 ---
 
-> ✅ **Network Identity Notice — v0.7.3**
+> ✅ **Network Identity Notice — v0.7.4**
 >
-> Raw IP addresses are no longer stored as peer identity. Peer identity is epoch-salted and hashed from canonicalized addresses. Malformed handshake identities are dropped before hashing. All P2P connections are encrypted with TLS 1.3. Certificates are ephemeral — generated in memory at startup and never persisted as identity artifacts. Bootstrap remains a private ceremony between trusted partners. See [NETWORKING.md](NETWORKING.md) for full details.
+> Raw IP addresses are no longer stored as peer identity. Peer identity is epoch-salted and hashed from canonicalized addresses. Malformed handshake identities are dropped before hashing. Inbound connections and peer messages are rate limited. All P2P connections are encrypted with TLS 1.3. Certificates are ephemeral — generated in memory at startup and never persisted as identity artifacts. Bootstrap remains a private ceremony between trusted partners. See [NETWORKING.md](NETWORKING.md) for full details.
 
 ---
 
@@ -47,12 +47,15 @@ TPI is not borrowed from anywhere. I happily spent the past several years develo
 - TLS 1.3 encrypted P2P transport — ephemeral self-signed certificates, never persisted
 - Address canonicalization — wildcard, localhost, IPv6, and hostname normalization
 - Malformed handshake identities dropped before hashing
+- Per-IP inbound connection rate limiting — abuse stopped before TLS handshake
+- Per-peer inbound message rate limiting — flooding peers disconnected immediately
+- Gossiped peer addresses and RPC addresses validated before ingestion
 - Peer-based live sync catch-up on startup
 - WebSocket real-time updates
 - Built-in metrics dashboard
 - Vendored dependencies for supply-chain security
 
-## Current Status: v0.7.3
+## Current Status: v0.7.4
 
 **Completed:**
 * ✅ TPI consensus — original mechanism, merit-based, no capital stake
@@ -72,6 +75,15 @@ TPI is not borrowed from anywhere. I happily spent the past several years develo
 * ✅ Outbound provisional identity reconciled via handshake normalization
 * ✅ Broadcast dials raw transport targets — logs hashes only
 * ✅ Gossip stays dialable — known peers distributed as raw addresses
+* ✅ Gossiped peer addresses validated before entering PeerManager
+* ✅ RPC addresses validated after canonicalization — invalid normalized RPC not bound
+* ✅ Invalid their_addr rejects all handshake data including gossip and RPC
+* ✅ PeerManager::apply_handshake_metadata() — handshake policy in testable helper
+* ✅ Per-IP inbound connection rate limiting — 5 attempts per 60 seconds, keyed by source IP only
+* ✅ Per-peer inbound message rate limiting — 100 messages per 10 seconds
+* ✅ Handshake counts against peer message budget — rate-limited peers disconnected immediately
+* ✅ Rate check before update_seen() — abusive messages do not mutate peer liveness
+* ✅ message_timestamps migrated during normalize_peer_address() with stale entry pruning
 * ✅ TLS 1.3 on all P2P connections — inbound and outbound
 * ✅ Ephemeral self-signed certificates generated in memory at startup — never persisted
 * ✅ Peer certificate fingerprints logged for observability
@@ -87,7 +99,7 @@ TPI is not borrowed from anywhere. I happily spent the past several years develo
 * ✅ Supply cap enforcement (33M VLid hard limit)
 * ✅ Fee priority ordering (high-fee transactions first)
 * ✅ Ed25519 signature verification on block acceptance
-* ✅ Comprehensive test suite (77 tests)
+* ✅ Comprehensive test suite (107 tests)
 * ✅ Snapshot primitives with deterministic checksums and atomic writes
 * ✅ Recovery RPC endpoints (GET /head, GET /block/:slot)
 * ✅ Archive segment module — 6-hour durable chain persistence unit
@@ -116,7 +128,7 @@ TPI is not borrowed from anywhere. I happily spent the past several years develo
 
 **In Development:**
 * 📋 Arweave Merkle data_root validation — requires active testnet network submission with funded wallet (deferred from v0.6.x)
-* 📋 v0.7.4 network hardening — rate limiting, gossiped peer address validation, RPC address validation
+* 📋 v0.7.5 TLS trust hardening — certificate trust anchoring and fingerprint pinning
 * 📋 Layer 2 networks (VNS, VIPFS, KEVIN)
 
 ## Development Phases
@@ -142,7 +154,7 @@ TPI is not borrowed from anywhere. I happily spent the past several years develo
 - ✅ Fees 100% to block producer (temporary — future governance decision)
 - ✅ Ed25519 signature verification on block acceptance
 - ✅ Transaction nonce enforcement (replay protection)
-- ✅ Comprehensive test suite (77 tests)
+- ✅ Comprehensive test suite (107 tests)
   - Mempool tests (6)
   - Minting tests (7)
   - Tokenomics tests (8 external + 6 inline)
@@ -152,6 +164,8 @@ TPI is not borrowed from anywhere. I happily spent the past several years develo
   - Archive tests (11)
   - Address canonicalization tests (18)
   - Peer manager reconciliation tests (8)
+  - Handshake validation tests (23)
+  - Rate limiting tests (7)
 
 ### Phase 4: State Management ✅ (Complete - v0.6.x)
 - ✅ Snapshot primitives and deterministic checksums
@@ -174,7 +188,7 @@ TPI is not borrowed from anywhere. I happily spent the past several years develo
 - ✅ Quorum gating replaced by sync-complete readiness
 - ✅ Bootstrap is a private ceremony between trusted partners
 
-### Phase 6: Network Hardening ✅ (Partial - v0.7.1 through v0.7.3) / 📋 (Continuing - v0.7.4)
+### Phase 6: Network Hardening ✅ (Partial - v0.7.1 through v0.7.4) / 📋 (Continuing - v0.7.5)
 - ✅ Validator IP hashing with epoch-based salt
 - ✅ Peer identity/transport separation — Zero Footprint applied to network layer
 - ✅ TLS 1.3 P2P transport encryption — ephemeral self-signed certificates
@@ -182,10 +196,9 @@ TPI is not borrowed from anywhere. I happily spent the past several years develo
 - ✅ Address canonicalization module — wildcard, localhost, IPv6, hostname normalization
 - ✅ Malformed handshake identities dropped before hashing
 - ✅ Dial target upgrade on every handshake via bind_canonical_dial_target()
-- ✅ 26 new network hardening tests
-- 📋 Rate limiting (v0.7.4)
-- 📋 Gossiped peer address validation (v0.7.4)
-- 📋 RPC address validation (v0.7.4)
+- ✅ Gossiped peer and RPC address validation
+- ✅ Per-IP connection rate limiting and per-peer message rate limiting
+- ✅ 56 new network hardening tests
 - 📋 TLS trust anchoring and fingerprint pinning (v0.7.5)
 
 ### Phase 7: Network Hardening, Stabilization, and Testnet Maturity 📋 (Future - v0.8.0+)
@@ -287,6 +300,9 @@ Raw IP addresses never exist as peer identity artifacts. Peer identity is epoch-
 
 **Address Canonicalization:**
 All inbound peer addresses are canonicalized before hashing — wildcard bind addresses replaced with actual transport IP, localhost normalized, IPv6 correctly bracketed, hostnames lowercased. Stale provisional dial targets are upgraded on every handshake via explicit canonical upgrade. The identity and transport layers are cleanly separated at every path.
+
+**Network Abuse Hardening:**
+Inbound connections are rate limited per source IP before the TLS handshake — ephemeral port rotation does not bypass the limit. Post-handshake message floods are disconnected immediately. Gossiped peer addresses and advertised RPC endpoints are validated before ingestion. Invalid peer identity in a handshake causes all associated handshake data to be ignored.
 
 **TLS 1.3 P2P Transport:**
 All peer connections are encrypted with TLS 1.3. Certificates are ephemeral — generated in memory at startup and discarded on shutdown. They are transport artifacts only and play no role in the peer identity model. Certificate fingerprints are logged for observability. Trust anchoring is deferred to future hardening work.
