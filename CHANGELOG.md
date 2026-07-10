@@ -5,6 +5,38 @@ All notable changes to Valid Blockchain will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.4] - 2026-07-010
+
+### Added
+- Per-IP inbound connection rate limiting — 5 attempts per 60 seconds, keyed by source IP only
+- Per-peer inbound message rate limiting — 100 messages per 10 seconds per connected peer
+- allow_inbound_connection() — rolling window connection limiter in network.rs
+- record_inbound_message() — rolling window message limiter in peer_manager.rs
+- message_timestamps field on PeerManager — per-peer inbound message history
+- PeerManager::apply_handshake_metadata() — extracted handshake policy from main.rs into testable helper
+- is_valid_peer_addr() — canonical address validator exported from address.rs
+- 7 rate limiting tests (tests/rate_limit_tests.rs)
+- 23 handshake validation and address parser tests (tests/handshake_validation_tests.rs)
+
+### Changed
+- Inbound connection attempts beyond threshold dropped before TLS handshake
+- Handshake message counts against peer message budget — rate-limited peers disconnected immediately
+- Message rate check runs before update_seen() — rate-limited messages do not mutate peer liveness
+- message_timestamps migrated during normalize_peer_address() with stale entry pruning
+- cleanup_stale_peers() removes message_timestamps alongside peer and dial entries
+- Gossiped peer addresses validated via is_valid_peer_addr() before entering PeerManager
+- RPC addresses validated after canonicalization — invalid normalized RPC not bound
+- Invalid their_addr in handshake rejects all handshake data including gossip and RPC
+- split_host_port() rejects empty bracketed hosts — []:8000 now correctly rejected
+- apply_handshake_metadata() replaces inline handshake block in main.rs
+
+### Notes
+- Connection limiter keyed by source IP only — ephemeral port rotation does not bypass limit
+- Message limiter uses same rolling window pattern as connection limiter
+- Handshake counts as first message toward peer budget
+- Rate limiting is first-pass minimal — no persistent banlists, no subnet heuristics, no type-specific quotas
+- All 107 tests pass (51 existing + 18 address + 8 peer manager + 23 handshake validation + 7 rate limiting)
+
 ## [0.7.3] - 2026-07-07
 
 ### Added
