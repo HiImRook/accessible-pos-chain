@@ -10,9 +10,9 @@ The `main` branch holds the forkable protocol base.
 
 ---
 
-> ✅ **Network Identity Notice — v0.7.3**
+> ✅ **Network Identity Notice — v0.7.4**
 >
-> Raw IP addresses are no longer stored as peer identity. Peer identity is epoch-salted and hashed from canonicalized addresses. Malformed handshake identities are dropped before hashing. All P2P connections are encrypted with TLS 1.3. Certificates are ephemeral — generated in memory at startup and never persisted as identity artifacts. Bootstrap remains a private ceremony between trusted partners. See [NETWORKING.md](https://github.com/HiImRook/accessible-pos-chain/blob/main/NETWORKING.md) for full details.
+> Raw IP addresses are no longer stored as peer identity. Peer identity is epoch-salted and hashed from canonicalized addresses. Malformed handshake identities are dropped before hashing. Inbound connections and peer messages are rate limited. All P2P connections are encrypted with TLS 1.3. Certificates are ephemeral — generated in memory at startup and never persisted as identity artifacts. Bootstrap remains a private ceremony between trusted partners. See [NETWORKING.md](https://github.com/HiImRook/accessible-pos-chain/blob/main/NETWORKING.md) for full details.
 
 ---
 
@@ -20,9 +20,9 @@ The `main` branch holds the forkable protocol base.
 
 - Single Rust binary: one `cargo build --release` executable
 - Under 2,000 lines of code total
-- Entire chain state lives in in-memory HashMaps(Future developers take note)
+- Entire chain state lives in in-memory HashMaps. Future developers take note.
 - All dependencies vendored
-- Merit valued over capital: no token-weighted mechanics, no SPOs
+- Merit valued over capital: no token-weighted mechanics, no SPOs, period
 
 ## Consensus: TPI (Three-Party Integrity)
 
@@ -48,7 +48,7 @@ TPI is an original consensus mechanism. It is not a variant of Proof of Stake, P
 
 Future governance will be merit-based (participation + wallet age).
 
-## Current Status: v0.7.3
+## Current Status: v0.7.4
 
 **Completed**
 - Full TPI consensus (random trio + merit producer + 2/3 finality) — original mechanism
@@ -68,6 +68,15 @@ Future governance will be merit-based (participation + wallet age).
 - Outbound provisional identity reconciled via handshake normalization
 - Broadcast dials raw transport targets — logs hashes only
 - Gossip stays dialable — known peers distributed as raw addresses
+- Gossiped peer addresses validated before entering PeerManager
+- RPC addresses validated after canonicalization — invalid normalized RPC not bound
+- Invalid their_addr rejects all handshake data including gossip and RPC
+- PeerManager::apply_handshake_metadata() — handshake policy in testable helper
+- Per-IP inbound connection rate limiting — 5 attempts per 60 seconds, keyed by source IP only
+- Per-peer inbound message rate limiting — 100 messages per 10 seconds
+- Handshake counts against peer message budget — rate-limited peers disconnected immediately
+- Rate check before update_seen() — abusive messages do not mutate peer liveness
+- message_timestamps migrated during normalize_peer_address() with stale entry pruning
 - TLS 1.3 on all P2P connections — inbound and outbound
 - Ephemeral self-signed certificates generated in memory at startup — never persisted
 - Peer certificate fingerprints logged for observability
@@ -80,7 +89,7 @@ Future governance will be merit-based (participation + wallet age).
 - Ed25519 signature verification
 - Wallet CLI
 - WebSocket RPC and metrics dashboard
-- 77 tests covering TPI, mempool, minting, tokenomics, ChainState, archive segments, address canonicalization, and peer manager reconciliation
+- 107 tests covering TPI, mempool, minting, tokenomics, ChainState, archive segments, address canonicalization, peer manager reconciliation, handshake validation, and rate limiting
 - Snapshot primitives with deterministic checksums and atomic writes
 - Recovery RPC endpoints (GET /head, GET /block/:slot)
 - Archive segment module — 6-hour durable chain persistence unit
@@ -109,7 +118,7 @@ Future governance will be merit-based (participation + wallet age).
 
 **Next**
 - Arweave Merkle data_root validation — requires active testnet network submission with funded wallet (deferred from v0.6.x)
-- v0.7.4 network hardening — rate limiting, gossiped peer address validation, RPC address validation
+- v0.7.5 TLS trust hardening — certificate trust anchoring and fingerprint pinning
 
 ## Hardware Requirements
 
@@ -147,6 +156,7 @@ Bootstrap peers and testnet details are announced on Discord before each launch.
 - Arweave publication sidecar — verified archive segments queued and uploaded to Arweave as permanent off-chain record; prune never depends on upload success as local durability always gates prune; VIPFS replaces Arweave as the backend when ready
 - TLS 1.3 encrypted P2P transport — ephemeral self-signed certificates generated at startup, never persisted, not part of peer identity model
 - Zero Footprint network layer — raw IPs never stored as peer identity; epoch-salted hashed identity separated from raw transport addresses; peer addresses canonicalized before hashing; malformed identities dropped before they become identity material; you cannot leak what you never kept
+- Network abuse hardening — inbound connections rate limited per source IP before TLS handshake; message floods disconnected immediately; gossiped peer and RPC addresses validated before ingestion; invalid sender identity rejects all associated handshake data
 - Peer-based live sync — one-time startup catch-up via peer RPC endpoints
 - Precise RPC error handling — malformed requests and mempool rejections return proper HTTP status codes instead of silent defaults
 - Custom P2P and racer system built from scratch
