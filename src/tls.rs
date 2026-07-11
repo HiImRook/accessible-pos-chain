@@ -23,7 +23,7 @@ pub fn generate_tls_config() -> Arc<ServerConfig> {
 pub fn generate_client_tls_config() -> Arc<rustls::ClientConfig> {
     let config = rustls::ClientConfig::builder_with_protocol_versions(&[&rustls::version::TLS13])
         .dangerous()
-        .with_custom_certificate_verifier(Arc::new(FingerprintVerifier))
+        .with_custom_certificate_verifier(Arc::new(LoggingOnlyVerifier))
         .with_no_client_auth();
 
     Arc::new(config)
@@ -34,10 +34,35 @@ pub fn cert_fingerprint(cert: &CertificateDer) -> String {
     hash.iter().map(|b| format!("{:02x}", b)).collect::<Vec<_>>().join(":")
 }
 
-#[derive(Debug)]
-struct FingerprintVerifier;
+pub fn is_trusted_fingerprint(fingerprint: &str, trusted: &[String]) -> bool {
+    if trusted.is_empty() {
+        return true;
+    }
+    let actual = fingerprint.trim().to_ascii_lowercase();
+    trusted.iter().any(|t| t.trim().to_ascii_lowercase() == actual)
+}
 
-impl rustls::client::danger::ServerCertVerifier for FingerprintVerifier {
+pub fn validate_peer_certificate(
+    certs: Option<&[CertificateDer<'_>]>,
+    trusted: &[String],
+) -> Result<String, String> {
+    let end_entity = certs
+        .and_then(|c| c.first())
+        .ok_or_else(|| "no peer certificate presented".to_string())?;
+
+    let fingerprint = cert_fingerprint(end_entity);
+
+    if !is_trusted_fingerprint(&fingerprint, trusted) {
+        return Err(format!("untrusted fingerprint: {}", fingerprint));
+    }
+
+    Ok(fingerprint)
+}
+
+#[derive(Debug)]
+struct LoggingOnlyVerifier;
+
+impl rustls::client::danger::ServerCertVerifier for LoggingOnlyVerifier {
     fn verify_server_cert(
         &self,
         end_entity: &CertificateDer,
