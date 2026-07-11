@@ -365,6 +365,17 @@ async fn main() {
 
     let config = Config::load().expect("Failed to load config.toml");
 
+    let tls_trust_mode = if config.tls_trust_mode.trim().is_empty() {
+        "pinned_fingerprints".to_string()
+    } else {
+        config.tls_trust_mode.trim().to_string()
+    };
+
+    if tls_trust_mode != "pinned_fingerprints" {
+        eprintln!("ERROR: Unsupported tls_trust_mode: {}", tls_trust_mode);
+        std::process::exit(1);
+    }
+
     if config.validators.is_empty() {
         eprintln!("ERROR: No validators configured in config.toml");
         eprintln!("Add at least one validator to the [validators] section");
@@ -407,6 +418,13 @@ async fn main() {
     let rpc_addr = config.rpc_addr.clone();
     let my_addr = listen_addr.clone();
     let my_rpc_addr = rpc_addr.clone();
+    let trusted_fingerprints = config.trusted_peer_fingerprints.clone();
+
+    if trusted_fingerprints.is_empty() {
+        println!("[TLS] Trust mode: {} (trust all; no fingerprints configured)", tls_trust_mode);
+    } else {
+        println!("[TLS] Trust mode: {} ({} pinned fingerprints)", tls_trust_mode, trusted_fingerprints.len());
+    }
 
     let my_genesis = if config.genesis_timestamp == 0 {
         let now = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs();
@@ -510,6 +528,7 @@ async fn main() {
     let my_rpc_addr_connect = my_rpc_addr.clone();
     let genesis_hash_connect = genesis_hash.clone();
     let client_tls_config_connect = Arc::clone(&client_tls_config);
+    let trusted_fingerprints_connect = trusted_fingerprints.clone();
     tokio::spawn(async move {
         let mut connect_interval = interval(Duration::from_secs(30));
 
@@ -533,8 +552,9 @@ async fn main() {
                     let my_rpc = Some(my_rpc_addr_connect.clone());
                     let genesis_hash = genesis_hash_connect.clone();
                     let client_tls = Arc::clone(&client_tls_config_connect);
+                    let fingerprints = trusted_fingerprints_connect.clone();
                     tokio::spawn(async move {
-                        network::connect_and_handle_peer(node, addr, tx, tpi_tx, pm, genesis_ts, my_rpc, genesis_hash, client_tls).await;
+                        network::connect_and_handle_peer(node, addr, tx, tpi_tx, pm, genesis_ts, my_rpc, genesis_hash, client_tls, fingerprints).await;
                     });
                 }
             }
@@ -553,8 +573,9 @@ async fn main() {
                     let my_rpc = Some(my_rpc_addr_connect.clone());
                     let genesis_hash = genesis_hash_connect.clone();
                     let client_tls = Arc::clone(&client_tls_config_connect);
+                    let fingerprints = trusted_fingerprints_connect.clone();
                     tokio::spawn(async move {
-                        network::connect_and_handle_peer(peer, addr, tx, tpi_tx, pm, genesis_ts, my_rpc, genesis_hash, client_tls).await;
+                        network::connect_and_handle_peer(peer, addr, tx, tpi_tx, pm, genesis_ts, my_rpc, genesis_hash, client_tls, fingerprints).await;
                     });
                 }
             }
@@ -576,6 +597,7 @@ async fn main() {
     let validator_id_for_block = my_validator_id.clone();
     let production_ready_block = Arc::clone(&production_ready);
     let client_tls_config_broadcast = Arc::clone(&client_tls_config);
+    let trusted_fingerprints_broadcast = trusted_fingerprints.clone();
 
     let mut current_slot = 0u64;
     let mut slot_deadline = tokio::time::Instant::now();
@@ -658,8 +680,9 @@ async fn main() {
                             let msg = NetworkMessage::NewBlock(block);
                             let pm = Arc::clone(&peer_manager);
                             let client_tls = Arc::clone(&client_tls_config_broadcast);
+                            let fingerprints = trusted_fingerprints_broadcast.clone();
                             tokio::spawn(async move {
-                                network::broadcast_message(msg, pm, client_tls).await;
+                                network::broadcast_message(msg, pm, client_tls, fingerprints).await;
                             });
                         }
                     }
@@ -700,6 +723,7 @@ async fn main() {
                 let genesis_hash_spawn = genesis_hash.clone();
                 let archive_guard_spawn = Arc::clone(&archiving_in_progress);
                 let client_tls_spawn = Arc::clone(&client_tls_config_broadcast);
+                let fingerprints_spawn = trusted_fingerprints_broadcast.clone();
 
                 tokio::spawn(async move {
                     if let Some(block) = produce_block_with_tpi(
@@ -758,7 +782,7 @@ async fn main() {
 
                             let msg = NetworkMessage::NewBlock(block);
                             tokio::spawn(async move {
-                                network::broadcast_message(msg, peer_manager_clone_spawn, client_tls_spawn).await;
+                                network::broadcast_message(msg, peer_manager_clone_spawn, client_tls_spawn, fingerprints_spawn).await;
                             });
                         }
                     }

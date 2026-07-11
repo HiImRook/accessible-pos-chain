@@ -6,6 +6,7 @@ use crate::types::NetworkMessage;
 use crate::tpi::TpiHashMessage;
 use crate::crypto::peer_addr_hash;
 use crate::address::{canonicalize_peer_addr, is_valid_peer_addr};
+use crate::tls::validate_peer_certificate;
 use std::sync::Arc;
 use tokio::sync::Mutex;
 use tokio_rustls::TlsAcceptor;
@@ -227,13 +228,14 @@ pub async fn connect_and_handle_peer(
     my_rpc_addr: Option<String>,
     genesis_hash: String,
     client_tls_config: Arc<ClientConfig>,
+    trusted_fingerprints: Vec<String>,
 ) {
     match TcpStream::connect(&addr).await {
         Ok(tcp_stream) => {
             let connector = TlsConnector::from(client_tls_config);
             let server_name = ServerName::try_from("valid-blockchain").unwrap().to_owned();
 
-            let mut stream = match connector.connect(server_name, tcp_stream).await {
+            let stream = match connector.connect(server_name, tcp_stream).await {
                 Ok(s) => s,
                 Err(e) => {
                     println!("[TLS] Outbound handshake failed to {}: {}", addr, e);
@@ -241,6 +243,20 @@ pub async fn connect_and_handle_peer(
                 }
             };
 
+            let fingerprint = match validate_peer_certificate(
+                stream.get_ref().1.peer_certificates(),
+                &trusted_fingerprints,
+            ) {
+                Ok(fp) => fp,
+                Err(e) => {
+                    println!("[TLS] Peer certificate validation failed for {}: {}", addr, e);
+                    return;
+                }
+            };
+
+            println!("[TLS] Trusted cert fingerprint from {}: {}", addr, fingerprint);
+
+            let mut stream = stream;
             let peer_hash = peer_addr_hash(&addr, &genesis_hash);
 
             let known_peers = {
@@ -310,6 +326,7 @@ pub async fn broadcast_message(
     msg: NetworkMessage,
     peer_manager: Arc<Mutex<PeerManager>>,
     client_tls_config: Arc<ClientConfig>,
+    trusted_fingerprints: Vec<String>,
 ) {
     let targets = {
         let pm = peer_manager.lock().await;
@@ -324,6 +341,19 @@ pub async fn broadcast_message(
 
                 match connector.connect(server_name, tcp_stream).await {
                     Ok(mut stream) => {
+                        let fingerprint = match validate_peer_certificate(
+                            stream.get_ref().1.peer_certificates(),
+                            &trusted_fingerprints,
+                        ) {
+                            Ok(fp) => fp,
+                            Err(e) => {
+                                println!("[TLS] Peer certificate validation failed for {}: {}", peer_hash, e);
+                                continue;
+                            }
+                        };
+
+                        println!("[TLS] Trusted cert fingerprint from {}: {}", peer_hash, fingerprint);
+
                         if let Err(e) = send_framed_message(&mut stream, &msg).await {
                             println!("Failed to broadcast to {}: {}", peer_hash, e);
                         }

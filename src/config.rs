@@ -10,6 +10,10 @@ pub struct Config {
     pub genesis_timestamp: u64,
     pub genesis: HashMap<String, u64>,
     pub validators: HashMap<String, u64>,
+    #[serde(default)]
+    pub tls_trust_mode: String,
+    #[serde(default)]
+    pub trusted_peer_fingerprints: Vec<String>,
 }
 
 impl Config {
