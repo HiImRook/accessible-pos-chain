@@ -5,6 +5,34 @@ All notable changes to Valid Blockchain will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.5] - 2026-07-11
+
+### Added
+- src/config.rs — tls_trust_mode and trusted_peer_fingerprints fields
+  - tls_trust_mode defaults to pinned_fingerprints — unsupported modes fail startup
+  - trusted_peer_fingerprints — optional allowlist of SHA-256 fingerprints
+  - Empty list means trust all — backward compatible with existing deployments
+- tls.rs — is_trusted_fingerprint() — case-insensitive, whitespace-tolerant fingerprint matching
+- tls.rs — validate_peer_certificate() — shared cert extraction and trust check helper
+- tls.rs — LoggingOnlyVerifier replaces FingerprintVerifier — naming reflects actual behavior
+- 12 TLS trust tests (tests/tls_trust_tests.rs)
+
+### Changed
+- network.rs — connect_and_handle_peer() accepts trusted_fingerprints parameter
+- network.rs — outbound connections rejected if peer cert fingerprint not in allowlist
+- network.rs — broadcast_message() accepts trusted_fingerprints parameter — broadcast path no longer bypasses trust policy
+- main.rs — trusted_peer_fingerprints loaded from config and threaded through all outbound connection paths
+- main.rs — tls_trust_mode validated at startup — unsupported values exit immediately
+- main.rs — trust mode and fingerprint count logged at startup
+
+### Notes
+- This is trust scaffolding, not full mTLS
+- LoggingOnlyVerifier passes all certs at the rustls layer — application-level trust check runs after handshake via validate_peer_certificate()
+- Empty trusted_peer_fingerprints list allows all connections — existing configs require no changes
+- Fingerprint pinning is ephemeral-cert compatible — fingerprints must be exchanged out-of-band before each session since certs regenerate at startup
+- Persistent validator identity key and session-stable cert pinning deferred to future hardening
+- All 119 tests pass (107 existing + 12 TLS trust)
+
 ## [0.7.4] - 2026-07-010
 
 ### Added
