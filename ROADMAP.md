@@ -1,7 +1,7 @@
 # Valid Blockchain - Development Roadmap
 
-**Current Version:** v0.7.4
-**Status:** v0.7.4 released (Testnet development)
+**Current Version:** v0.7.5
+**Status:** v0.7.5 released (Testnet development)
 
 ---
 
@@ -17,6 +17,19 @@ Features are documented **after** implementation to prevent roadmap drift.
 ---
 
 ## Version History (Completed)
+
+### v0.7.5 - TLS Trust Hardening Scaffolding (Jul 2026)
+- ✅ trusted_peer_fingerprints config field — optional SHA-256 fingerprint allowlist
+- ✅ tls_trust_mode config field — validated at startup, unsupported modes exit immediately
+- ✅ validate_peer_certificate() — shared cert extraction and trust check helper
+- ✅ is_trusted_fingerprint() — case-insensitive, whitespace-tolerant matching
+- ✅ LoggingOnlyVerifier — naming reflects actual behavior (logging only, not enforcement at rustls layer)
+- ✅ Outbound connection and broadcast path both enforce fingerprint allowlist
+- ✅ Empty allowlist = trust all, backward compatible
+- ✅ 12 TLS trust tests
+- ⚠️ LoggingOnlyVerifier passes all certs at rustls layer — application-level check only
+- ⚠️ Ephemeral certs regenerate at startup — fingerprints must be exchanged out-of-band per session
+- ⚠️ Persistent validator identity key and session-stable cert pinning deferred
 
 ### v0.7.4 - Network Abuse Hardening (Jul 2026)
 - ✅ Per-IP inbound connection rate limiting — 5 attempts per 60 seconds, keyed by source IP only
@@ -204,12 +217,6 @@ Features are documented **after** implementation to prevent roadmap drift.
 
 ## Upcoming Releases
 
-### v0.7.5 - TLS Trust Hardening (Target: Q3 2026)
-- P2P TLS trust anchoring
-- Peer certificate fingerprint pinning
-- Trust policy hardening for ephemeral self-signed transport certificates
-- Further transport-layer trust refinement without promoting TLS artifacts into durable peer identity
-
 ### v0.7.6 - Arweave Publication Validation (Target: Q4 2026)
 - Real wallet submission test against Arweave mainnet
 - Merkle data_root correctness confirmation or fix
@@ -277,7 +284,9 @@ Features are documented **after** implementation to prevent roadmap drift.
 
 ⚠️ **Arweave Merkle data_root pending live-network validation** — requires funded wallet submission
 ⚠️ **Chunked upload not implemented** — segments over 8MB deferred
-⚠️ **P2P TLS trust anchoring and fingerprint pinning deferred** — planned v0.7.5
+⚠️ **LoggingOnlyVerifier passes all certs at rustls layer** — application-level trust check only
+⚠️ **Ephemeral certs regenerate at startup** — fingerprints must be exchanged out-of-band per session
+⚠️ **Persistent validator identity key deferred** — session-stable cert pinning not yet implemented
 ⚠️ **RPC sync transport hardening deferred**
 ⚠️ **Genesis mismatch policy** — currently logged but handshake metadata still applied; future hardening decision
 
@@ -300,4 +309,4 @@ MIT License - See LICENSE file for details
 
 ---
 
-**Last Updated:** Jul 9, 2026
+**Last Updated:** Jul 11, 2026
