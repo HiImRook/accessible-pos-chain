@@ -4,9 +4,9 @@ A lightweight **TPI (Three-Party Integrity)** blockchain focused on accessibilit
 
 ---
 
-> ✅ **Network Identity Notice — v0.7.4**
+> ✅ **Network Identity Notice — v0.7.5**
 >
-> Raw IP addresses are no longer stored as peer identity. Peer identity is epoch-salted and hashed from canonicalized addresses. Malformed handshake identities are dropped before hashing. Inbound connections and peer messages are rate limited. All P2P connections are encrypted with TLS 1.3. Certificates are ephemeral — generated in memory at startup and never persisted as identity artifacts. Bootstrap remains a private ceremony between trusted partners. See [NETWORKING.md](NETWORKING.md) for full details.
+> Raw IP addresses are no longer stored as peer identity. Peer identity is epoch-salted and hashed from canonicalized addresses. Malformed handshake identities are dropped before hashing. Inbound connections and peer messages are rate limited. All P2P connections are encrypted with TLS 1.3. Certificate fingerprint pinning is now configurable. Certificates are ephemeral — generated in memory at startup and never persisted as identity artifacts. Bootstrap remains a private ceremony between trusted partners. See [NETWORKING.md](NETWORKING.md) for full details.
 
 ---
 
@@ -45,6 +45,7 @@ TPI is not borrowed from anywhere. I happily spent the past several years develo
 - Archive segments published to Arweave as permanent off-chain record
 - Archive/prune operations decoupled from chain lock and async runtime threads
 - TLS 1.3 encrypted P2P transport — ephemeral self-signed certificates, never persisted
+- Configurable TLS fingerprint pinning — trusted_peer_fingerprints allowlist in config.toml
 - Address canonicalization — wildcard, localhost, IPv6, and hostname normalization
 - Malformed handshake identities dropped before hashing
 - Per-IP inbound connection rate limiting — abuse stopped before TLS handshake
@@ -55,7 +56,7 @@ TPI is not borrowed from anywhere. I happily spent the past several years develo
 - Built-in metrics dashboard
 - Vendored dependencies for supply-chain security
 
-## Current Status: v0.7.4
+## Current Status: v0.7.5
 
 **Completed:**
 * ✅ TPI consensus — original mechanism, merit-based, no capital stake
@@ -88,6 +89,12 @@ TPI is not borrowed from anywhere. I happily spent the past several years develo
 * ✅ Ephemeral self-signed certificates generated in memory at startup — never persisted
 * ✅ Peer certificate fingerprints logged for observability
 * ✅ Shared TLS configs via Arc — generated once at startup, not per connection
+* ✅ trusted_peer_fingerprints config field — optional SHA-256 fingerprint allowlist
+* ✅ tls_trust_mode config field — validated at startup, unsupported modes exit immediately
+* ✅ validate_peer_certificate() — shared cert extraction and trust check for all outbound paths
+* ✅ is_trusted_fingerprint() — case-insensitive, whitespace-tolerant matching
+* ✅ Outbound connections and broadcasts enforce fingerprint allowlist
+* ✅ LoggingOnlyVerifier — naming reflects actual behavior at rustls layer
 * ✅ Transaction nonces and fee structure
 * ✅ Racer backup system
 * ✅ RPC server with WebSocket support
@@ -99,7 +106,7 @@ TPI is not borrowed from anywhere. I happily spent the past several years develo
 * ✅ Supply cap enforcement (33M VLid hard limit)
 * ✅ Fee priority ordering (high-fee transactions first)
 * ✅ Ed25519 signature verification on block acceptance
-* ✅ Comprehensive test suite (107 tests)
+* ✅ Comprehensive test suite (119 tests)
 * ✅ Snapshot primitives with deterministic checksums and atomic writes
 * ✅ Recovery RPC endpoints (GET /head, GET /block/:slot)
 * ✅ Archive segment module — 6-hour durable chain persistence unit
@@ -128,7 +135,7 @@ TPI is not borrowed from anywhere. I happily spent the past several years develo
 
 **In Development:**
 * 📋 Arweave Merkle data_root validation — requires active testnet network submission with funded wallet (deferred from v0.6.x)
-* 📋 v0.7.5 TLS trust hardening — certificate trust anchoring and fingerprint pinning
+* 📋 v0.7.6 Arweave publication validation
 * 📋 Layer 2 networks (VNS, VIPFS, KEVIN)
 
 ## Development Phases
@@ -154,7 +161,7 @@ TPI is not borrowed from anywhere. I happily spent the past several years develo
 - ✅ Fees 100% to block producer (temporary — future governance decision)
 - ✅ Ed25519 signature verification on block acceptance
 - ✅ Transaction nonce enforcement (replay protection)
-- ✅ Comprehensive test suite (107 tests)
+- ✅ Comprehensive test suite (119 tests)
   - Mempool tests (6)
   - Minting tests (7)
   - Tokenomics tests (8 external + 6 inline)
@@ -166,6 +173,7 @@ TPI is not borrowed from anywhere. I happily spent the past several years develo
   - Peer manager reconciliation tests (8)
   - Handshake validation tests (23)
   - Rate limiting tests (7)
+  - TLS trust tests (12)
 
 ### Phase 4: State Management ✅ (Complete - v0.6.x)
 - ✅ Snapshot primitives and deterministic checksums
@@ -188,7 +196,7 @@ TPI is not borrowed from anywhere. I happily spent the past several years develo
 - ✅ Quorum gating replaced by sync-complete readiness
 - ✅ Bootstrap is a private ceremony between trusted partners
 
-### Phase 6: Network Hardening ✅ (Partial - v0.7.1 through v0.7.4) / 📋 (Continuing - v0.7.5)
+### Phase 6: Network Hardening ✅ (Partial - v0.7.1 through v0.7.5) / 📋 (Continuing - v0.7.6)
 - ✅ Validator IP hashing with epoch-based salt
 - ✅ Peer identity/transport separation — Zero Footprint applied to network layer
 - ✅ TLS 1.3 P2P transport encryption — ephemeral self-signed certificates
@@ -198,15 +206,14 @@ TPI is not borrowed from anywhere. I happily spent the past several years develo
 - ✅ Dial target upgrade on every handshake via bind_canonical_dial_target()
 - ✅ Gossiped peer and RPC address validation
 - ✅ Per-IP connection rate limiting and per-peer message rate limiting
-- ✅ 56 new network hardening tests
-- 📋 TLS trust anchoring and fingerprint pinning (v0.7.5)
+- ✅ TLS fingerprint pinning scaffolding — configurable allowlist, enforced on all outbound paths
+- ✅ 68 new network hardening tests
+- 📋 Arweave publication validation (v0.7.6)
 
 ### Phase 7: Network Hardening, Stabilization, and Testnet Maturity 📋 (Future - v0.8.0+)
-- Connection-level and message-level rate limiting
 - Further peer identity and canonicalization hardening
 - Hostname and IPv6 normalization in peer address resolution
 - RPC normalization against resolved dial targets
-- TLS trust anchoring and fingerprint pinning
 - Additional network abuse resistance and malformed-message handling
 - Expanded integration and adversarial testing for networking, sync, and archival flows
 - Arweave publication validation and end-to-end live-network verification
@@ -305,7 +312,7 @@ All inbound peer addresses are canonicalized before hashing — wildcard bind ad
 Inbound connections are rate limited per source IP before the TLS handshake — ephemeral port rotation does not bypass the limit. Post-handshake message floods are disconnected immediately. Gossiped peer addresses and advertised RPC endpoints are validated before ingestion. Invalid peer identity in a handshake causes all associated handshake data to be ignored.
 
 **TLS 1.3 P2P Transport:**
-All peer connections are encrypted with TLS 1.3. Certificates are ephemeral — generated in memory at startup and discarded on shutdown. They are transport artifacts only and play no role in the peer identity model. Certificate fingerprints are logged for observability. Trust anchoring is deferred to future hardening work.
+All peer connections are encrypted with TLS 1.3. Certificates are ephemeral — generated in memory at startup and discarded on shutdown. Certificate fingerprint pinning is now configurable via trusted_peer_fingerprints in config.toml. All outbound connections and broadcasts enforce the allowlist. Empty allowlist means trust all — existing deployments require no changes.
 
 **Zero-Comment Code:**
 Self-documenting variable names eliminate need for comments. Complexity that requires explanation is unnecessary and just an extra layer of work.
