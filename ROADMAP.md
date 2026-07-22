@@ -230,17 +230,39 @@ Features are documented **after** implementation to prevent roadmap drift.
 
 ## Upcoming Releases
 
-### v0.8.0 - Testnet Maturity and Network Hardening (Target: Q3 2026)
-- Bootstrap node deployment and peer gossip self-sustainability verification
-- Hostname and IPv6 normalization in peer address resolution
-- RPC normalization against resolved dial targets
-- Additional network abuse resistance and malformed-message handling
-- Expanded integration and adversarial testing for networking, sync, and archival flows
-- Testnet stability, observability, and operational hardening
+### v0.8.0 - Live Testnet Deployment (Target: Q3 2026)
+
+**Primary goal:** Move from local hardening work and private testnet to a live multi-node testnet and prove the network can sustain itself under real conditions.
+
+**In scope:**
+- Deploy bootstrap/local nodes in real physical locations
+- Launch validators against those nodes
+- Verify peer discovery works across locations
+- Verify gossip propagates beyond the initial bootstrap set
+- Verify nodes sync correctly after startup
+- Verify block production continues under normal operation
+- Verify the network remains healthy after bootstrap dependence is reduced
+- Fix only issues directly exposed by bring-up: hostname/IPv6/RPC normalization, peer connectivity edge cases, and real-world rate-limit or handshake problems
+- Add tests for any failure modes discovered during deployment
+
+**Out of scope until testnet is stable:**
+- L2 groundwork
+- VNS, VIPFS, KEVIN
+- New consensus or identity redesign
+- Major archive redesign
+- Speculative hardening not tied to observed deployment issues
+
+**Completion criteria:**
+- Bootstrap nodes are live in real locations
+- Multiple validators connect and remain stable
+- Peer gossip and self-discovery work beyond initial bootstrap contact
+- Startup sync works reliably on the live network
+- Block production runs stably over sustained uptime
+- Deployment-discovered bugs are fixed and covered by tests
 
 ---
 
-## Future Considerations (v0.8.0+)
+## Future Considerations (v0.9.0+)
 
 ### Anti-Frontrunning
 - Parent block hash as deterministic transaction ordering seed
@@ -324,4 +346,4 @@ MIT License - See LICENSE file for details
 
 ---
 
-**Last Updated:** Jul 21, 2026
+**Last Updated:** Jul 22, 2026
