@@ -24,12 +24,19 @@ fn arweave_inline_max_bytes() -> u64 {
 struct ArweaveWallet {
     private_key: RsaPrivateKey,
     owner: Vec<u8>,
+    address: String,
 }
 
 impl ArweaveWallet {
     fn from_env() -> Result<Self, String> {
-        let jwk_json = std::env::var("ARWEAVE_JWK_JSON")
-            .map_err(|_| "ARWEAVE_JWK_JSON not set".to_string())?;
+        let jwk_json = if let Ok(path) = std::env::var("ARWEAVE_WALLET_PATH") {
+            std::fs::read_to_string(&path)
+                .map_err(|e| format!("failed to read wallet file {}: {}", path, e))?
+        } else {
+            std::env::var("ARWEAVE_JWK_JSON")
+                .map_err(|_| "ARWEAVE_WALLET_PATH or ARWEAVE_JWK_JSON required".to_string())?
+        };
+
         let parsed: jwk::JsonWebKey = jwk_json.parse()
             .map_err(|e| format!("JWK parse failed: {}", e))?;
         let der = parsed.key.try_to_der()
@@ -37,11 +44,13 @@ impl ArweaveWallet {
         let private_key = RsaPrivateKey::from_pkcs8_der(&der)
             .map_err(|e| format!("DER to RSA key failed: {}", e))?;
         let owner = private_key.n().to_bytes_be();
+
         let mut hasher = Sha256::new();
         hasher.update(&owner);
         let address = BASE64URL_NOPAD.encode(&hasher.finalize());
+
         println!("[PUBLISH] Arweave wallet loaded: {}", address);
-        Ok(Self { private_key, owner })
+        Ok(Self { private_key, owner, address })
     }
 
     fn sign(&self, message: &[u8]) -> Result<Vec<u8>, String> {
@@ -90,9 +99,9 @@ fn encode_note(offset: u64) -> Vec<u8> {
     buf
 }
 
-fn leaf_hash(data: &[u8], offset: u64) -> Vec<u8> {
+fn leaf_hash(data_hash: &[u8], offset: u64) -> Vec<u8> {
     let note = encode_note(offset);
-    sha256_bytes(&[sha256_bytes(data), sha256_bytes(&note)].concat())
+    sha256_bytes(&[sha256_bytes(data_hash), sha256_bytes(&note)].concat())
 }
 
 fn branch_hash(left: &[u8], right: &[u8], right_max: u64) -> Vec<u8> {
@@ -108,7 +117,8 @@ fn compute_data_root(data: &[u8]) -> Vec<u8> {
     let mut leaves: Vec<(Vec<u8>, u64)> = data.chunks(ARWEAVE_CHUNK_SIZE)
         .map(|chunk| {
             offset += chunk.len() as u64;
-            (leaf_hash(chunk, offset), offset)
+            let chunk_hash = sha256_bytes(chunk);
+            (leaf_hash(&chunk_hash, offset), offset)
         })
         .collect();
     while leaves.len() > 1 {
@@ -203,7 +213,7 @@ impl ArweaveClient {
         let meta = &manifest.artifact.metadata;
         let tags = vec![
             RawTag { name: b"App-Name".to_vec(), value: b"accessible-pos-chain".to_vec() },
-            RawTag { name: b"App-Version".to_vec(), value: b"v0.6.7".to_vec() },
+            RawTag { name: b"App-Version".to_vec(), value: b"v0.7.5".to_vec() },
             RawTag { name: b"Content-Type".to_vec(), value: b"application/json".to_vec() },
             RawTag { name: b"Archive-Type".to_vec(), value: b"block-segment".to_vec() },
             RawTag { name: b"Chain-Genesis".to_vec(), value: meta.genesis_hash.as_bytes().to_vec() },
@@ -247,8 +257,12 @@ impl ArweaveClient {
         let data_size = data_bytes.len() as u64;
         let inline_max = arweave_inline_max_bytes();
 
+        println!("[PUBLISH] Segment {}-{}: {} bytes, wallet: {}",
+            segment_start, segment_end, data_size, self.wallet.address);
+
         if data_size > inline_max {
-            println!("[PUBLISH] Segment {}-{} exceeds inline limit ({} bytes) — deferred", segment_start, segment_end, data_size);
+            println!("[PUBLISH] Segment {}-{} exceeds inline limit ({} bytes) — deferred",
+                segment_start, segment_end, data_size);
             return PublicationReceipt {
                 backend: "arweave".to_string(),
                 object_id: None,
@@ -264,7 +278,8 @@ impl ArweaveClient {
 
         match self.build_sign_and_submit(manifest, data_bytes, data_size).await {
             Ok(tx_id) => {
-                println!("[PUBLISH] Segment {}-{} submitted: {}", segment_start, segment_end, tx_id);
+                println!("[PUBLISH] Segment {}-{} submitted: tx_id={}",
+                    segment_start, segment_end, tx_id);
                 PublicationReceipt {
                     backend: "arweave".to_string(),
                     object_id: Some(tx_id),
@@ -306,6 +321,11 @@ impl ArweaveClient {
         let reward = reward.trim().to_string();
 
         let data_root_bytes = compute_data_root(&data_bytes);
+        let data_root_b64 = BASE64URL_NOPAD.encode(&data_root_bytes);
+
+        println!("[PUBLISH] anchor={} reward={} data_root={}",
+            &anchor[..16.min(anchor.len())], reward, data_root_b64);
+
         let raw_tags = Self::build_raw_tags(manifest)?;
 
         let anchor_raw = BASE64URL_NOPAD.decode(anchor.as_bytes())
@@ -322,12 +342,12 @@ impl ArweaveClient {
             DeepHashItem::Blob(ARWEAVE_FORMAT.as_bytes().to_vec()),
             DeepHashItem::Blob(self.wallet.owner.clone()),
             DeepHashItem::Blob(vec![]),
-            DeepHashItem::Blob(data_root_bytes.clone()),
-            DeepHashItem::Blob(data_size.to_string().into_bytes()),
             DeepHashItem::Blob(b"0".to_vec()),
             DeepHashItem::Blob(reward.as_bytes().to_vec()),
             DeepHashItem::Blob(anchor_raw),
             DeepHashItem::List(tag_items),
+            DeepHashItem::Blob(data_size.to_string().into_bytes()),
+            DeepHashItem::Blob(data_root_bytes.clone()),
         ]);
 
         let signing_data = deep_hash(signing_input);
@@ -336,6 +356,8 @@ impl ArweaveClient {
         let mut id_hasher = Sha256::new();
         id_hasher.update(&signature_bytes);
         let tx_id = BASE64URL_NOPAD.encode(&id_hasher.finalize());
+
+        println!("[PUBLISH] tx_id={}", tx_id);
 
         let http_tags: Vec<ArweaveTag> = raw_tags.iter().map(|t| t.into()).collect();
 
@@ -348,7 +370,7 @@ impl ArweaveClient {
             target: String::new(),
             quantity: "0".to_string(),
             data: BASE64URL_NOPAD.encode(&data_bytes),
-            data_root: BASE64URL_NOPAD.encode(&data_root_bytes),
+            data_root: data_root_b64,
             data_size: data_size.to_string(),
             reward,
             signature: BASE64URL_NOPAD.encode(&signature_bytes),
@@ -359,8 +381,11 @@ impl ArweaveClient {
             .map_err(|e| format!("POST /tx failed: {}", e))?;
 
         let status = resp.status();
+        let body = resp.text().await.unwrap_or_default();
+
+        println!("[PUBLISH] POST /tx response: {} — {}", status, body);
+
         if !status.is_success() {
-            let body = resp.text().await.unwrap_or_default();
             return Err(format!("POST /tx rejected {}: {}", status, body));
         }
 
