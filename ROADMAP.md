@@ -1,7 +1,7 @@
 # Valid Blockchain - Development Roadmap
 
-**Current Version:** v0.7.5
-**Status:** v0.7.5 released (Testnet development)
+**Current Version:** v0.7.6
+**Status:** v0.7.6 released (Testnet development)
 
 ---
 
@@ -17,6 +17,19 @@ Features are documented **after** implementation to prevent roadmap drift.
 ---
 
 ## Version History (Completed)
+
+### v0.7.6 - Arweave Publication Validation (Jul 2026)
+- ✅ Arweave signing field order corrected to format 2 spec — format, owner, target, quantity, reward, anchor, tags, data_size, data_root
+- ✅ data_root leaf hash corrected — chunk bytes pre-hashed before leaf_hash() — matches arweave-js merkle.ts
+- ✅ Wallet loading supports ARWEAVE_WALLET_PATH (file path) alongside ARWEAVE_JWK_JSON
+- ✅ Wallet address added to ArweaveWallet struct and logged at startup
+- ✅ Full POST /tx response body logged for observability
+- ✅ data_root and tx_id logged before submission
+- ✅ src/bin/arweave_test.rs — standalone test binary for live mainnet validation
+- ✅ Real archive segment submitted to Arweave mainnet — tx_id: 71o-aNdFvGGPEcIvK6b4MCFKQjS-FJD_-KAIKDeiKCA
+- ✅ data_root correctness confirmed against live network
+- ✅ RSA-PSS signing path confirmed correct
+- ✅ Inline upload confirmed sufficient — chunked upload not required at current segment sizes
 
 ### v0.7.5 - TLS Trust Hardening Scaffolding (Jul 2026)
 - ✅ trusted_peer_fingerprints config field — optional SHA-256 fingerprint allowlist
@@ -97,8 +110,8 @@ Features are documented **after** implementation to prevent roadmap drift.
 - ✅ Tag schema — chain-native metadata embedded in every archive upload
 - ✅ Prune correctness never gated on remote upload success
 - ✅ Audit config — inapplicable advisories documented and ignored
-- ⚠️ Arweave Merkle data_root pending live-network validation — requires funded wallet submission
-- ⚠️ Chunked upload deferred to future release
+- ⚠️ Arweave Merkle data_root correctness confirmed in v0.7.6
+- ⚠️ Chunked upload deferred — inline upload sufficient at current segment sizes
 
 ### v0.6.6 - Archive Lock-Scope and Concurrency Hardening (Jun 2026)
 - ✅ ChainState write lock no longer held during archive disk I/O
@@ -217,10 +230,13 @@ Features are documented **after** implementation to prevent roadmap drift.
 
 ## Upcoming Releases
 
-### v0.7.6 - Arweave Publication Validation (Target: Q4 2026)
-- Real wallet submission test against Arweave mainnet
-- Merkle data_root correctness confirmation or fix
-- Chunked upload path if segments exceed inline limit in practice
+### v0.8.0 - Testnet Maturity and Network Hardening (Target: Q3 2026)
+- Bootstrap node deployment and peer gossip self-sustainability verification
+- Hostname and IPv6 normalization in peer address resolution
+- RPC normalization against resolved dial targets
+- Additional network abuse resistance and malformed-message handling
+- Expanded integration and adversarial testing for networking, sync, and archival flows
+- Testnet stability, observability, and operational hardening
 
 ---
 
@@ -282,8 +298,7 @@ Features are documented **after** implementation to prevent roadmap drift.
 
 ## Known Limitations
 
-⚠️ **Arweave Merkle data_root pending live-network validation** — requires funded wallet submission
-⚠️ **Chunked upload not implemented** — segments over 8MB deferred
+⚠️ **Chunked upload not implemented** — segments over 8MB deferred; inline upload sufficient at current segment sizes
 ⚠️ **LoggingOnlyVerifier passes all certs at rustls layer** — application-level trust check only
 ⚠️ **Ephemeral certs regenerate at startup** — fingerprints must be exchanged out-of-band per session
 ⚠️ **Persistent validator identity key deferred** — session-stable cert pinning not yet implemented
@@ -309,4 +324,4 @@ MIT License - See LICENSE file for details
 
 ---
 
-**Last Updated:** Jul 11, 2026
+**Last Updated:** Jul 21, 2026
