@@ -4,9 +4,9 @@ A lightweight **TPI (Three-Party Integrity)** blockchain focused on accessibilit
 
 ---
 
-> ✅ **Network Identity Notice — v0.7.5**
+> ✅ **Network Identity Notice — v0.7.6**
 >
-> Raw IP addresses are no longer stored as peer identity. Peer identity is epoch-salted and hashed from canonicalized addresses. Malformed handshake identities are dropped before hashing. Inbound connections and peer messages are rate limited. All P2P connections are encrypted with TLS 1.3. Certificate fingerprint pinning is now configurable. Certificates are ephemeral — generated in memory at startup and never persisted as identity artifacts. Bootstrap remains a private ceremony between trusted partners. See [NETWORKING.md](NETWORKING.md) for full details.
+> Raw IP addresses are no longer stored as peer identity. Peer identity is epoch-salted and hashed from canonicalized addresses. Malformed handshake identities are dropped before hashing. Inbound connections and peer messages are rate limited. All P2P connections are encrypted with TLS 1.3. Certificate fingerprint pinning is now configurable. Certificates are ephemeral, generated in memory at startup and never persisted as identity artifacts. Archive segments are published to Arweave mainnet, transaction correctness validated live. Bootstrap remains a private ceremony between trusted partners. See [NETWORKING.md](NETWORKING.md) for full details.
 
 ---
 
@@ -22,7 +22,7 @@ Valid Blockchain uses **Three-Party Integrity (TPI)** — an original consensus 
 - Bad behavior loses standing, not tokens
 - No capital at stake and no computational race. Merit is gained through participation.
 
-TPI is not borrowed from anywhere. I happily spent the past several years developing this as a counter-reaction to unnecessarily heavy blockchain consensus and finality.
+TPI is not borrowed from anywhere. I happily spent the past several years developing this as a counter-reaction to unnecessarily heavy blockchain consensus, finality, and state bloat.
 
 ---
 
@@ -42,7 +42,7 @@ TPI is not borrowed from anywhere. I happily spent the past several years develo
 
 **Infrastructure:**
 - 6-hour archive segments for durable chain persistence
-- Archive segments published to Arweave as permanent off-chain record
+- Archive segments published to Arweave as permanent off-chain record — live mainnet validated
 - Archive/prune operations decoupled from chain lock and async runtime threads
 - TLS 1.3 encrypted P2P transport — ephemeral self-signed certificates, never persisted
 - Configurable TLS fingerprint pinning — trusted_peer_fingerprints allowlist in config.toml
@@ -56,13 +56,13 @@ TPI is not borrowed from anywhere. I happily spent the past several years develo
 - Built-in metrics dashboard
 - Vendored dependencies for supply-chain security
 
-## Current Status: v0.7.5
+## Current Status: v0.7.6
 
 **Completed:**
 * ✅ TPI consensus — original mechanism, merit-based, no capital stake
 * ✅ validator_id removed from peer handshake entirely
 * ✅ Peer connections are identity-free at the transport layer
-* ✅ SPO delegation dropped — this is a TPI chain, not PoS
+* ✅ SPO delegation dropped — this is a TPI chain, not a PoS
 * ✅ Startup quorum gating replaced by sync-complete readiness
 * ✅ Raw IP addresses never stored as peer identity
 * ✅ Epoch-salted peer address hashing — 24-hour rotation window derived from genesis hash
@@ -128,14 +128,15 @@ TPI is not borrowed from anywhere. I happily spent the past several years develo
 * ✅ Duplicate concurrent archive task guard prevents racing on the same segment
 * ✅ Backend-neutral archive publication contract (manifest/receipt/status)
 * ✅ Arweave uploader — JWK wallet loading, deep hash, RSA-PSS signing, inline upload
+* ✅ Arweave transaction construction validated live on mainnet — signing field order and data_root correctness confirmed
+* ✅ Arweave wallet loading from file path via ARWEAVE_WALLET_PATH
 * ✅ Background publisher loop — 5-minute scan, retry on failure, skip terminal statuses
 * ✅ Oversize guard — segments over 8MB deferred, configurable via ARWEAVE_INLINE_MAX_BYTES
 * ✅ Chain-native tag schema embedded in every Arweave archive upload
 * ✅ Prune correctness never gated on remote upload success
+* ✅ Inline upload confirmed sufficient — chunked upload not required at current segment sizes
 
 **In Development:**
-* 📋 Arweave Merkle data_root validation — requires active testnet network submission with funded wallet (deferred from v0.6.x)
-* 📋 v0.7.6 Arweave publication validation
 * 📋 Layer 2 networks (VNS, VIPFS, KEVIN)
 
 ## Development Phases
@@ -196,7 +197,7 @@ TPI is not borrowed from anywhere. I happily spent the past several years develo
 - ✅ Quorum gating replaced by sync-complete readiness
 - ✅ Bootstrap is a private ceremony between trusted partners
 
-### Phase 6: Network Hardening ✅ (Partial - v0.7.1 through v0.7.5) / 📋 (Continuing - v0.7.6)
+### Phase 6: Network Hardening and Archive Publication ✅ (Complete - v0.7.1 through v0.7.6)
 - ✅ Validator IP hashing with epoch-based salt
 - ✅ Peer identity/transport separation — Zero Footprint applied to network layer
 - ✅ TLS 1.3 P2P transport encryption — ephemeral self-signed certificates
@@ -207,16 +208,15 @@ TPI is not borrowed from anywhere. I happily spent the past several years develo
 - ✅ Gossiped peer and RPC address validation
 - ✅ Per-IP connection rate limiting and per-peer message rate limiting
 - ✅ TLS fingerprint pinning scaffolding — configurable allowlist, enforced on all outbound paths
+- ✅ Arweave publication pipeline validated live on mainnet
 - ✅ 68 new network hardening tests
-- 📋 Arweave publication validation (v0.7.6)
 
-### Phase 7: Network Hardening, Stabilization, and Testnet Maturity 📋 (Future - v0.8.0+)
+### Phase 7: Network Maturity and Testnet Hardening 📋 (Future - v0.8.0+)
 - Further peer identity and canonicalization hardening
 - Hostname and IPv6 normalization in peer address resolution
 - RPC normalization against resolved dial targets
 - Additional network abuse resistance and malformed-message handling
 - Expanded integration and adversarial testing for networking, sync, and archival flows
-- Arweave publication validation and end-to-end live-network verification
 - Testnet stability, observability, and operational hardening
 
 ### Phase 8: Community Governance and Programmable Token Layer 📋 (Future)
@@ -314,6 +314,9 @@ Inbound connections are rate limited per source IP before the TLS handshake — 
 **TLS 1.3 P2P Transport:**
 All peer connections are encrypted with TLS 1.3. Certificates are ephemeral — generated in memory at startup and discarded on shutdown. Certificate fingerprint pinning is now configurable via trusted_peer_fingerprints in config.toml. All outbound connections and broadcasts enforce the allowlist. Empty allowlist means trust all — existing deployments require no changes.
 
+**Arweave Publication Sidecar:**
+After each verified local archive segment, a publication manifest is queued. A background task processes the queue every 5 minutes, uploading segments to Arweave as permanent off-chain storage. Transaction construction, deep hash, RSA-PSS signing, and data_root correctness are validated against Arweave mainnet. Prune correctness never depends on upload success as local durability always gates prune. When VIPFS is ready, it replaces Arweave as the publication backend without touching validator logic.
+
 **Zero-Comment Code:**
 Self-documenting variable names eliminate need for comments. Complexity that requires explanation is unnecessary and just an extra layer of work.
 
@@ -322,9 +325,6 @@ Complete state management using HashMaps. No external database dependencies ensu
 
 **6-Hour Archive Segments:**
 Every 2,160 blocks, the retiring block range is written as a durable archive segment. This is the chain's long-term memory, not a restore checkpoint, but a permanent historical record. Peers handle live catch-up sync. This method replaces the planned "memory pruning" update.
-
-**Arweave Publication Sidecar:**
-After each verified local archive segment, a publication manifest is queued. A background task processes the queue every 5 minutes, uploading segments to Arweave as permanent off-chain storage. Prune correctness never depends on upload success as local durability always gates prune. When VIPFS is ready, it replaces Arweave as the publication backend without touching validator logic.
 
 **Lock-Scoped Archive Generation:**
 Archive segment building, writing, and verification run without holding the chain state lock and without blocking the async runtime. File I/O is isolated via spawn_blocking, and the chain lock is only briefly acquired to clone the block range and, after success, to prune it. Duplicate concurrent archive attempts for the same segment are prevented by an in-memory guard.
