@@ -5,6 +5,33 @@ All notable changes to Valid Blockchain will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.6] - 2026-07-21
+
+### Fixed
+- arweave.rs — signing field order corrected to Arweave format 2 spec
+  - Previous order: format, owner, target, data_root, data_size, quantity, reward, anchor, tags
+  - Correct order: format, owner, target, quantity, reward, anchor, tags, data_size, data_root
+- arweave.rs — data_root leaf hash corrected — chunk bytes are now pre-hashed before leaf_hash()
+  - leaf_hash now receives SHA256(chunk) not raw chunk bytes
+  - matches arweave-js merkle.ts reference implementation
+- arweave.rs — wallet loading now supports ARWEAVE_WALLET_PATH (file path) in addition to ARWEAVE_JWK_JSON
+- arweave.rs — wallet address added to ArweaveWallet struct and logged at startup
+- arweave.rs — full POST /tx response body logged for observability
+
+### Added
+- src/bin/arweave_test.rs — standalone test binary for live Arweave mainnet validation
+- arweave.rs — data_root and tx_id logged before submission
+- arweave.rs — segment size and wallet address logged before submission
+- App-Version tag bumped to v0.7.5
+
+### Validated
+- Real archive segment submitted to Arweave mainnet
+- Transaction accepted: tx_id 71o-aNdFvGGPEcIvK6b4MCFKQjS-FJD_-KAIKDeiKCA
+- data_root correctness confirmed against live network
+- RSA-PSS signing path confirmed correct
+- Inline upload confirmed sufficient for current segment sizes — chunked upload not required
+- All 119 tests pass
+
 ## [0.7.5] - 2026-07-11
 
 ### Added
