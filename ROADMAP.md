@@ -230,20 +230,20 @@ Features are documented **after** implementation to prevent roadmap drift.
 
 ## Upcoming Releases
 
-### v0.8.0 - Real Testnet Bring-Up (Target: Q3 2026)
+### v0.8.0 - Live Testnet Deployment (Target: Q3 2026)
 
-**Primary goal:** Move from local hardening work to a live multi-node testnet and prove the network can sustain itself under real conditions.
+**Primary goal:** Move from local hardening work and private testnet to a live multi-node testnet and prove the network can sustain itself under real conditions.
 
 **In scope:**
-- Deploy bootstrap/church nodes in real physical locations
+- Deploy bootstrap/local nodes in real physical locations
 - Launch validators against those nodes
-- Verify peer discovery works across real locations
+- Verify peer discovery works across locations
 - Verify gossip propagates beyond the initial bootstrap set
 - Verify nodes sync correctly after startup
 - Verify block production continues under normal operation
 - Verify the network remains healthy after bootstrap dependence is reduced
 - Fix only issues directly exposed by bring-up: hostname/IPv6/RPC normalization, peer connectivity edge cases, and real-world rate-limit or handshake problems
-- Add tests for any real failure modes discovered during deployment
+- Add tests for any failure modes discovered during deployment
 
 **Out of scope until testnet is stable:**
 - L2 groundwork
